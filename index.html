@@ -6,6 +6,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="assets/js/leaflet/leaflet.css" />
 <link rel="stylesheet" href="assets/css/common.css" />
+<style>
+	.c-details__summary {
+  position: sticky;
+  top: 0;
+  z-index: 2; /* ensure it's above contents */
+  background: #f9f9f9; /* match the background of container */
+  padding: 8px 12px;
+  border-bottom: 1px solid #ccc;
+}
+
+</style>
 </head>
 <body>
 <div class="l-container js-menu-toggle p-simulation">
@@ -23,7 +34,17 @@
 	</header>
 	<main class="l-contents">
 		<header class="l-contents__head">
-			<h1 class="l-contents__tit">入力</h1>
+  <div class="breadcrumb-wrapper">
+    <nav class="breadcrumb-arrow">
+      <ul>
+        <li class="step step-input CURRENT"><a href="index.html">入力</a></li>
+        <li class="step step-results"><a href="results.html">シミュレーション結果</a></li>
+        <li class="step step-list"><a href="list.html">登録した結果一覧</a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <h1 class="l-contents__tit">入力</h1>
 			<div class="l-contents__parameter">
 				<span class="l-contents__parameter-tit">パラメーター</span>
 				<nav class="l-contents__parameter-nav">
@@ -1148,7 +1169,7 @@
 				</div>
 				<div class="c-area__btns column02 js-btns">
 					<button class="c-btn c-btn__contents blue" type="submit">シミュレーション結果</button>
-					<a class="c-btn c-btn__contents blue" href="list.html">結果一覧</a>
+					<!-- <a class="c-btn c-btn__contents blue" href="list.html">結果一覧</a> -->
 				</div>
 			</div>
 		</form>

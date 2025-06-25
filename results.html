@@ -6,6 +6,58 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="assets/js/leaflet/leaflet.css" />
 <link rel="stylesheet" href="assets/css/common.css" />
+<style>
+	.l-contents__tit {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  white-space: nowrap;    
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.l-contents__dl {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;     
+}
+
+.l-contents__dl-dt {
+  font-weight: bold;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.95rem;
+}
+
+.l-contents__dl-dd {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.l-contents__name-input {
+  padding: 0.3rem 0.5rem;
+}
+
+.l-contents__dl-dd.c-area__name {
+  max-width: 90%;         
+  flex: 1 1 400px;        
+  white-space: nowrap;     
+  overflow: hidden;        
+  text-overflow: ellipsis; 
+}
+
+.l-contents__name-input {
+  width: 90%;             
+  min-width: 0;            
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+</style>
 </head>
 <body>
 <div class="l-loading js-loading"><i class="l-loading__ico c-ico__loading"></i></div>
@@ -24,7 +76,17 @@
 	</header>
 	<main class="l-contents p-result__map">
 		<header class="l-contents__head">
-			<h1 class="l-contents__tit">シミュレーション結果</h1>
+  <div class="breadcrumb-wrapper">
+    <nav class="breadcrumb-arrow">
+      <ul>
+        <li class="step step-input"><a href="index.html">入力</a></li>
+        <li class="step step-results CURRENT"><a href="results.html">シミュレーション結果</a></li>
+        <li class="step step-list"><a href="list.html">登録した結果一覧</a></li>
+      </ul>
+    </nav>
+  </div>
+
+  <h1 class="l-contents__tit">シミュレーション結果</h1>
 			<dl class="l-contents__dl">
 				<dt class="l-contents__dl-dt">総合評価</dt>
 				<dd class="l-contents__dl-dd l-contents__evaluation">
