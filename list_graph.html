@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<title>【登録した結果一覧】デジタルツインサンドボックス</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="assets/css/common.css" />
+</head>
+<body>
+<div class="l-container js-menu-toggle p-list">
+  <header class="l-header">
+    <div class="l-header__tit js-menu-toggle">
+      <span class="l-header__tit-en">DTSB</span>
+      <h1 class="l-header__tit-jp">デジタルツインサンドボックス</h1>
+    </div>
+    <nav class="l-header__nav">
+      <a href="#" class="l-header__nav-link logout js-menu-toggle"><span>ログアウト</span></a>
+      <a href="./" class="l-header__nav-link simulation js-menu-toggle js-menu-simulation"><span>シミュレーション</span></a>
+      <a href="list.html" class="l-header__nav-link results current js-menu-toggle"><span>結果一覧</span></a>
+      <span class="l-header__nav-link menu js-menu-open js-menu-toggle"><span>メニューを閉じる</span></span>
+    </nav>
+  </header>
+  <main class="l-contents p-list__graph">
+    <header class="l-contents__head">
+      <h1 class="l-contents__tit">登録した結果一覧</h1>
+    </header>
+    <div class="l-contents__main">
+			<div class="l-contents__data">
+				<div class="c-area__results">
+          <div class="c-box">
+            <div class="c-chart p-list__graph-comparison"><canvas id="result01"></canvas></div>
+          </div>
+          <div class="c-area__grid column02 c-area__scroll">
+            <div class="c-box">
+              <div class="c-area__name c-box__registered-name js-name">
+                <input class="c-area__name-input c-box__registered-input js-name-input" type="text" name="analysis_title_01" value="○○を意識した解析" readonly>
+                <button class="js-name-edit c-box__registered-edit c-btn__edit" type="button"><img src="assets/image/ico_edit_01.svg" width="15" height="15" alt="編集"/></button>
+              </div>
+              <div class="c-chart"><canvas id="result02"></canvas></div>
+            </div>
+            <div class="c-box">
+              <div class="c-area__name c-box__registered-name js-name">
+                <input class="c-area__name-input c-box__registered-input js-name-input" type="text" name="analysis_title_02" value="○○を意識した解析" readonly>
+                <button class="js-name-edit c-box__registered-edit c-btn__edit" type="button"><img src="assets/image/ico_edit_01.svg" width="15" height="15" alt="編集"/></button>
+              </div>
+              <div class="c-chart"><canvas id="result03"></canvas></div>
+            </div>
+            <div class="c-box">
+              <div class="c-area__name c-box__registered-name js-name">
+                <input class="c-area__name-input c-box__registered-input js-name-input" type="text" name="analysis_title_03" value="○○を意識した解析" readonly>
+                <button class="js-name-edit c-box__registered-edit c-btn__edit" type="button"><img src="assets/image/ico_edit_01.svg" width="15" height="15" alt="編集"/></button>
+              </div>
+              <div class="c-chart"><canvas id="result04"></canvas></div>
+            </div>
+          </div>
+				</div>
+				<div class="c-area__btns column03 wide js-btns">
+          <a class="c-btn c-btn__contents blue" href="list.html">表で比較</a>
+          <a class="c-btn c-btn__contents blue" href="#">CSVで出力</a>
+          <a class="c-btn c-btn__contents black" href="./">入力に戻る</a>
+        </div>
+			</div>
+    </div>
+  </main>
+</div>
+<script src="assets/js/chart.min.js"></script>
+<script src="assets/js/common.js"></script>
+<script>
+	const commonLabel = ["所用時間短縮便益", "交通事故削減便益", "サービス利用者数", "地域経済への波及効果", "渋滞緩和", "運行コスト"];
+	const commonBorderWidth = 1;
+	const commonOption = {
+		scales: {
+			r: {
+				min: 0,
+				max: 5,
+				ticks: {
+					stepSize: 1,
+				},
+				backgroundColor: '#f8f8f8',
+				grid: {
+					color: '#DDD',
+				},
+				angleLines: {
+					color: '#DDD',
+				},
+				pointLabels: {
+					color: '#333',
+				},
+			},
+		},
+		plugins: {
+			legend: {
+				position: 'bottom',
+				align: 'end'
+			}
+		},
+		maintainAspectRatio: false
+	};
+	const label01 = "入力";
+	const bgColor01 = "rgba(245,129,60,0.5)";
+	const borderColor01 = "rgba(245,129,60,1)";
+	const label02 = "現在";
+	const bgColor02 = "rgba(49,89,158,0.5)";
+	const borderColor02 = "rgba(49,89,158,1)";
+  const bgColor03 = "rgba(49,158,136,0.5)";
+	const borderColor03 = "rgba(49,158,136,1)";
+  const bgColor04 = "rgba(153,153,153,0.4)";
+	const borderColor04 = "rgba(153,153,153,1)";
+
+  const result01 = new Chart(document.getElementById('result01'), {
+    type: 'radar',
+    data: {
+      labels: commonLabel,
+			datasets: [{
+        label: '○○を意識した解析',
+        data: [5,4,5,4,5,2],
+        backgroundColor: bgColor01,
+        borderColor: borderColor01,
+        borderWidth: commonBorderWidth,
+      },{
+        label: '○○を意識した解析',
+        data: [4,5,4,5,2,5],
+        backgroundColor: bgColor02,
+        borderColor: borderColor02,
+				borderWidth: commonBorderWidth,
+      },{
+        label: '○○を意識した解析',
+        data: [5,5,5,4,3,4],
+        backgroundColor: bgColor03,
+        borderColor: borderColor03,
+				borderWidth: commonBorderWidth,
+      }]
+    },
+    options: commonOption
+  });
+  const result02 = new Chart(document.getElementById('result02'), {
+    type: 'radar',
+    data: {
+      labels: commonLabel,
+			datasets: [{
+        label: label01,
+        data: [5,4,5,4,5,2],
+        backgroundColor: bgColor01,
+        borderColor: borderColor01,
+        borderWidth: commonBorderWidth,
+      },{
+        label: label02,
+        data: [3,2,3,3,3,4],
+        backgroundColor: bgColor04,
+        borderColor: borderColor04,
+				borderWidth: commonBorderWidth,
+      }]
+    },
+    options: commonOption
+  });
+	const result03 = new Chart(document.getElementById('result03'), {
+    type: 'radar',
+    data: {
+      labels: commonLabel,
+			datasets: [{
+        label: label01,
+        data: [4,5,4,5,2,5],
+        backgroundColor: bgColor02,
+        borderColor: borderColor02,
+        borderWidth: commonBorderWidth,
+      },{
+        label: label02,
+        data: [2,3,3,3,4,3],
+        backgroundColor: bgColor04,
+        borderColor: borderColor04,
+				borderWidth: commonBorderWidth,
+      }]
+    },
+    options: commonOption
+  });
+	const result04 = new Chart(document.getElementById('result04'), {
+    type: 'radar',
+    data: {
+      labels: commonLabel,
+			datasets: [{
+        label: label01,
+        data: [5,5,5,4,3,4],
+        backgroundColor: bgColor03,
+        borderColor: borderColor03,
+        borderWidth: commonBorderWidth,
+      },{
+        label: label02,
+        data: [3,4,4,4,5,4],
+        backgroundColor: bgColor04,
+        borderColor: borderColor04,
+				borderWidth: commonBorderWidth,
+      }]
+    },
+    options: commonOption
+  });
+</script>
+</body>
+</html>

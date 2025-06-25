@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<title>【登録した結果一覧】デジタルツインサンドボックス</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="assets/css/common.css" />
+</head>
+<body>
+<div class="l-container js-menu-toggle p-list">
+	<header class="l-header">
+		<div class="l-header__tit js-menu-toggle">
+			<span class="l-header__tit-en">DTSB</span>
+			<h1 class="l-header__tit-jp">デジタルツインサンドボックス</h1>
+		</div>
+		<nav class="l-header__nav">
+			<a href="#" class="l-header__nav-link logout js-menu-toggle"><span>ログアウト</span></a>
+			<a href="./" class="l-header__nav-link simulation js-menu-toggle js-menu-simulation"><span>シミュレーション</span></a>
+			<a href="list.html" class="l-header__nav-link results current js-menu-toggle"><span>結果一覧</span></a>
+			<span class="l-header__nav-link menu js-menu-open js-menu-toggle"><span>メニューを閉じる</span></span>
+		</nav>
+	</header>
+	<main class="l-contents">
+		<header class="l-contents__head">
+			<h1 class="l-contents__tit">登録した結果一覧</h1>
+		</header>
+		<div class="l-contents__main">
+			<div class="l-contents__data">
+				<div class="c-box c-area__scroll">
+					<table class="c-table p-list__table">
+						<thead>
+							<tr>
+								<th rowspan="2"></th>
+								<th rowspan="2" class="u-ta-left">名称</th>
+								<th>評価</th>
+								<th><span class="u-ib">平均</span><span class="u-ib">所要時間</span></th>
+								<th><span class="u-ib">運行</span><span class="u-ib">コスト</span></th>
+								<th><span class="u-ib">交通事故</span><span class="u-ib">発生率</span></th>
+								<th><span class="u-ib">平均</span><span class="u-ib">乗客数</span></th>
+								<th><span class="u-ib">交流発生</span><span class="u-ib">効果</span></th>
+								<th><span class="u-ib">渋滞発生</span><span class="u-ib">頻度</span></th>
+							</tr>
+							<tr class="u-nowrap">
+								<td><label class="c-btn__sort"><input type="checkbox" name="sort" value="2"><span class="c-btn__sort-inner">高い順</span></label></td>
+								<td><label class="c-btn__sort"><input type="checkbox" name="sort" value="3"><span class="c-btn__sort-inner">高い順</span></label></td>
+								<td><label class="c-btn__sort"><input type="checkbox" name="sort" value="4"><span class="c-btn__sort-inner">高い順</span></label></td>
+								<td><label class="c-btn__sort"><input type="checkbox" name="sort" value="5"><span class="c-btn__sort-inner">高い順</span></label></td>
+								<td><label class="c-btn__sort"><input type="checkbox" name="sort" value="6"><span class="c-btn__sort-inner">高い順</span></label></td>
+								<td><label class="c-btn__sort"><input type="checkbox" name="sort" value="7"><span class="c-btn__sort-inner">高い順</span></label></td>
+								<td><label class="c-btn__sort"><input type="checkbox" name="sort" value="8"><span class="c-btn__sort-inner">高い順</span></label></td>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="p-list__table-checkbox">
+									<label class="c-input__checkbox">
+										<input type="checkbox" name="comparison[]" value="result01">
+										<i class="c-input__checkbox-ico"></i>
+									</label>
+								</td>
+								<th>
+									<span>○○を意識した解析</span>
+									<ul class="c-table__action">
+										<li><a class="c-table__action-link u-nowrap" href="./">入力画面</a></li>
+										<li><a class="c-table__action-link u-nowrap" href="results.html">結果画面</a></li>
+									</ul>
+								</th>
+								<td class="p-list__table-star u-en" data-star="4"><i class="c-ico__star fill"></i>4</td>
+								<td class="p-list__table-evaluation u-en">A</td>
+								<td class="p-list__table-evaluation u-en">B</td>
+								<td class="p-list__table-evaluation u-en">A</td>
+								<td class="p-list__table-evaluation u-en">A</td>
+								<td class="p-list__table-evaluation u-en">C</td>
+								<td class="p-list__table-evaluation u-en">D</td>
+							</tr>
+							<tr>
+								<td class="p-list__table-checkbox">
+									<label class="c-input__checkbox">
+										<input type="checkbox" name="comparison[]" value="result02">
+										<i class="c-input__checkbox-ico"></i>
+									</label>
+								</td>
+								<th>
+									<span>○○を意識した解析</span>
+									<ul class="c-table__action">
+										<li><a class="c-table__action-link u-nowrap" href="./">入力画面</a></li>
+										<li><a class="c-table__action-link u-nowrap" href="results.html">結果画面</a></li>
+									</ul>
+								</th>
+								<td class="p-list__table-star u-en" data-star="3"><i class="c-ico__star fill"></i>3</td>
+								<td class="p-list__table-evaluation u-en">A</td>
+								<td class="p-list__table-evaluation u-en">C</td>
+								<td class="p-list__table-evaluation u-en">B</td>
+								<td class="p-list__table-evaluation u-en">A</td>
+								<td class="p-list__table-evaluation u-en">C</td>
+								<td class="p-list__table-evaluation u-en">B</td>
+							</tr>
+							<tr>
+								<td class="p-list__table-checkbox">
+									<label class="c-input__checkbox">
+										<input type="checkbox" name="comparison[]" value="result03">
+										<i class="c-input__checkbox-ico"></i>
+									</label>
+								</td>
+								<th>
+									<span>○○を意識した解析</span>
+									<ul class="c-table__action">
+										<li><a class="c-table__action-link u-nowrap" href="./">入力画面</a></li>
+										<li><a class="c-table__action-link u-nowrap" href="results.html">結果画面</a></li>
+									</ul>
+								</th>
+								<td class="p-list__table-star u-en" data-star="1"><i class="c-ico__star fill"></i>1</td>
+								<td class="p-list__table-evaluation u-en">A</td>
+								<td class="p-list__table-evaluation u-en">B</td>
+								<td class="p-list__table-evaluation u-en">D</td>
+								<td class="p-list__table-evaluation u-en">D</td>
+								<td class="p-list__table-evaluation u-en">C</td>
+								<td class="p-list__table-evaluation u-en">D</td>
+							</tr>
+							<tr>
+								<td class="p-list__table-checkbox">
+									<label class="c-input__checkbox">
+										<input type="checkbox" name="comparison[]" value="result04">
+										<i class="c-input__checkbox-ico"></i>
+									</label>
+								</td>
+								<th>
+									<span>○○を意識した解析</span>
+									<ul class="c-table__action">
+										<li><a class="c-table__action-link u-nowrap" href="./">入力画面</a></li>
+										<li><a class="c-table__action-link u-nowrap" href="results.html">結果画面</a></li>
+									</ul>
+								</th>
+								<td class="p-list__table-star u-en" data-star="5"><i class="c-ico__star fill"></i>5</td>
+								<td class="p-list__table-evaluation u-en">A</td>
+								<td class="p-list__table-evaluation u-en">B</td>
+								<td class="p-list__table-evaluation u-en">A</td>
+								<td class="p-list__table-evaluation u-en">A</td>
+								<td class="p-list__table-evaluation u-en">C</td>
+								<td class="p-list__table-evaluation u-en">A</td>
+							</tr>
+							<tr>
+								<td class="p-list__table-checkbox">
+									<label class="c-input__checkbox">
+										<input type="checkbox" name="comparison[]" value="result05">
+										<i class="c-input__checkbox-ico"></i>
+									</label>
+								</td>
+								<th>
+									<span>○○を意識した解析</span>
+									<ul class="c-table__action">
+										<li><a class="c-table__action-link u-nowrap" href="./">入力画面</a></li>
+										<li><a class="c-table__action-link u-nowrap" href="results.html">結果画面</a></li>
+									</ul>
+								</th>
+								<td class="p-list__table-star u-en" data-star="4"><i class="c-ico__star fill"></i>4</td>
+								<td class="p-list__table-evaluation u-en">A</td>
+								<td class="p-list__table-evaluation u-en">B</td>
+								<td class="p-list__table-evaluation u-en">A</td>
+								<td class="p-list__table-evaluation u-en">A</td>
+								<td class="p-list__table-evaluation u-en">C</td>
+								<td class="p-list__table-evaluation u-en">D</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div class="c-area__btns column03 wide js-btns">
+					<a class="c-btn c-btn__contents blue" href="list_graph.html">グラフで比較</a>
+					<a class="c-btn c-btn__contents blue" href="#">CSVで出力</a>
+					<a class="c-btn c-btn__contents black" href="./">入力に戻る</a>
+				</div>
+			</div>
+		</div>
+	</main>
+</div>
+<script src="assets/js/common.js"></script>
+<script>
+const checkboxes = document.querySelectorAll('input[name="sort"]');
+window.addEventListener('DOMContentLoaded', () => {
+	checkboxes.forEach(checkbox => {
+		checkbox.checked = false;
+	});
+});
+const table = document.querySelector('.p-list__table');
+const tbody = table.querySelector('tbody');
+const rows = Array.from(tbody.querySelectorAll('tr'));
+const originalRows = rows.slice(); // 元の順序で行の配列を保持
+checkboxes.forEach(checkbox => {
+	checkbox.addEventListener('click', () => {
+		if (checkbox.checked) {
+			checkboxes.forEach(otherCheckbox => {
+				if (otherCheckbox !== checkbox) {
+					otherCheckbox.checked = false;
+				}
+			});
+			sortTable(checkbox.value);
+		} else {
+			// チェックが外れた場合、元の順序でテーブルを再描画
+			tbody.innerHTML = '';
+			originalRows.forEach(row => tbody.appendChild(row));
+		}
+	});
+});
+function sortTable(sortValue) {
+	let sortedRows;
+	if (sortValue === '2') {
+		sortedRows = rows.sort((a, b) => {
+			const starAElement = a.querySelector('[data-star]');
+			const starBElement = b.querySelector('[data-star]');
+			if (starAElement && starBElement) {
+				const starA = parseInt(starAElement.dataset.star);
+				const starB = parseInt(starBElement.dataset.star);
+				return starB - starA;
+			} else {
+				return 0;
+			}
+		});
+	} else {
+		sortedRows = rows.sort((a, b) => {
+			const valueA = a.cells[sortValue].textContent;
+			const valueB = b.cells[sortValue].textContent;
+			return valueA.localeCompare(valueB);
+		});
+	}
+	tbody.innerHTML = '';
+	sortedRows.forEach(row => tbody.appendChild(row));
+}
+</script>
+</body>
+</html>

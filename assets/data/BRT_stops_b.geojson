@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "BRT_stops",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "stop_name": "〇〇駅前", "id": "", "n": 10, "ridership": 50 }, "geometry": { "type": "Point", "coordinates": [ 132.7514487984486,34.43201225470247 ] } },
+{ "type": "Feature", "properties": { "stop_name": "〇〇駅前", "id": null, "n": 20, "ridership": 20 }, "geometry": { "type": "Point", "coordinates": [ 132.7500794397762,34.42946185838436 ] } },
+{ "type": "Feature", "properties": { "stop_name": "〇〇駅前", "id": null, "n": 30, "ridership": 30, "comment": "○○駅⇔○○駅間の所要時間が20分増加", 	"icon": "warning" }, "geometry": { "type": "Point", "coordinates": [ 132.74736280886157,34.421464039623025 ] } },
+{ "type": "Feature", "properties": { "stop_name": "〇〇駅前", "id": null, "n": 50, "ridership": 40 }, "geometry": { "type": "Point", "coordinates": [ 132.75434212080484,34.42760366349216 ] } }
+]
+}

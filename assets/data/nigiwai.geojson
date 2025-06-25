@@ -1,0 +1,49 @@
+{
+	"type": "FeatureCollection",
+	"features": [
+		{
+			"type": "Feature",
+			"properties": {
+				"name": "地点A",
+				"nigiwai": 5
+			},
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					132.738282,
+					34.4176719
+				]
+			}
+		},
+		{
+			"type": "Feature",
+			"properties": {
+				"name": "地点B",
+				"nigiwai": 8,
+				"comment": "駅周辺においてにぎわいが増加",
+				"icon": "good"
+			},
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					132.7412292,
+					34.4271741
+				]
+			}
+		},
+		{
+			"type": "Feature",
+			"properties": {
+				"name": "地点C",
+				"nigiwai": 3
+			},
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					132.716462,
+					34.4006401
+				]
+			}
+		}
+	]
+}
