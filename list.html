@@ -37,11 +37,88 @@
 			box-shadow: 0 4px 6px -4px rgba(0, 0, 0, 0.3);
 		}
 
-		.p-list__table thead th {
-			background: #f47216;
-			padding: 8px;
+		.p-list__table thead {
+			position: sticky;
+			top: 0;
+			z-index: 100;
+			/* increase */
+			/* REMOVE box-shadow here if needed */
+			overflow: visible !important;
+			/* <-- fix */
+		}
+	</style>
+
+	<style>
+		.checkbox-header {
+			position: relative;
+			width: 40px;
+			/* adjust as needed */
+			padding: 0;
+		}
+
+		/* Tooltip bubble */
+		.checkbox-header .bubble {
+			position: absolute;
+			top: -60px;
+			left: 50%;
+			transform: translateX(-50%);
+			width: max-content;
+			max-width: 140px;
+			background: #fff;
+			color: #333;
+			border: 1px solid #ccc;
+			border-radius: 8px;
+			font-size: 12px;
+			padding: 6px 8px;
 			text-align: center;
-			vertical-align: bottom;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			z-index: 20;
+			white-space: nowrap;
+		}
+
+		/* Tooltip arrow */
+		.checkbox-header .bubble::after {
+			content: '';
+			position: absolute;
+			bottom: -8px;
+			left: 50%;
+			transform: translateX(-50%);
+			border-width: 8px 8px 0 8px;
+			border-style: solid;
+			border-color: #fff transparent transparent transparent;
+		}
+
+		.bubble-checkbox-tip {
+			position: absolute;
+			top: 130px;
+			/* tweak this until it sits right under your H1 */
+			left: 80px;
+			/* roughly half the width of your checkbox column */
+			transform: translateX(-50%);
+			z-index: 999;
+			width: max-content;
+			max-width: 180px;
+			background: #fff;
+			color: #333;
+			border: 1px solid #ccc;
+			border-radius: 8px;
+			font-size: 12px;
+			padding: 6px 10px;
+			text-align: center;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			white-space: nowrap;
+			z-index: 999;
+		}
+
+		.bubble-checkbox-tip::after {
+			content: '';
+			position: absolute;
+			bottom: -8px;
+			left: 50%;
+			transform: translateX(-50%);
+			border-width: 8px 8px 0 8px;
+			border-style: solid;
+			border-color: #fff transparent transparent transparent;
 		}
 	</style>
 
@@ -77,11 +154,16 @@
 			</header>
 			<div class="l-contents__main">
 				<div class="l-contents__data">
+					<div class="bubble-checkbox-tip">
+						2つ以上選択すると<br>グラフで比較できます
+					</div>
+
 					<div class="c-box c-area__scroll">
 						<table class="c-table p-list__table">
 							<thead>
 								<tr>
-									<th rowspan="2"></th>
+
+
 									<th rowspan="2" class="u-ta-left">名称</th>
 									<th>
 										評価
@@ -322,6 +404,20 @@
 			sortedRows.forEach(row => tbody.appendChild(row));
 		}
 	</script>
+
+	<script>
+		window.addEventListener('DOMContentLoaded', () => {
+			const bubble = document.querySelector('.bubble-checkbox-tip');
+			if (bubble) {
+				setTimeout(() => {
+					bubble.style.display = 'none';
+				}, 5000); // hides after 5 seconds
+			}
+		});
+	</script>
+
+
+
 </body>
 
 </html>
