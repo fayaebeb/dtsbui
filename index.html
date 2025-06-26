@@ -25,9 +25,143 @@
 
 		details.c-route>.c-route__setting {
 			padding-top: 40px;
-			/* adjust to match your summary height */
 		}
 	</style>
+
+	<style>
+		/* Main range styling */
+		.c-input__range-wrap.dual {
+			position: relative;
+			height: 36px;
+			margin-top: 10px;
+		}
+
+		.c-input__range-wrap.dual input[type=range] {
+			position: absolute;
+			width: 100%;
+			height: 6px;
+			margin: 0;
+			-webkit-appearance: none;
+			background: transparent;
+			pointer-events: none;
+			/* Disable interaction on track */
+			z-index: 1;
+		}
+
+		.c-input__range-wrap.dual input[type=range]#fareRangeMin {
+			z-index: 1;
+		}
+
+		.c-input__range-wrap.dual input[type=range]#fareRangeMax {
+			z-index: 2;
+		}
+
+		.c-input__range-wrap.dual input[type=range]::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			pointer-events: all;
+			/* Enable interaction only on thumb */
+			width: 16px;
+			height: 16px;
+			background: #007bff;
+			border: 2px solid #fff;
+			border-radius: 50%;
+			box-shadow: 0 0 1px rgba(0, 0, 0, 0.4);
+			cursor: pointer;
+			margin-top: -5px;
+		}
+
+		.c-input__range-wrap.dual input[type=range]::-moz-range-thumb {
+			pointer-events: all;
+			width: 16px;
+			height: 16px;
+			background: #007bff;
+			border: 2px solid #fff;
+			border-radius: 50%;
+			cursor: pointer;
+		}
+
+
+		.c-input__range-wrap.dual input[type=range]:nth-child(2) {
+			z-index: 2;
+			/* ensures upper thumb is on top */
+		}
+
+		.c-input__range-wrap.dual input[type=range]::-webkit-slider-runnable-track {
+			height: 6px;
+			background: #ccc;
+			border-radius: 3px;
+		}
+
+		.c-input__range-wrap.dual input[type=range]::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			pointer-events: all;
+			width: 16px;
+			height: 16px;
+			background: #ffae00;
+			border: 2px solid #fff;
+			border-radius: 50%;
+			box-shadow: 0 0 1px rgba(0, 0, 0, 0.4);
+			cursor: pointer;
+			margin-top: -5px;
+		}
+
+		.c-input__range-wrap.dual input[type=range]::-moz-range-thumb {
+			width: 16px;
+			height: 16px;
+			background: #ff9100;
+			border: 2px solid #fff;
+			border-radius: 50%;
+			cursor: pointer;
+		}
+
+		.c-input__range-mark {
+			position: absolute;
+			top: 50%;
+			left: 0;
+			right: 0;
+			height: 6px;
+			background: rgba(0, 123, 255, 0.2);
+			border-radius: 3px;
+			transform: translateY(-50%);
+			z-index: 0;
+		}
+
+		.fare-inputs {
+			margin-top: 10px;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		/* Display styling */
+		.c-input__range-display {
+			display: flex;
+			align-items: baseline;
+			gap: 4px;
+			font-size: 1.1em;
+		}
+
+		.c-input__range-display strong {
+			font-weight: bold;
+			font-size: 1.2em;
+		}
+
+		.c-input__range-separator {
+			padding: 0 4px;
+		}
+
+		.c-input__range-unit {
+			font-size: 0.9em;
+			margin-left: 4px;
+		}
+
+		.c-input__range-diff {
+			color: #888;
+			margin-left: 8px;
+			font-size: 0.85em;
+		}
+	</style>
+
 </head>
 
 <body>
@@ -163,54 +297,47 @@
 											<label class="c-input__radio-label"><input type="radio" name="current_a_brt"
 													value="1">有</label>
 										</dd>
-										<dt>運賃<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="current_a_fare">リセット</span></dt>
-										<dd class="c-fare js-fare" id="current_a_fare">
-											<figure class="c-fare__fig">
-												<label class="c-fare__change c-input__change">
-													<input class="js-fare-minInput" type="hidden"
-														name="current_a_fare_min" value="120" data-default="120"
-														data-saved="120">
-													<input class="js-fare-maxInput" type="hidden"
-														name="current_a_fare_max" value="390" data-default="390"
-														data-saved="390">
-													<span id="current_a_fare_min" class="u-en js-fare-minTxt"
-														data-saved="120">120</span>～<span id="current_a_fare_max"
-														class="u-en js-fare-maxTxt"
-														data-saved="390">390</span><small>円</small>
-												</label>
-												<ul class="c-fare__section">
-													<li class="c-fare__station">
-														<img class="c-fare__station-ico"
-															src="assets/image/ico_pin_01.svg" width="13" height="20"
-															alt="" />
-														<span class="c-fare__station-name">○○駅</span>
-													</li>
-													<li class="c-fare__station">
-														<img class="c-fare__station-ico"
-															src="assets/image/ico_pin_01.svg" width="13" height="20"
-															alt="" />
-														<span class="c-fare__station-name">○○駅</span>
-													</li>
-												</ul>
-												<span class="c-fare__saved c-input__saved"><span
-														class="u-en">120</span>～<span
-														class="u-en">390</span><small>円</small></span>
-											</figure>
-											<label class="c-input__number js-number">
-												<div class="c-input__number-inner">
-													<input type="tel" name="current_a_fareID" id="current_a_fareID"
-														class="c-fare__number js-number-input js-fare-input" value="+0"
-														data-saved="+0" readonly>
-													<div class="c-input__number-arrows">
-														<i class="c-input__number-up js-number-up"
-															data-input-id="current_a_fareID"></i>
-														<i class="c-input__number-down js-number-down"
-															data-input-id="current_a_fareID"></i>
-													</div>
-												</div>円
-											</label>
+										<dt>運賃
+											<span class="c-btn__small c-btn__small-white reset js-reset"
+												data-reset="current_a_fare">リセット</span>
+										</dt>
+										<dd class="c-input__range" id="current_a_fare">
+											<span class="c-input__range-unit">運賃 (円)</span>
+											<div class="c-input__range-container js-range">
+												<div class="c-input__range-display u-en js-range-change"
+													aria-label="Fare range">
+													<strong class="js-range-min-value">120</strong>
+													<span class="c-input__range-separator">〜</span>
+													<strong class="js-range-max-value">390</strong>
+													<span class="c-input__range-unit">円</span>
+													<small class="js-range-diff c-input__range-diff">(±0)</small>
+												</div>
+
+												<div class="c-input__range-minmax u-en">
+													<span class="js-range-min">0</span>
+													<span class="js-range-max">1000</span>
+												</div>
+
+												<div class="c-input__range-wrap dual">
+													<input type="range" id="fareRangeMin" min="0" max="1000" value="120"
+														class="c-input__range-slider js-range-slider" />
+													<input type="range" id="fareRangeMax" min="0" max="1000" value="390"
+														class="c-input__range-slider js-range-slider" />
+													<i class="c-input__range-mark js-range-mark equal"></i>
+												</div>
+
+												<div class="fare-inputs u-en">
+													<input type="number" id="fareMinInput" value="120" min="0"
+														max="1000"> 円 ～
+													<input type="number" id="fareMaxInput" value="390" min="0"
+														max="1000"> 円
+												</div>
+
+												<span
+													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
+											</div>
 										</dd>
+
 										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="current_a_frequency">まとめてリセット</span></dt>
 										<dd id="current_a_frequency">
@@ -407,54 +534,53 @@
 											<label class="c-input__radio-label"><input type="radio" name="current_b_brt"
 													value="1">有</label>
 										</dd>
-										<dt>運賃<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="current_b_fare">リセット</span></dt>
-										<dd class="c-fare js-fare" id="current_b_fare">
-											<figure class="c-fare__fig">
-												<label class="c-fare__change c-input__change">
-													<input class="js-fare-minInput" type="hidden"
-														name="current_b_fare_min" value="120" data-default="120"
-														data-saved="120">
-													<input class="js-fare-maxInput" type="hidden"
-														name="current_b_fare_max" value="390" data-default="390"
-														data-saved="390">
-													<span id="current_b_fare_min" class="u-en js-fare-minTxt"
-														data-saved="120">120</span>～<span id="current_b_fare_max"
-														class="u-en js-fare-maxTxt"
-														data-saved="390">390</span><small>円</small>
-												</label>
-												<ul class="c-fare__section">
-													<li class="c-fare__station">
-														<img class="c-fare__station-ico"
-															src="assets/image/ico_pin_01.svg" width="13" height="20"
-															alt="" />
-														<span class="c-fare__station-name">○○駅</span>
-													</li>
-													<li class="c-fare__station">
-														<img class="c-fare__station-ico"
-															src="assets/image/ico_pin_01.svg" width="13" height="20"
-															alt="" />
-														<span class="c-fare__station-name">○○駅</span>
-													</li>
-												</ul>
-												<span class="c-fare__saved c-input__saved"><span
-														class="u-en">120</span>～<span
-														class="u-en">390</span><small>円</small></span>
-											</figure>
-											<label class="c-input__number js-number">
-												<div class="c-input__number-inner">
-													<input type="tel" name="current_b_fareID" id="current_b_fareID"
-														class="c-fare__number js-number-input js-fare-input" value="+0"
-														data-saved="+0" readonly>
-													<div class="c-input__number-arrows">
-														<i class="c-input__number-up js-number-up"
-															data-input-id="current_b_fareID"></i>
-														<i class="c-input__number-down js-number-down"
-															data-input-id="current_b_fareID"></i>
-													</div>
-												</div>円
-											</label>
+										<dt>運賃
+											<span class="c-btn__small c-btn__small-white reset js-reset"
+												data-reset="current_b_fare">リセット</span>
+										</dt>
+										<dd class="c-input__range" id="current_b_fare">
+											<span class="c-input__range-unit">運賃 (円)</span>
+											<div class="c-input__range-container js-range">
+												<div class="c-input__range-display u-en js-range-change"
+													aria-label="Fare range">
+													<strong class="js-range-min-value">120</strong>
+													<span class="c-input__range-separator">〜</span>
+													<strong class="js-range-max-value">390</strong>
+													<span class="c-input__range-unit">円</span>
+													<small class="js-range-diff c-input__range-diff">(±0)</small>
+												</div>
+
+												<div class="c-input__range-minmax u-en">
+													<span class="js-range-min">0</span>
+													<span class="js-range-max">1000</span>
+												</div>
+
+												<div class="c-input__range-wrap dual">
+													<!-- B-specific IDs here: -->
+													<input type="range" id="fareRangeMinB" min="0" max="1000"
+														value="120" class="c-input__range-slider js-range-slider" />
+													<input type="range" id="fareRangeMaxB" min="0" max="1000"
+														value="390" class="c-input__range-slider js-range-slider" />
+													<i class="c-input__range-mark js-range-mark equal"></i>
+												</div>
+
+												<div class="fare-inputs u-en">
+													<input type="number" id="fareMinInputB" value="120" min="0"
+														max="1000"> 円 ～
+													<input type="number" id="fareMaxInputB" value="390" min="0"
+														max="1000"> 円
+												</div>
+
+												<!-- hidden for form submission -->
+												<input type="hidden" name="current_b_fare_min"
+													id="current_b_fare_min_hidden" value="120">
+												<input type="hidden" name="current_b_fare_max"
+													id="current_b_fare_max_hidden" value="390">
+												<span
+													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
+											</div>
 										</dd>
+
 										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="current_b_frequency">まとめてリセット</span></dt>
 										<dd id="current_b_frequency">
@@ -655,55 +781,57 @@
 											<label class="c-input__radio-label"><input type="radio"
 													name="scenario01_a_brt" value="1" checked>有</label>
 										</dd>
-										<dt>運賃<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="scenario01_a_fare">リセット</span></dt>
-										<dd class="c-fare js-fare" id="scenario01_a_fare">
-											<figure class="c-fare__fig">
-												<label class="c-fare__change c-input__change">
-													<input class="js-fare-minInput" type="hidden"
-														name="scenario01_a_fare_min" value="140" data-default="120"
-														data-saved="140">
-													<input class="js-fare-maxInput" type="hidden"
-														name="scenario01_a_fare_max" value="410" data-default="390"
-														data-saved="410">
-													<span id="scenario01_a_fare_min" class="u-en js-fare-minTxt"
-														data-saved="140">140</span>～<span id="scenario01_a_fare_max"
-														class="u-en js-fare-maxTxt"
-														data-saved="410">410</span><small>円</small>
-												</label>
-												<ul class="c-fare__section">
-													<li class="c-fare__station">
-														<img class="c-fare__station-ico"
-															src="assets/image/ico_pin_01.svg" width="13" height="20"
-															alt="" />
-														<span class="c-fare__station-name">○○駅</span>
-													</li>
-													<li class="c-fare__station">
-														<img class="c-fare__station-ico"
-															src="assets/image/ico_pin_01.svg" width="13" height="20"
-															alt="" />
-														<span class="c-fare__station-name">○○駅</span>
-													</li>
-												</ul>
-												<span class="c-fare__saved c-input__saved"><span
-														class="u-en">120</span>～<span
-														class="u-en">390</span><small>円</small></span>
-											</figure>
-											<label class="c-input__number js-number">
-												<div class="c-input__number-inner">
-													<input type="tel" name="scenario01_a_fareID"
-														id="scenario01_a_fareID"
-														class="c-fare__number js-number-input js-fare-input" value="+20"
-														data-saved="+20" readonly>
-													<div class="c-input__number-arrows">
-														<i class="c-input__number-up js-number-up"
-															data-input-id="scenario01_a_fareID"></i>
-														<i class="c-input__number-down js-number-down"
-															data-input-id="scenario01_a_fareID"></i>
-													</div>
-												</div>円
-											</label>
+										<dt>運賃
+											<span class="c-btn__small c-btn__small-white reset js-reset"
+												data-reset="scenario01_a_fare">リセット</span>
+										</dt>
+
+										<dd class="c-input__range" id="scenario01_a_fare">
+											<span class="c-input__range-unit">運賃 (円)</span>
+
+											<div class="c-input__range-container js-range">
+												<div class="c-input__range-display u-en js-range-change"
+													aria-label="Fare range">
+													<strong class="js-range-min-value">140</strong>
+													<span class="c-input__range-separator">〜</span>
+													<strong class="js-range-max-value">410</strong>
+													<span class="c-input__range-unit">円</span>
+													<small class="js-range-diff c-input__range-diff">(±0)</small>
+												</div>
+
+												<div class="c-input__range-minmax u-en">
+													<span class="js-range-min">0</span>
+													<span class="js-range-max">1000</span>
+												</div>
+
+												<div class="c-input__range-wrap dual">
+													<input type="range" id="fareRangeMin_scenario01_a" min="0"
+														max="1000" value="140"
+														class="c-input__range-slider js-range-slider" />
+													<input type="range" id="fareRangeMax_scenario01_a" min="0"
+														max="1000" value="410"
+														class="c-input__range-slider js-range-slider" />
+													<i class="c-input__range-mark js-range-mark equal"></i>
+												</div>
+
+												<div class="fare-inputs u-en">
+													<input type="number" id="fareMinInput_scenario01_a" value="140"
+														min="0" max="1000"> 円 ～
+													<input type="number" id="fareMaxInput_scenario01_a" value="410"
+														min="0" max="1000"> 円
+												</div>
+
+												<!-- hidden inputs to preserve form data -->
+												<input type="hidden" name="scenario01_a_fare_min"
+													id="scenario01_a_fare_min" value="140">
+												<input type="hidden" name="scenario01_a_fare_max"
+													id="scenario01_a_fare_max" value="410">
+
+												<span
+													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
+											</div>
 										</dd>
+
 										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="scenario01_a_frequency">まとめてリセット</span></dt>
 										<dd id="scenario01_a_frequency">
@@ -901,55 +1029,55 @@
 											<label class="c-input__radio-label"><input type="radio"
 													name="scenario01_b_brt" value="1" checked>有</label>
 										</dd>
-										<dt>運賃<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="scenario01_b_fare">リセット</span></dt>
-										<dd class="c-fare js-fare" id="scenario01_b_fare">
-											<figure class="c-fare__fig">
-												<label class="c-fare__change c-input__change">
-													<input class="js-fare-minInput" type="hidden"
-														name="scenario01_b_fare_min" value="120" data-default="120"
-														data-saved="120">
-													<input class="js-fare-maxInput" type="hidden"
-														name="scenario01_b_fare_max" value="390" data-default="390"
-														data-saved="390">
-													<span id="scenario01_b_fare_min" class="u-en js-fare-minTxt"
-														data-saved="120">120</span>～<span id="scenario01_b_fare_max"
-														class="u-en js-fare-maxTxt"
-														data-saved="390">390</span><small>円</small>
-												</label>
-												<ul class="c-fare__section">
-													<li class="c-fare__station">
-														<img class="c-fare__station-ico"
-															src="assets/image/ico_pin_01.svg" width="13" height="20"
-															alt="" />
-														<span class="c-fare__station-name">○○駅</span>
-													</li>
-													<li class="c-fare__station">
-														<img class="c-fare__station-ico"
-															src="assets/image/ico_pin_01.svg" width="13" height="20"
-															alt="" />
-														<span class="c-fare__station-name">○○駅</span>
-													</li>
-												</ul>
-												<span class="c-fare__saved c-input__saved"><span
-														class="u-en">120</span>～<span
-														class="u-en">390</span><small>円</small></span>
-											</figure>
-											<label class="c-input__number js-number">
-												<div class="c-input__number-inner">
-													<input type="tel" name="scenario01_b_fareID"
-														id="scenario01_b_fareID"
-														class="c-fare__number js-number-input js-fare-input" value="+0"
-														data-saved="+0" readonly>
-													<div class="c-input__number-arrows">
-														<i class="c-input__number-up js-number-up"
-															data-input-id="scenario01_b_fareID"></i>
-														<i class="c-input__number-down js-number-down"
-															data-input-id="scenario01_b_fareID"></i>
-													</div>
-												</div>円
-											</label>
+										<dt>運賃
+											<span class="c-btn__small c-btn__small-white reset js-reset"
+												data-reset="scenario01_b_fare">リセット</span>
+										</dt>
+										<dd class="c-input__range" id="scenario01_b_fare">
+											<span class="c-input__range-unit">運賃 (円)</span>
+											<div class="c-input__range-container js-range">
+												<div class="c-input__range-display u-en js-range-change"
+													aria-label="Fare range">
+													<strong class="js-range-min-value">120</strong>
+													<span class="c-input__range-separator">〜</span>
+													<strong class="js-range-max-value">390</strong>
+													<span class="c-input__range-unit">円</span>
+													<small class="js-range-diff c-input__range-diff">(±0)</small>
+												</div>
+
+												<div class="c-input__range-minmax u-en">
+													<span class="js-range-min">0</span>
+													<span class="js-range-max">1000</span>
+												</div>
+
+												<div class="c-input__range-wrap dual">
+													<input type="range" id="fareRangeMin_scenario01_b" min="0"
+														max="1000" value="120"
+														class="c-input__range-slider js-range-slider" />
+													<input type="range" id="fareRangeMax_scenario01_b" min="0"
+														max="1000" value="390"
+														class="c-input__range-slider js-range-slider" />
+													<i class="c-input__range-mark js-range-mark equal"></i>
+												</div>
+
+												<div class="fare-inputs u-en">
+													<input type="number" id="fareMinInput_scenario01_b" value="120"
+														min="0" max="1000"> 円 ～
+													<input type="number" id="fareMaxInput_scenario01_b" value="390"
+														min="0" max="1000"> 円
+												</div>
+
+												<!-- Hidden for form submission -->
+												<input type="hidden" name="scenario01_b_fare_min"
+													id="scenario01_b_fare_min" value="120">
+												<input type="hidden" name="scenario01_b_fare_max"
+													id="scenario01_b_fare_max" value="390">
+
+												<span
+													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
+											</div>
 										</dd>
+
 										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="scenario01_b_frequency">まとめてリセット</span></dt>
 										<dd id="scenario01_b_frequency">
@@ -1151,55 +1279,53 @@
 											<label class="c-input__radio-label"><input type="radio"
 													name="scenario02_a_brt" value="1" checked>有</label>
 										</dd>
-										<dt>運賃<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="scenario02_a_fare">リセット</span></dt>
-										<dd class="c-fare js-fare" id="scenario02_a_fare">
-											<figure class="c-fare__fig">
-												<label class="c-fare__change c-input__change">
-													<input class="js-fare-minInput" type="hidden"
-														name="scenario02_a_fare_min" value="160" data-default="120"
-														data-saved="160">
-													<input class="js-fare-maxInput" type="hidden"
-														name="scenario02_a_fare_max" value="430" data-default="390"
-														data-saved="430">
-													<span id="scenario02_a_fare_min" class="u-en js-fare-minTxt"
-														data-saved="160">160</span>～<span id="scenario02_a_fare_max"
-														class="u-en js-fare-maxTxt"
-														data-saved="430">430</span><small>円</small>
-												</label>
-												<ul class="c-fare__section">
-													<li class="c-fare__station">
-														<img class="c-fare__station-ico"
-															src="assets/image/ico_pin_01.svg" width="13" height="20"
-															alt="" />
-														<span class="c-fare__station-name">○○駅</span>
-													</li>
-													<li class="c-fare__station">
-														<img class="c-fare__station-ico"
-															src="assets/image/ico_pin_01.svg" width="13" height="20"
-															alt="" />
-														<span class="c-fare__station-name">○○駅</span>
-													</li>
-												</ul>
-												<span class="c-fare__saved c-input__saved"><span
-														class="u-en">120</span>～<span
-														class="u-en">390</span><small>円</small></span>
-											</figure>
-											<label class="c-input__number js-number">
-												<div class="c-input__number-inner">
-													<input type="tel" name="scenario02_a_fareID"
-														id="scenario02_a_fareID"
-														class="c-fare__number js-number-input js-fare-input" value="+40"
-														data-saved="+40" readonly>
-													<div class="c-input__number-arrows">
-														<i class="c-input__number-up js-number-up"
-															data-input-id="scenario02_a_fareID"></i>
-														<i class="c-input__number-down js-number-down"
-															data-input-id="scenario02_a_fareID"></i>
-													</div>
-												</div>円
-											</label>
+										<dt>運賃
+											<span class="c-btn__small c-btn__small-white reset js-reset"
+												data-reset="scenario02_a_fare">リセット</span>
+										</dt>
+										<dd class="c-input__range" id="scenario02_a_fare">
+											<span class="c-input__range-unit">運賃 (円)</span>
+
+											<div class="c-input__range-container js-range">
+												<div class="c-input__range-display u-en js-range-change"
+													aria-label="Fare range">
+													<strong class="js-range-min-value">160</strong>
+													<span class="c-input__range-separator">〜</span>
+													<strong class="js-range-max-value">430</strong>
+													<span class="c-input__range-unit">円</span>
+													<small class="js-range-diff c-input__range-diff">(+40)</small>
+												</div>
+
+												<div class="c-input__range-minmax u-en">
+													<span class="js-range-min">0</span>
+													<span class="js-range-max">1000</span>
+												</div>
+
+												<div class="c-input__range-wrap dual">
+													<input type="range" id="fareRangeMin_scenario02_a" min="0"
+														max="1000" value="160"
+														class="c-input__range-slider js-range-slider" />
+													<input type="range" id="fareRangeMax_scenario02_a" min="0"
+														max="1000" value="430"
+														class="c-input__range-slider js-range-slider" />
+													<i class="c-input__range-mark js-range-mark equal"></i>
+												</div>
+
+												<div class="fare-inputs u-en">
+													<input type="number" id="fareMinInput_scenario02_a" value="160"
+														min="0" max="1000"> 円 ～
+													<input type="number" id="fareMaxInput_scenario02_a" value="430"
+														min="0" max="1000"> 円
+												</div>
+
+												<!-- Hidden inputs for form submission -->
+												<input type="hidden" name="scenario02_a_fare_min"
+													id="scenario02_a_fare_min" value="160">
+												<input type="hidden" name="scenario02_a_fare_max"
+													id="scenario02_a_fare_max" value="430">
+											</div>
 										</dd>
+
 										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="scenario02_a_frequency">まとめてリセット</span></dt>
 										<dd id="scenario02_a_frequency">
@@ -1397,55 +1523,56 @@
 											<label class="c-input__radio-label"><input type="radio"
 													name="scenario02_b_brt" value="1" checked>有</label>
 										</dd>
-										<dt>運賃<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="scenario02_b_fare">リセット</span></dt>
-										<dd class="c-fare js-fare" id="scenario02_b_fare">
-											<figure class="c-fare__fig">
-												<label class="c-fare__change c-input__change">
-													<input class="js-fare-minInput" type="hidden"
-														name="scenario02_b_fare_min" value="120" data-default="120"
-														data-saved="120">
-													<input class="js-fare-maxInput" type="hidden"
-														name="scenario02_b_fare_max" value="390" data-default="390"
-														data-saved="390">
-													<span id="scenario02_b_fare_min" class="u-en js-fare-minTxt"
-														data-saved="120">120</span>～<span id="scenario02_b_fare_max"
-														class="u-en js-fare-maxTxt"
-														data-saved="390">390</span><small>円</small>
-												</label>
-												<ul class="c-fare__section">
-													<li class="c-fare__station">
-														<img class="c-fare__station-ico"
-															src="assets/image/ico_pin_01.svg" width="13" height="20"
-															alt="" />
-														<span class="c-fare__station-name">○○駅</span>
-													</li>
-													<li class="c-fare__station">
-														<img class="c-fare__station-ico"
-															src="assets/image/ico_pin_01.svg" width="13" height="20"
-															alt="" />
-														<span class="c-fare__station-name">○○駅</span>
-													</li>
-												</ul>
-												<span class="c-fare__saved c-input__saved"><span
-														class="u-en">120</span>～<span
-														class="u-en">390</span><small>円</small></span>
-											</figure>
-											<label class="c-input__number js-number">
-												<div class="c-input__number-inner">
-													<input type="tel" name="scenario02_b_fareID"
-														id="scenario02_b_fareID"
-														class="c-fare__number js-number-input js-fare-input" value="+0"
-														data-saved="+0" readonly>
-													<div class="c-input__number-arrows">
-														<i class="c-input__number-up js-number-up"
-															data-input-id="scenario02_b_fareID"></i>
-														<i class="c-input__number-down js-number-down"
-															data-input-id="scenario02_b_fareID"></i>
-													</div>
-												</div>円
-											</label>
+										<dt>運賃
+											<span class="c-btn__small c-btn__small-white reset js-reset"
+												data-reset="scenario02_b_fare">リセット</span>
+										</dt>
+										<dd class="c-input__range" id="scenario02_b_fare">
+											<span class="c-input__range-unit">運賃 (円)</span>
+
+											<div class="c-input__range-container js-range">
+												<div class="c-input__range-display u-en js-range-change"
+													aria-label="Fare range">
+													<strong class="js-range-min-value">120</strong>
+													<span class="c-input__range-separator">〜</span>
+													<strong class="js-range-max-value">390</strong>
+													<span class="c-input__range-unit">円</span>
+													<small class="js-range-diff c-input__range-diff">(±0)</small>
+												</div>
+
+												<div class="c-input__range-minmax u-en">
+													<span class="js-range-min">0</span>
+													<span class="js-range-max">1000</span>
+												</div>
+
+												<div class="c-input__range-wrap dual">
+													<input type="range" id="fareRangeMin_scenario02_b" min="0"
+														max="1000" value="120"
+														class="c-input__range-slider js-range-slider" />
+													<input type="range" id="fareRangeMax_scenario02_b" min="0"
+														max="1000" value="390"
+														class="c-input__range-slider js-range-slider" />
+													<i class="c-input__range-mark js-range-mark equal"></i>
+												</div>
+
+												<div class="fare-inputs u-en">
+													<input type="number" id="fareMinInput_scenario02_b" value="120"
+														min="0" max="1000"> 円 ～
+													<input type="number" id="fareMaxInput_scenario02_b" value="390"
+														min="0" max="1000"> 円
+												</div>
+
+												<!-- Hidden inputs for form submission -->
+												<input type="hidden" name="scenario02_b_fare_min"
+													id="scenario02_b_fare_min" value="120">
+												<input type="hidden" name="scenario02_b_fare_max"
+													id="scenario02_b_fare_max" value="390">
+
+												<span
+													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
+											</div>
 										</dd>
+
 										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="scenario02_b_frequency">まとめてリセット</span></dt>
 										<dd id="scenario02_b_frequency">
@@ -1671,6 +1798,540 @@
 	<script src="assets/js/common.js"></script>
 	<script src="assets/js/map.js"></script>
 	<script src="assets/js/simulation.js"></script>
+
+	<script>
+		const fareMinA = document.getElementById('fareRangeMin');
+		const fareMaxA = document.getElementById('fareRangeMax');
+		const inputMinA = document.getElementById('fareMinInput');
+		const inputMaxA = document.getElementById('fareMaxInput');
+		const rangeMarkA = document.querySelector('#current_a_fare .js-range-mark');
+
+		function updateVisualA(minVal, maxVal) {
+			const total = +fareMinA.max - +fareMinA.min;
+			const pctMin = ((minVal - +fareMinA.min) / total) * 100;
+			const pctMax = ((maxVal - +fareMinA.min) / total) * 100;
+
+			rangeMarkA.style.left = pctMin + '%';
+			rangeMarkA.style.width = (pctMax - pctMin) + '%';
+
+			// update the display text
+			document.querySelector('#current_a_fare .js-range-min-value').textContent = minVal;
+			document.querySelector('#current_a_fare .js-range-max-value').textContent = maxVal;
+			document.querySelector('#current_a_fare .js-range-diff').textContent = `(±${maxVal - minVal})`;
+		}
+
+		function syncSlidersA() {
+			let minV = +fareMinA.value, maxV = +fareMaxA.value;
+			if (minV > maxV) { minV = maxV; fareMinA.value = minV; }
+			if (maxV < minV) { maxV = minV; fareMaxA.value = maxV; }
+			inputMinA.value = minV;
+			inputMaxA.value = maxV;
+			updateVisualA(minV, maxV);
+		}
+
+		function syncInputsA() {
+			let minV = +inputMinA.value, maxV = +inputMaxA.value;
+			minV = isNaN(minV) ? +fareMinA.min : Math.max(+fareMinA.min, Math.min(minV, +fareMinA.max));
+			maxV = isNaN(maxV) ? +fareMaxA.max : Math.max(+fareMaxA.min, Math.min(maxV, +fareMaxA.max));
+			if (minV > maxV) minV = maxV;
+			if (maxV < minV) maxV = minV;
+			fareMinA.value = minV; fareMaxA.value = maxV;
+			inputMinA.value = minV; inputMaxA.value = maxV;
+			updateVisualA(minV, maxV);
+		}
+
+		// bind A events
+		fareMinA.addEventListener('input', syncSlidersA);
+		fareMaxA.addEventListener('input', syncSlidersA);
+		inputMinA.addEventListener('input', syncInputsA);
+		inputMaxA.addEventListener('input', syncInputsA);
+
+		// thumb z-index swap
+		fareMinA.addEventListener('pointerdown', () => { fareMinA.style.zIndex = 3; fareMaxA.style.zIndex = 2; });
+		fareMaxA.addEventListener('pointerdown', () => { fareMaxA.style.zIndex = 3; fareMinA.style.zIndex = 2; });
+
+		// Initial state for A
+		fareMinA.value = 120;
+		fareMaxA.value = 390;
+		inputMinA.value = 120;
+		inputMaxA.value = 390;
+		updateVisualA(120, 390);
+
+		document.querySelector('[data-reset="current_a_fare"]')
+			.addEventListener('click', () => {
+				fareMinA.value = 120;
+				fareMaxA.value = 390;
+				inputMinA.value = 120;
+				inputMaxA.value = 390;
+				updateVisualA(120, 390);
+			});
+	</script>
+
+
+	<script>
+		const fareMinB = document.getElementById('fareRangeMinB');
+		const fareMaxB = document.getElementById('fareRangeMaxB');
+		const inputMinB = document.getElementById('fareMinInputB');
+		const inputMaxB = document.getElementById('fareMaxInputB');
+		const hiddenMinB = document.getElementById('current_b_fare_min_hidden');
+		const hiddenMaxB = document.getElementById('current_b_fare_max_hidden');
+		const rangeMarkB = document.querySelector('#current_b_fare .js-range-mark');
+
+		function updateVisualB(minVal, maxVal) {
+			const total = +fareMinB.max - +fareMinB.min;
+			const pctMin = ((minVal - +fareMinB.min) / total) * 100;
+			const pctMax = ((maxVal - +fareMinB.min) / total) * 100;
+
+			rangeMarkB.style.left = pctMin + '%';
+			rangeMarkB.style.width = (pctMax - pctMin) + '%';
+
+			document.querySelector('#current_b_fare .js-range-min-value').textContent = minVal;
+			document.querySelector('#current_b_fare .js-range-max-value').textContent = maxVal;
+			document.querySelector('#current_b_fare .js-range-diff').textContent = `(±${maxVal - minVal})`;
+
+			hiddenMinB.value = minVal;
+			hiddenMaxB.value = maxVal;
+		}
+
+		function syncSlidersB() {
+			let minV = +fareMinB.value, maxV = +fareMaxB.value;
+			if (minV > maxV) { minV = maxV; fareMinB.value = minV; }
+			if (maxV < minV) { maxV = minV; fareMaxB.value = maxV; }
+			inputMinB.value = minV;
+			inputMaxB.value = maxV;
+			updateVisualB(minV, maxV);
+		}
+
+		function syncInputsB() {
+			let minV = +inputMinB.value, maxV = +inputMaxB.value;
+			minV = isNaN(minV) ? +fareMinB.min : Math.max(+fareMinB.min, Math.min(minV, +fareMinB.max));
+			maxV = isNaN(maxV) ? +fareMaxB.max : Math.max(+fareMaxB.min, Math.min(maxV, +fareMaxB.max));
+			if (minV > maxV) minV = maxV;
+			if (maxV < minV) maxV = minV;
+			fareMinB.value = minV; fareMaxB.value = maxV;
+			inputMinB.value = minV; inputMaxB.value = maxV;
+			updateVisualB(minV, maxV);
+		}
+
+		// bind events for B
+		fareMinB.addEventListener('input', syncSlidersB);
+		fareMaxB.addEventListener('input', syncSlidersB);
+		inputMinB.addEventListener('input', syncInputsB);
+		inputMaxB.addEventListener('input', syncInputsB);
+
+		// keep thumb on top when dragging
+		fareMinB.addEventListener('pointerdown', () => {
+			fareMinB.style.zIndex = 3;
+			fareMaxB.style.zIndex = 2;
+		});
+		fareMaxB.addEventListener('pointerdown', () => {
+			fareMaxB.style.zIndex = 3;
+			fareMinB.style.zIndex = 2;
+		});
+
+		// initialize B on load
+		fareMinB.value = 120;
+		fareMaxB.value = 390;
+		inputMinB.value = 120;
+		inputMaxB.value = 390;
+		updateVisualB(120, 390);
+
+		// reset button for B
+		document.querySelector('[data-reset="current_b_fare"]')
+			.addEventListener('click', () => {
+				fareMinB.value = 120;
+				fareMaxB.value = 390;
+				inputMinB.value = 120;
+				inputMaxB.value = 390;
+				updateVisualB(120, 390);
+			});
+	</script>
+
+	<script>
+		const minSlider = document.getElementById('fareRangeMin_scenario01_a');
+		const maxSlider = document.getElementById('fareRangeMax_scenario01_a');
+		const minInput = document.getElementById('fareMinInput_scenario01_a');
+		const maxInput = document.getElementById('fareMaxInput_scenario01_a');
+		const hiddenMin = document.getElementById('scenario01_a_fare_min');
+		const hiddenMax = document.getElementById('scenario01_a_fare_max');
+		const mark = document.querySelector('#scenario01_a_fare .js-range-mark');
+
+		function updateScenario01Visual(minVal, maxVal) {
+			const total = +minSlider.max - +minSlider.min;
+			const pctMin = ((minVal - +minSlider.min) / total) * 100;
+			const pctMax = ((maxVal - +minSlider.min) / total) * 100;
+			mark.style.left = pctMin + '%';
+			mark.style.width = (pctMax - pctMin) + '%';
+
+			document.querySelector('#scenario01_a_fare .js-range-min-value').textContent = minVal;
+			document.querySelector('#scenario01_a_fare .js-range-max-value').textContent = maxVal;
+			document.querySelector('#scenario01_a_fare .js-range-diff').textContent = `(±${maxVal - minVal})`;
+
+			hiddenMin.value = minVal;
+			hiddenMax.value = maxVal;
+		}
+
+		function syncScenario01FromSliders() {
+			let minVal = +minSlider.value;
+			let maxVal = +maxSlider.value;
+			if (minVal > maxVal) {
+				minVal = maxVal;
+				minSlider.value = minVal;
+			}
+			if (maxVal < minVal) {
+				maxVal = minVal;
+				maxSlider.value = maxVal;
+			}
+			minInput.value = minVal;
+			maxInput.value = maxVal;
+			updateScenario01Visual(minVal, maxVal);
+		}
+
+		function syncScenario01FromInputs() {
+			let minVal = +minInput.value;
+			let maxVal = +maxInput.value;
+
+			minVal = isNaN(minVal) ? +minSlider.min : Math.max(+minSlider.min, Math.min(minVal, +minSlider.max));
+			maxVal = isNaN(maxVal) ? +maxSlider.max : Math.max(+maxSlider.min, Math.min(maxVal, +maxSlider.max));
+
+			if (minVal > maxVal) minVal = maxVal;
+			if (maxVal < minVal) maxVal = minVal;
+
+			minSlider.value = minVal;
+			maxSlider.value = maxVal;
+			minInput.value = minVal;
+			maxInput.value = maxVal;
+			updateScenario01Visual(minVal, maxVal);
+		}
+
+		// Z-index behavior
+		minSlider.addEventListener('pointerdown', () => {
+			minSlider.style.zIndex = 3;
+			maxSlider.style.zIndex = 2;
+		});
+
+		maxSlider.addEventListener('pointerdown', () => {
+			maxSlider.style.zIndex = 3;
+			minSlider.style.zIndex = 2;
+		});
+
+		// Bind events
+		minSlider.addEventListener('input', syncScenario01FromSliders);
+		maxSlider.addEventListener('input', syncScenario01FromSliders);
+		minInput.addEventListener('input', syncScenario01FromInputs);
+		maxInput.addEventListener('input', syncScenario01FromInputs);
+
+		// Initial setup
+		minSlider.value = 140;
+		maxSlider.value = 410;
+		minInput.value = 140;
+		maxInput.value = 410;
+		updateScenario01Visual(140, 410);
+
+		// Reset button
+		document.querySelector('[data-reset="scenario01_a_fare"]')
+			.addEventListener('click', () => {
+				minSlider.value = 120;
+				maxSlider.value = 390;
+				minInput.value = 120;
+				maxInput.value = 390;
+				updateScenario01Visual(120, 390);
+			});
+	</script>
+
+	<script>
+		const fareMinB2 = document.getElementById('fareRangeMin_scenario01_b');
+		const fareMaxB2 = document.getElementById('fareRangeMax_scenario01_b');
+		const inputMinB2 = document.getElementById('fareMinInput_scenario01_b');
+		const inputMaxB2 = document.getElementById('fareMaxInput_scenario01_b');
+		const hiddenMinB2 = document.getElementById('scenario01_b_fare_min');
+		const hiddenMaxB2 = document.getElementById('scenario01_b_fare_max');
+		const rangeMarkB2 = document.querySelector('#scenario01_b_fare .js-range-mark');
+
+		function updateVisualB2(minVal, maxVal) {
+			const total = +fareMinB2.max - +fareMinB2.min;
+			const pctMin = ((minVal - +fareMinB2.min) / total) * 100;
+			const pctMax = ((maxVal - +fareMinB2.min) / total) * 100;
+
+			rangeMarkB2.style.left = pctMin + '%';
+			rangeMarkB2.style.width = (pctMax - pctMin) + '%';
+
+			document.querySelector('#scenario01_b_fare .js-range-min-value').textContent = minVal;
+			document.querySelector('#scenario01_b_fare .js-range-max-value').textContent = maxVal;
+			document.querySelector('#scenario01_b_fare .js-range-diff').textContent = `(±${maxVal - minVal})`;
+
+			hiddenMinB2.value = minVal;
+			hiddenMaxB2.value = maxVal;
+		}
+
+		function syncSlidersB2() {
+			let minVal = +fareMinB2.value;
+			let maxVal = +fareMaxB2.value;
+
+			if (minVal > maxVal) {
+				minVal = maxVal;
+				fareMinB2.value = minVal;
+			}
+			if (maxVal < minVal) {
+				maxVal = minVal;
+				fareMaxB2.value = maxVal;
+			}
+
+			inputMinB2.value = minVal;
+			inputMaxB2.value = maxVal;
+			updateVisualB2(minVal, maxVal);
+		}
+
+		function syncInputsB2() {
+			let minVal = +inputMinB2.value;
+			let maxVal = +inputMaxB2.value;
+
+			minVal = isNaN(minVal) ? +fareMinB2.min : Math.max(+fareMinB2.min, Math.min(minVal, +fareMinB2.max));
+			maxVal = isNaN(maxVal) ? +fareMaxB2.max : Math.max(+fareMaxB2.min, Math.min(maxVal, +fareMaxB2.max));
+
+			if (minVal > maxVal) minVal = maxVal;
+			if (maxVal < minVal) maxVal = minVal;
+
+			fareMinB2.value = minVal;
+			fareMaxB2.value = maxVal;
+			inputMinB2.value = minVal;
+			inputMaxB2.value = maxVal;
+			updateVisualB2(minVal, maxVal);
+		}
+
+		fareMinB2.addEventListener('input', syncSlidersB2);
+		fareMaxB2.addEventListener('input', syncSlidersB2);
+		inputMinB2.addEventListener('input', syncInputsB2);
+		inputMaxB2.addEventListener('input', syncInputsB2);
+
+		fareMinB2.addEventListener('pointerdown', () => {
+			fareMinB2.style.zIndex = 3;
+			fareMaxB2.style.zIndex = 2;
+		});
+
+		fareMaxB2.addEventListener('pointerdown', () => {
+			fareMaxB2.style.zIndex = 3;
+			fareMinB2.style.zIndex = 2;
+		});
+
+		// Initialize
+		fareMinB2.value = 120;
+		fareMaxB2.value = 390;
+		inputMinB2.value = 120;
+		inputMaxB2.value = 390;
+		updateVisualB2(120, 390);
+
+		// Reset
+		document.querySelector('[data-reset="scenario01_b_fare"]')
+			.addEventListener('click', () => {
+				fareMinB2.value = 120;
+				fareMaxB2.value = 390;
+				inputMinB2.value = 120;
+				inputMaxB2.value = 390;
+				updateVisualB2(120, 390);
+			});
+	</script>
+
+	<script>
+		const fareMin02A = document.getElementById('fareRangeMin_scenario02_a');
+		const fareMax02A = document.getElementById('fareRangeMax_scenario02_a');
+		const inputMin02A = document.getElementById('fareMinInput_scenario02_a');
+		const inputMax02A = document.getElementById('fareMaxInput_scenario02_a');
+		const hiddenMin02A = document.getElementById('scenario02_a_fare_min');
+		const hiddenMax02A = document.getElementById('scenario02_a_fare_max');
+		const mark02A = document.querySelector('#scenario02_a_fare .js-range-mark');
+
+		const defaultMin = 120;
+		const defaultMax = 390;
+
+		function updateVisual02A(minVal, maxVal) {
+			const total = +fareMin02A.max - +fareMin02A.min;
+			const pctMin = ((minVal - +fareMin02A.min) / total) * 100;
+			const pctMax = ((maxVal - +fareMin02A.min) / total) * 100;
+
+			mark02A.style.left = pctMin + '%';
+			mark02A.style.width = (pctMax - pctMin) + '%';
+
+			document.querySelector('#scenario02_a_fare .js-range-min-value').textContent = minVal;
+			document.querySelector('#scenario02_a_fare .js-range-max-value').textContent = maxVal;
+
+			const delta = (maxVal - defaultMax) + (minVal - defaultMin);
+			const diffText = delta === 0 ? '(±0)' : (delta > 0 ? `(+${delta})` : `(${delta})`);
+			document.querySelector('#scenario02_a_fare .js-range-diff').textContent = diffText;
+
+			hiddenMin02A.value = minVal;
+			hiddenMax02A.value = maxVal;
+		}
+
+		function syncSliders02A() {
+			let minVal = +fareMin02A.value;
+			let maxVal = +fareMax02A.value;
+
+			if (minVal > maxVal) {
+				minVal = maxVal;
+				fareMin02A.value = minVal;
+			}
+			if (maxVal < minVal) {
+				maxVal = minVal;
+				fareMax02A.value = maxVal;
+			}
+
+			inputMin02A.value = minVal;
+			inputMax02A.value = maxVal;
+			updateVisual02A(minVal, maxVal);
+		}
+
+		function syncInputs02A() {
+			let minVal = +inputMin02A.value;
+			let maxVal = +inputMax02A.value;
+
+			minVal = isNaN(minVal) ? +fareMin02A.min : Math.max(+fareMin02A.min, Math.min(minVal, +fareMin02A.max));
+			maxVal = isNaN(maxVal) ? +fareMax02A.max : Math.max(+fareMax02A.min, Math.min(maxVal, +fareMax02A.max));
+
+			if (minVal > maxVal) minVal = maxVal;
+			if (maxVal < minVal) maxVal = minVal;
+
+			fareMin02A.value = minVal;
+			fareMax02A.value = maxVal;
+			inputMin02A.value = minVal;
+			inputMax02A.value = maxVal;
+
+			updateVisual02A(minVal, maxVal);
+		}
+
+		// Events
+		fareMin02A.addEventListener('input', syncSliders02A);
+		fareMax02A.addEventListener('input', syncSliders02A);
+		inputMin02A.addEventListener('input', syncInputs02A);
+		inputMax02A.addEventListener('input', syncInputs02A);
+
+		fareMin02A.addEventListener('pointerdown', () => {
+			fareMin02A.style.zIndex = 3;
+			fareMax02A.style.zIndex = 2;
+		});
+
+		fareMax02A.addEventListener('pointerdown', () => {
+			fareMax02A.style.zIndex = 3;
+			fareMin02A.style.zIndex = 2;
+		});
+
+		// Initial State
+		fareMin02A.value = 160;
+		fareMax02A.value = 430;
+		inputMin02A.value = 160;
+		inputMax02A.value = 430;
+		updateVisual02A(160, 430);
+
+		// Reset
+		document.querySelector('[data-reset="scenario02_a_fare"]')
+			.addEventListener('click', () => {
+				fareMin02A.value = defaultMin;
+				fareMax02A.value = defaultMax;
+				inputMin02A.value = defaultMin;
+				inputMax02A.value = defaultMax;
+				updateVisual02A(defaultMin, defaultMax);
+			});
+	</script>
+
+	<script>
+		const fareMin02B = document.getElementById('fareRangeMin_scenario02_b');
+		const fareMax02B = document.getElementById('fareRangeMax_scenario02_b');
+		const inputMin02B = document.getElementById('fareMinInput_scenario02_b');
+		const inputMax02B = document.getElementById('fareMaxInput_scenario02_b');
+		const hiddenMin02B = document.getElementById('scenario02_b_fare_min');
+		const hiddenMax02B = document.getElementById('scenario02_b_fare_max');
+		const mark02B = document.querySelector('#scenario02_b_fare .js-range-mark');
+
+		const defaultMinB = 120;
+		const defaultMaxB = 390;
+
+		function updateVisual02B(minVal, maxVal) {
+			const total = +fareMin02B.max - +fareMin02B.min;
+			const pctMin = ((minVal - +fareMin02B.min) / total) * 100;
+			const pctMax = ((maxVal - +fareMin02B.min) / total) * 100;
+
+			mark02B.style.left = pctMin + '%';
+			mark02B.style.width = (pctMax - pctMin) + '%';
+
+			document.querySelector('#scenario02_b_fare .js-range-min-value').textContent = minVal;
+			document.querySelector('#scenario02_b_fare .js-range-max-value').textContent = maxVal;
+
+			const delta = (maxVal - defaultMaxB) + (minVal - defaultMinB);
+			const diffText = delta === 0 ? '(±0)' : (delta > 0 ? `(+${delta})` : `(${delta})`);
+			document.querySelector('#scenario02_b_fare .js-range-diff').textContent = diffText;
+
+			hiddenMin02B.value = minVal;
+			hiddenMax02B.value = maxVal;
+		}
+
+		function syncSliders02B() {
+			let minVal = +fareMin02B.value;
+			let maxVal = +fareMax02B.value;
+
+			if (minVal > maxVal) {
+				minVal = maxVal;
+				fareMin02B.value = minVal;
+			}
+			if (maxVal < minVal) {
+				maxVal = minVal;
+				fareMax02B.value = maxVal;
+			}
+
+			inputMin02B.value = minVal;
+			inputMax02B.value = maxVal;
+			updateVisual02B(minVal, maxVal);
+		}
+
+		function syncInputs02B() {
+			let minVal = +inputMin02B.value;
+			let maxVal = +inputMax02B.value;
+
+			minVal = isNaN(minVal) ? +fareMin02B.min : Math.max(+fareMin02B.min, Math.min(minVal, +fareMin02B.max));
+			maxVal = isNaN(maxVal) ? +fareMax02B.max : Math.max(+fareMax02B.min, Math.min(maxVal, +fareMax02B.max));
+
+			if (minVal > maxVal) minVal = maxVal;
+			if (maxVal < minVal) maxVal = minVal;
+
+			fareMin02B.value = minVal;
+			fareMax02B.value = maxVal;
+			inputMin02B.value = minVal;
+			inputMax02B.value = maxVal;
+			updateVisual02B(minVal, maxVal);
+		}
+
+		// Event bindings
+		fareMin02B.addEventListener('input', syncSliders02B);
+		fareMax02B.addEventListener('input', syncSliders02B);
+		inputMin02B.addEventListener('input', syncInputs02B);
+		inputMax02B.addEventListener('input', syncInputs02B);
+
+		fareMin02B.addEventListener('pointerdown', () => {
+			fareMin02B.style.zIndex = 3;
+			fareMax02B.style.zIndex = 2;
+		});
+
+		fareMax02B.addEventListener('pointerdown', () => {
+			fareMax02B.style.zIndex = 3;
+			fareMin02B.style.zIndex = 2;
+		});
+
+		// Initialize on load
+		fareMin02B.value = defaultMinB;
+		fareMax02B.value = defaultMaxB;
+		inputMin02B.value = defaultMinB;
+		inputMax02B.value = defaultMaxB;
+		updateVisual02B(defaultMinB, defaultMaxB);
+
+		// Reset
+		document.querySelector('[data-reset="scenario02_b_fare"]')
+			.addEventListener('click', () => {
+				fareMin02B.value = defaultMinB;
+				fareMax02B.value = defaultMaxB;
+				inputMin02B.value = defaultMinB;
+				inputMax02B.value = defaultMaxB;
+				updateVisual02B(defaultMinB, defaultMaxB);
+			});
+	</script>
 </body>
 
 </html>
