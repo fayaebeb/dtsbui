@@ -414,12 +414,13 @@
 			<div class="l-fixed__bg js-fixed-close"></div>
 		</div>
 	</div>
-	<script src="assets/js/jszip.min.js"></script>
-	<script src="assets/js/leaflet/leaflet.js"></script>
-	<script src="assets/js/chart.min.js"></script>
-	<script src="assets/js/common.js"></script>
-	<script src="assets/js/map.js"></script>
-	<script src="assets/js/results.js"></script>
+        <script src="assets/js/jszip.min.js"></script>
+        <script src="assets/js/leaflet/leaflet.js"></script>
+        <script src="assets/js/chart.min.js"></script>
+        <script src="assets/js/common.js"></script>
+        <script src="assets/js/map.js"></script>
+        <script src="assets/js/matsim.js"></script>
+        <script src="assets/js/results.js"></script>
 	<script>
 		// 総合評価の初期化
 		const initialTotalDataA = [5, 4, 5, 4, 5, 2];
@@ -642,40 +643,50 @@
 		});
 		// 運用コストの初期化
 		const initialCostData = [300, 500];
-		const costChart = new Chart(document.getElementById('costChart'), {
-			type: 'bar',
-			data: {
-				labels: barLabels,
-				datasets: [{
-					data: initialCostData,
-					backgroundColor: barBgColor,
-				}]
-			},
-			options: {
-				scales: {
-					x: barX,
-					y: {
-						suggestedMax: 600,
-						ticks: {
-							stepSize: 50,
-							callback: function (value, index, ticks) {
-								return index < ticks.length - 1 ?
-									this.getLabelForValue(value) :
-									['(円)', this.getLabelForValue(value)];
-							}
-						},
-					}
-				},
-				plugins: {
-					legend: {
-						display: false,
-					}
-				},
-				maintainAspectRatio: false
-			}
-		});
+                const costChart = new Chart(document.getElementById('costChart'), {
+                        type: 'bar',
+                        data: {
+                                labels: barLabels,
+                                datasets: [{
+                                        data: initialCostData,
+                                        backgroundColor: barBgColor,
+                                }]
+                        },
+                        options: {
+                                scales: {
+                                        x: barX,
+                                        y: {
+                                                suggestedMax: 600,
+                                                ticks: {
+                                                        stepSize: 50,
+                                                        callback: function (value, index, ticks) {
+                                                                return index < ticks.length - 1 ?
+                                                                        this.getLabelForValue(value) :
+                                                                        ['(円)', this.getLabelForValue(value)];
+                                                        }
+                                                },
+                                        }
+                                },
+                                plugins: {
+                                        legend: {
+                                                display: false,
+                                        }
+                                },
+                                maintainAspectRatio: false
+                        }
+                });
 
-		const initialTripData = false;
+                // MATSim の結果を読み込み平均所要時間を更新
+                MATSim.loadTripMetrics('assets/data/0.trips.csv.gz')
+                        .then(result => {
+                                const time = Math.round(result.averageTravelTime);
+                                initialTimeData[1] = time;
+                                timeChart.data.datasets[0].data[1] = time;
+                                timeChart.update();
+                        })
+                        .catch(console.error);
+
+                const initialTripData = false;
 		const initialBCData = false;
 		function updateCharts(properties) {
 			// 総合評価の更新
