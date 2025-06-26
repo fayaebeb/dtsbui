@@ -182,25 +182,18 @@
 		<main class="l-contents">
 			<header class="l-contents__head">
 				<div class="breadcrumb-wrapper">
-					<nav class="breadcrumb-arrow">
+					<nav class="breadcrumb-arrow" aria-label="ページ階層">
 						<ul>
-							<li class="step step-input CURRENT"><a href="index.html">入力</a></li>
-							<li class="step step-results"><a href="results.html">結果</a></li>
-							<li class="step step-list"><a href="list.html">登録した結果一覧</a></li>
+							<li class="step"><a href="index.html" aria-current="page">入力</a></li>
+							<li class="step"><a href="results.html">結果</a></li>
+							<li class="step"><a href="list.html">結果一覧</a></li>
 						</ul>
 					</nav>
 				</div>
 
+
 				<h1 class="l-contents__tit">入力</h1>
-				<div class="l-contents__parameter">
-					<span class="l-contents__parameter-tit">パラメーター</span>
-					<nav class="l-contents__parameter-nav">
-						<span class="l-contents__parameter-link js-parameter current">現状</span>
-						<span class="l-contents__parameter-link js-parameter">シナリオ1</span>
-						<span class="l-contents__parameter-link js-parameter">シナリオ2</span>
-					</nav>
-				</div>
-				<!-- <span class="l-fixed__open l-contents__useful c-btn js-fixed-open" data-fixed="useful">便利機能</span> -->
+
 				<button type="button" class="l-fixed__open l-contents__useful c-btn js-fixed-open" data-fixed="useful">
 					便利機能
 				</button>
@@ -283,6 +276,24 @@
 				</div>
 				<div class="l-contents__data">
 					<div class="c-box c-box__route c-area__scroll">
+						<dl class="c-route__setting l-contents__parameter">
+							<dt>パラメーター</dt>
+							<dd class="c-input__radio">
+								<label class="c-input__radio-label">
+									<input type="radio" name="parameter_mode" value="現状" checked
+										data-target=".js-parameter-content.current">現状
+								</label>
+								<label class="c-input__radio-label">
+									<input type="radio" name="parameter_mode" value="シナリオ1"
+										data-target=".js-parameter-content.scenario1">シナリオ1
+								</label>
+								<label class="c-input__radio-label">
+									<input type="radio" name="parameter_mode" value="シナリオ2"
+										data-target=".js-parameter-content.scenario2">シナリオ2
+								</label>
+							</dd>
+						</dl>
+
 						<div class="c-box__route-wrap">
 							<!--現状-->
 							<div class="c-box__route-content js-parameter-content current">
@@ -1763,7 +1774,7 @@
 						</div>
 					</div>
 					<div class="c-area__btns column02 js-btns">
-						<button class="c-btn c-btn__contents blue" type="submit">シミュレーション結果</button>
+						<button class="c-btn c-btn__contents blue" type="submit">結果を出力する</button>
 						<!-- <a class="c-btn c-btn__contents blue" href="list.html">結果一覧</a> -->
 					</div>
 				</div>
@@ -2332,6 +2343,20 @@
 				updateVisual02B(defaultMinB, defaultMaxB);
 			});
 	</script>
+
+	<script>
+		const scenarioButtons = document.querySelectorAll('input[name="parameter_mode"]');
+		const scenarioContents = document.querySelectorAll('.js-parameter-content');
+
+		scenarioButtons.forEach((btn, index) => {
+			btn.addEventListener('change', () => {
+				scenarioContents.forEach(content => content.classList.remove('current'));
+				scenarioContents[index].classList.add('current');
+			});
+		});
+	</script>
+
+
 </body>
 
 </html>

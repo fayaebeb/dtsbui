@@ -120,6 +120,15 @@
 			border-style: solid;
 			border-color: #fff transparent transparent transparent;
 		}
+
+		.c-btn.disabled,
+		.c-btn[aria-disabled="true"] {
+			background-color: #ccc !important;
+			color: #666 !important;
+			cursor: not-allowed;
+			pointer-events: none;
+			text-decoration: none;
+		}
 	</style>
 
 </head>
@@ -142,11 +151,11 @@
 		<main class="l-contents">
 			<header class="l-contents__head">
 				<div class="breadcrumb-wrapper">
-					<nav class="breadcrumb-arrow">
+					<nav class="breadcrumb-arrow" aria-label="ページ階層">
 						<ul>
 							<li class="step step-input"><a href="index.html">入力</a></li>
 							<li class="step step-results"><a href="results.html">結果</a></li>
-							<li class="step step-list CURRENT"><a href="list.html">登録した結果一覧</a></li>
+							<li class="step step-list"><a href="list.html" aria-current="page">結果一覧</a></li>
 						</ul>
 					</nav>
 				</div>
@@ -343,7 +352,8 @@
 						</table>
 					</div>
 					<div class="c-area__btns column03 wide js-btns">
-						<a class="c-btn c-btn__contents blue" href="list_graph.html">グラフで比較</a>
+						<a id="compareButton" class="c-btn c-btn__contents blue disabled" href="list_graph.html"
+							aria-disabled="true">グラフで比較</a>
 						<a class="c-btn c-btn__contents blue" href="#">CSVで出力</a>
 						<a class="c-btn c-btn__contents black" href="./">入力に戻る</a>
 					</div>
@@ -415,6 +425,32 @@
 			}
 		});
 	</script>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			const compareButton = document.getElementById('compareButton');
+			const comparisonCheckboxes = document.querySelectorAll('input[name="comparison[]"]');
+
+			function updateCompareButtonState() {
+				const checkedCount = [...comparisonCheckboxes].filter(cb => cb.checked).length;
+
+				if (checkedCount >= 2) {
+					compareButton.classList.remove('disabled');
+					compareButton.setAttribute('aria-disabled', 'false');
+				} else {
+					compareButton.classList.add('disabled');
+					compareButton.setAttribute('aria-disabled', 'true');
+				}
+			}
+
+			comparisonCheckboxes.forEach(cb => {
+				cb.addEventListener('change', updateCompareButtonState);
+			});
+
+			updateCompareButtonState(); // initial state
+		});
+	</script>
+
 
 
 
