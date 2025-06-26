@@ -1,709 +1,738 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<title>【シミュレーション結果】デジタルツインサンドボックス</title>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="assets/js/leaflet/leaflet.css" />
-<link rel="stylesheet" href="assets/css/common.css" />
-<style>
-	.l-contents__tit {
-  font-size: 1.8rem;
-  margin-bottom: 0.5rem;
-  white-space: nowrap;    
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+	<title>【シミュレーション結果】デジタルツインサンドボックス</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="assets/js/leaflet/leaflet.css" />
+	<link rel="stylesheet" href="assets/css/common.css" />
+	<style>
+		.l-contents__tit {
+			font-size: 1.8rem;
+			margin-bottom: 0.5rem;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
 
-.l-contents__dl {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;     
-}
+		.l-contents__dl {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			flex-wrap: wrap;
+		}
 
-.l-contents__dl-dt {
-  font-weight: bold;
-  padding: 0.2rem 0.5rem;
-  font-size: 0.95rem;
-}
+		.l-contents__dl-dt {
+			font-weight: bold;
+			padding: 0.2rem 0.5rem;
+			font-size: 0.95rem;
+		}
 
-.l-contents__dl-dd {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
+		.l-contents__dl-dd {
+			flex: 1 1 auto;
+			min-width: 0;
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
 
-.l-contents__name-input {
-  padding: 0.3rem 0.5rem;
-}
+		.l-contents__name-input {
+			padding: 0.3rem 0.5rem;
+		}
 
-.l-contents__dl-dd.c-area__name {
-  max-width: 90%;         
-  flex: 1 1 400px;        
-  white-space: nowrap;     
-  overflow: hidden;        
-  text-overflow: ellipsis; 
-}
+		.l-contents__dl-dd.c-area__name {
+			max-width: 90%;
+			flex: 1 1 400px;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
 
-.l-contents__name-input {
-  width: 90%;             
-  min-width: 0;            
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-
-</style>
+		.l-contents__name-input {
+			width: 90%;
+			min-width: 0;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+	</style>
 </head>
-<body>
-<div class="l-loading js-loading"><i class="l-loading__ico c-ico__loading"></i></div>
-<div class="l-container js-loading-container js-menu-toggle p-result hide">
-	<header class="l-header">
-		<div class="l-header__tit js-menu-toggle">
-			<span class="l-header__tit-en">DTSB</span>
-			<h1 class="l-header__tit-jp">デジタルツインサンドボックス</h1>
-		</div>
-		<nav class="l-header__nav">
-			<a href="#" class="l-header__nav-link logout js-menu-toggle"><span>ログアウト</span></a>
-			<a href="./" class="l-header__nav-link simulation current js-menu-toggle js-menu-simulation"><span>シミュレーション</span></a>
-			<a href="list.html" class="l-header__nav-link results js-menu-toggle"><span>結果一覧</span></a>
-			<span class="l-header__nav-link menu js-menu-open js-menu-toggle"><span>メニューを閉じる</span></span>
-		</nav>
-	</header>
-	<main class="l-contents p-result__map">
-		<header class="l-contents__head">
-  <div class="breadcrumb-wrapper">
-    <nav class="breadcrumb-arrow">
-      <ul>
-        <li class="step step-input"><a href="index.html">入力</a></li>
-        <li class="step step-results CURRENT"><a href="results.html">シミュレーション結果</a></li>
-        <li class="step step-list"><a href="list.html">登録した結果一覧</a></li>
-      </ul>
-    </nav>
-  </div>
 
-  <h1 class="l-contents__tit">シミュレーション結果</h1>
-			<dl class="l-contents__dl">
-				<dt class="l-contents__dl-dt">総合評価</dt>
-				<dd class="l-contents__dl-dd l-contents__evaluation">
-					<ol class="l-contents__evaluation-star">
-						<li class="c-ico__star fill"></li>
-						<li class="c-ico__star fill"></li>
-						<li class="c-ico__star fill"></li>
-						<li class="c-ico__star fill"></li>
-						<li class="c-ico__star"></li>
-					</ol>
-					<span class="l-contents__evaluation-num u-en">4</span>
-				</dd>
-			</dl>
-			<dl class="l-contents__dl">
-				<dt class="l-contents__dl-dt">名称</dt>
-				<dd class="l-contents__dl-dd c-area__name js-name">
-					<input class="l-contents__name-input c-area__name-input js-name-input" type="text" name="analysis_title" value="○○を意識した解析" readonly>
-					<button class="l-contents__name-edit js-name-edit c-btn__edit" type="button"><img src="assets/image/ico_edit_01.svg" width="15" height="15" alt="編集"/></button>
-				</dd>
-			</dl>
+<body>
+	<div class="l-loading js-loading"><i class="l-loading__ico c-ico__loading"></i></div>
+	<div class="l-container js-loading-container js-menu-toggle p-result hide">
+		<header class="l-header">
+			<div class="l-header__tit js-menu-toggle">
+				<span class="l-header__tit-en">DTSB</span>
+				<h1 class="l-header__tit-jp">デジタルツインサンドボックス</h1>
+			</div>
+			<nav class="l-header__nav">
+				<a href="#" class="l-header__nav-link logout js-menu-toggle"><span>ログアウト</span></a>
+				<a href="./"
+					class="l-header__nav-link simulation current js-menu-toggle js-menu-simulation"><span>シミュレーション</span></a>
+				<a href="list.html" class="l-header__nav-link results js-menu-toggle"><span>結果一覧</span></a>
+				<span class="l-header__nav-link menu js-menu-open js-menu-toggle"><span>メニューを閉じる</span></span>
+			</nav>
 		</header>
-		<form class="l-contents__main" action="list.html">
-			<div class="l-contents__map">
-				<div class="l-contents__main-tit">
-					<h2 class="tit">地図</h2>
-					<small>※メッシュをクリックすると、メッシュごとの結果が表示されます。</small>
-					<!-- <label class="l-contents__main-mesh c-input__checkbox">メッシュ表示<i class="c-ico__loading js-mesh-loading hidden"></i><input class="js-mesh" type="checkbox" name="mesh" value="1"><i class="c-input__checkbox-switch"></i></label> -->
+		<main class="l-contents p-result__map">
+			<header class="l-contents__head">
+				<div class="breadcrumb-wrapper">
+					<nav class="breadcrumb-arrow">
+						<ul>
+							<li class="step step-input"><a href="index.html">入力</a></li>
+							<li class="step step-results CURRENT"><a href="results.html">シミュレーション結果</a></li>
+							<li class="step step-list"><a href="list.html">登録した結果一覧</a></li>
+						</ul>
+					</nav>
 				</div>
-				<div class="l-contents__map-wrap">
-					<div class="l-contents__map-load" id="map"></div>
-					<div class="l-contents__map-data">
-						<div class="scroll">
-							<span class="c-btn__small c-btn__small-black legends u-hover-op js-legends" data-fixed="legends">凡例</span>
-							<dl class="l-contents__map-view">
-								<dt>表示切替</dt>
-								<dd>
+
+				<h1 class="l-contents__tit">シミュレーション結果</h1>
+				<dl class="l-contents__dl">
+					<dt class="l-contents__dl-dt">総合評価</dt>
+					<dd class="l-contents__dl-dd l-contents__evaluation">
+						<ol class="l-contents__evaluation-star">
+							<li class="c-ico__star fill"></li>
+							<li class="c-ico__star fill"></li>
+							<li class="c-ico__star fill"></li>
+							<li class="c-ico__star fill"></li>
+							<li class="c-ico__star"></li>
+						</ol>
+						<span class="l-contents__evaluation-num u-en">4</span>
+					</dd>
+				</dl>
+				<dl class="l-contents__dl">
+					<dt class="l-contents__dl-dt">名称</dt>
+					<dd class="l-contents__dl-dd c-area__name js-name">
+						<input class="l-contents__name-input c-area__name-input js-name-input" type="text"
+							name="analysis_title" value="○○を意識した解析" readonly>
+						<button class="l-contents__name-edit js-name-edit c-btn__edit" type="button"><img
+								src="assets/image/ico_edit_01.svg" width="15" height="15" alt="編集" /></button>
+					</dd>
+				</dl>
+			</header>
+			<form class="l-contents__main" action="list.html">
+				<div class="l-contents__map">
+					<div class="l-contents__main-tit">
+						<h2 class="tit">地図</h2>
+						<!-- <label class="l-contents__main-mesh c-input__checkbox">メッシュ表示<i class="c-ico__loading js-mesh-loading hidden"></i><input class="js-mesh" type="checkbox" name="mesh" value="1"><i class="c-input__checkbox-switch"></i></label> -->
+					</div>
+					<div class="l-contents__map-wrap">
+						<div class="l-contents__map-load" id="map"></div>
+						<div class="l-contents__map-data">
+							<div class="scroll">
+								<button type="button"
+									class="c-btn__small c-btn__small-black legends u-hover-op js-legends"
+									data-fixed="legends">
+									凡例
+								</button>
+								<dl class="l-contents__map-view">
+									<dt>表示切替</dt>
+									<dd>
+										<label class="l-contents__map-btn">
+											<input type="checkbox" id="data_root" name="data_root" checked>
+											<span class="btn">路線</span>
+										</label>
+										<label class="l-contents__map-btn">
+											<input type="checkbox" id="data_commentary" name="data_commentary" checked>
+											<span class="btn">解説</span>
+										</label>
+										<label class="l-contents__map-btn">
+											<input type="checkbox" id="data_bustle" name="data_bustle" checked>
+											<span class="btn">にぎわい</span>
+										</label>
+										<label class="l-contents__map-btn">
+											<input type="checkbox" id="data_time" name="data_time">
+											<span class="btn">所用時間</span>
+										</label>
+										<label class="l-contents__map-btn">
+											<input type="checkbox" id="data_passengers" name="data_passengers">
+											<span class="btn">乗降客数</span>
+										</label>
+									</dd>
+								</dl>
+								<div class="l-contents__map-population">
 									<label class="l-contents__map-btn">
-										<input type="checkbox" id="data_root" name="data_root" checked>
-										<span class="btn">路線</span>
+										<input type="checkbox" class="js-population" name="data_population">
+										<span class="btn">人口推計</span>
 									</label>
-									<label class="l-contents__map-btn">
-										<input type="checkbox" id="data_commentary" name="data_commentary" checked>
-										<span class="btn">解説</span>
-									</label>
-									<label class="l-contents__map-btn">
-										<input type="checkbox" id="data_bustle" name="data_bustle" checked>
-										<span class="btn">にぎわい</span>
-									</label>
-									<label class="l-contents__map-btn">
-										<input type="checkbox" id="data_time" name="data_time">
-										<span class="btn">所用時間</span>
-									</label>
-									<label class="l-contents__map-btn">
-										<input type="checkbox" id="data_passengers" name="data_passengers">
-										<span class="btn">乗降客数</span>
-									</label>
-								</dd>
-							</dl>
-							<div class="l-contents__map-population">
-								<label class="l-contents__map-btn">
-									<input type="checkbox" class="js-population" name="data_population">
-									<span class="btn">人口推計</span>
-								</label>
-								<label class="l-contents__map-year">
-									<span class="tit">年代</span>
-									<div class="range-wrap">
-										<div class="years u-en">
-											<span class="min-value js-year-min">2015</span>
-											<span class="current-value js-year-current">2025</span>
-											<span class="max-value js-year-max">2050</span>
+									<label class="l-contents__map-year">
+										<span class="tit">年代</span>
+										<div class="range-wrap">
+											<div class="years u-en">
+												<span class="min-value js-year-min">2015</span>
+												<span class="current-value js-year-current">2025</span>
+												<span class="max-value js-year-max">2050</span>
+											</div>
+											<div class="range-box">
+												<input class="range js-year" type="range" name="data_year" value="2025"
+													min="2015" max="2050" step="5" />
+												<ul class="scale">
+													<li class="min"></li>
+													<li></li>
+													<li></li>
+													<li></li>
+													<li></li>
+													<li></li>
+													<li></li>
+													<li class="max"></li>
+												</ul>
+											</div>
 										</div>
-										<div class="range-box">
-											<input class="range js-year" type="range" name="data_year" value="2025" min="2015" max="2050" step="5" />
-											<ul class="scale">
-												<li class="min"></li>
-												<li></li><li></li><li></li><li></li><li></li><li></li>
-												<li class="max"></li>
-											</ul>
-										</div>
-									</div>
-								</label>
+									</label>
+								</div>
 							</div>
-						</div>
-						<div class="l-contents__map-legends js-legends-contents">
-							<i class="close js-legends-close"></i>
-							<dl>
-								<dt>人口推計</dt>
-								<dd>
-									<ul class="population">
-										<li><span>0 - 10</span></li>
-										<li><span>11 - 50</span></li>
-										<li><span>51 - 100</span></li>
-										<li><span>101 - 200</span></li>
-										<li><span>201 - 300</span></li>
-										<li><span>301 - 600</span></li>
-										<li><span>601 - 1000</span></li>
-										<li><span>1001 - 2000</span></li>
-										<li><span>2001 - 5000</span></li>
-										<li><span>5001 - 7000</span></li>
-										<li><span>7001 以上</span></li>
-									</ul>
-								</dd>
-							</dl>
+							<div class="l-contents__map-legends js-legends-contents">
+								<i class="close js-legends-close"></i>
+								<dl>
+									<dt>人口推計</dt>
+									<dd>
+										<ul class="population">
+											<li><span>0 - 10</span></li>
+											<li><span>11 - 50</span></li>
+											<li><span>51 - 100</span></li>
+											<li><span>101 - 200</span></li>
+											<li><span>201 - 300</span></li>
+											<li><span>301 - 600</span></li>
+											<li><span>601 - 1000</span></li>
+											<li><span>1001 - 2000</span></li>
+											<li><span>2001 - 5000</span></li>
+											<li><span>5001 - 7000</span></li>
+											<li><span>7001 以上</span></li>
+										</ul>
+									</dd>
+								</dl>
+							</div>
 						</div>
 					</div>
 				</div>
-			</div>
-			<div class="l-contents__data">
-				<div class="l-contents__main-tit">
-					<h2 class="tit">グラフ</h2>
-					<a class="c-btn__small c-btn__small-black zoomin u-hover-op" href="results_graph.html">グラフを大きく表示</a>
+				<div class="l-contents__data">
+					<div class="l-contents__main-tit">
+						<h2 class="tit">グラフ</h2>
+						<button type="button" class="c-btn__small c-btn__small-black zoomin u-hover-op"
+							onclick="location.href='results_graph.html'">
+							グラフを大きく表示
+						</button>
+					</div>
+					<div class="c-box c-area__scroll">
+						<details class="c-details" open>
+							<summary class="c-details__summary">結果</summary>
+							<small>※メッシュをクリックすると、メッシュごとの結果が表示されます。</small>
+
+							<div class="c-chart"><canvas id="totalChart"></canvas></div>
+						</details>
+						<details class="c-details">
+							<summary class="c-details__summary">平均所要時間</summary>
+							<div class="p-result__map-bar c-chart"><canvas id="timeChart"></canvas></div>
+						</details>
+						<details class="c-details">
+							<summary class="c-details__summary">交通事故発生率</summary>
+							<div class="p-result__map-bar c-chart"><canvas id="accidentChart"></canvas></div>
+						</details>
+						<details class="c-details">
+							<summary class="c-details__summary">平均乗客数</summary>
+							<div class="p-result__map-bar c-chart"><canvas id="passengersChart"></canvas></div>
+						</details>
+						<details class="c-details">
+							<summary class="c-details__summary">交流発生効果</summary>
+							<div class="p-result__map-bar c-chart"><canvas id="exchangeChart"></canvas></div>
+						</details>
+						<details class="c-details">
+							<summary class="c-details__summary">渋滞発生頻度</summary>
+							<div class="p-result__map-bar c-chart"><canvas id="trafficjamChart"></canvas></div>
+						</details>
+						<details class="c-details">
+							<summary class="c-details__summary">運用コスト</summary>
+							<div class="p-result__map-bar c-chart"><canvas id="costChart"></canvas></div>
+						</details>
+					</div>
 				</div>
-				<div class="c-box c-area__scroll">
-					<details class="c-details" open>
-						<summary class="c-details__summary">結果</summary>
-						<div class="c-chart"><canvas id="totalChart"></canvas></div>
-					</details>
-					<details class="c-details">
-						<summary class="c-details__summary">平均所要時間</summary>
-						<div class="p-result__map-bar c-chart"><canvas id="timeChart"></canvas></div>
-					</details>
-					<details class="c-details">
-						<summary class="c-details__summary">交通事故発生率</summary>
-						<div class="p-result__map-bar c-chart"><canvas id="accidentChart"></canvas></div>
-					</details>
-					<details class="c-details">
-						<summary class="c-details__summary">平均乗客数</summary>
-						<div class="p-result__map-bar c-chart"><canvas id="passengersChart"></canvas></div>
-					</details>
-					<details class="c-details">
-						<summary class="c-details__summary">交流発生効果</summary>
-						<div class="p-result__map-bar c-chart"><canvas id="exchangeChart"></canvas></div>
-					</details>
-					<details class="c-details">
-						<summary class="c-details__summary">渋滞発生頻度</summary>
-						<div class="p-result__map-bar c-chart"><canvas id="trafficjamChart"></canvas></div>
-					</details>
-					<details class="c-details">
-						<summary class="c-details__summary">運用コスト</summary>
-						<div class="p-result__map-bar c-chart"><canvas id="costChart"></canvas></div>
-					</details>
+				<div class="p-result__story c-box">
+					<div class="p-result__story-tit">
+						<h2>ある1日のストーリー</h2>
+						<button type="button"
+							class="l-fixed__open p-result__story-btn c-btn__small c-btn__small-black target u-hover-op js-fixed-open"
+							data-fixed="target">
+							ターゲット選択
+						</button>
+					</div>
+					<ul class="p-result__story-target">
+						<li class="js-target-item" data-target="target01">
+							<figure class="p-result__story-ico">
+								<img src="assets/image/ico_story_01.svg" width="100" height="100" alt="こども" />
+								<figcaption>こども</figcaption>
+							</figure>
+							<div class="p-result__story-fukidashi">
+								<span class="p-result__story-txt c-area__scroll">こどもダミーテキストです。</span>
+							</div>
+						</li>
+						<li class="js-target-item" data-target="target02" class="current">
+							<figure class="p-result__story-ico">
+								<img src="assets/image/ico_story_02.svg" width="100" height="100" alt="学生" />
+								<figcaption>学生</figcaption>
+							</figure>
+							<div class="p-result__story-fukidashi">
+								<span class="p-result__story-txt c-area__scroll"><span
+										class="u-ib">大学までの通学時間が20分短縮されて、寝られる時間が伸びた！</span><span
+										class="u-ib">大学からの帰り道に商業施設に寄りやすくなって、街が賑わっている</span> ・・・・・</span>
+							</div>
+						</li>
+						<li class="js-target-item" data-target="target03">
+							<figure class="p-result__story-ico">
+								<img src="assets/image/ico_story_03.svg" width="100" height="100" alt="主婦／主夫" />
+								<figcaption>主婦／主夫</figcaption>
+							</figure>
+							<div class="p-result__story-fukidashi">
+								<span class="p-result__story-txt c-area__scroll">主婦／主夫ダミーテキストです。</span>
+							</div>
+						</li>
+						<li class="js-target-item" data-target="target04">
+							<figure class="p-result__story-ico">
+								<img src="assets/image/ico_story_04.svg" width="100" height="100" alt="会社員" />
+								<figcaption>会社員</figcaption>
+							</figure>
+							<div class="p-result__story-fukidashi">
+								<span class="p-result__story-txt c-area__scroll">会社員ダミーテキストです。</span>
+							</div>
+						</li>
+						<li class="js-target-item" data-target="target05">
+							<figure class="p-result__story-ico">
+								<img src="assets/image/ico_story_05.svg" width="100" height="100" alt="高齢者" />
+								<figcaption>高齢者</figcaption>
+							</figure>
+							<div class="p-result__story-fukidashi">
+								<span class="p-result__story-txt c-area__scroll">高齢者ダミーテキストです。</span>
+							</div>
+						</li>
+						<li class="js-target-item" data-target="target06">
+							<figure class="p-result__story-ico">
+								<img src="assets/image/ico_story_06.svg" width="100" height="100" alt="観光客" />
+								<figcaption>観光客</figcaption>
+							</figure>
+							<div class="p-result__story-fukidashi">
+								<span class="p-result__story-txt c-area__scroll">観光客ダミーテキストです。</span>
+							</div>
+						</li>
+						<li class="js-target-item" data-target="target07">
+							<figure class="p-result__story-ico">
+								<img src="assets/image/ico_story_07.svg" width="100" height="100" alt="出張" />
+								<figcaption>出張</figcaption>
+							</figure>
+							<div class="p-result__story-fukidashi">
+								<span class="p-result__story-txt c-area__scroll">出張ダミーテキストです。</span>
+							</div>
+						</li>
+						<li class="js-target-item" data-target="target08">
+							<figure class="p-result__story-ico">
+								<img src="assets/image/ico_story_08.svg" width="100" height="100" alt="行政" />
+								<figcaption>行政</figcaption>
+							</figure>
+							<div class="p-result__story-fukidashi">
+								<span class="p-result__story-txt c-area__scroll">行政ダミーテキストです。</span>
+							</div>
+						</li>
+					</ul>
 				</div>
-			</div>
-			<div class="p-result__story c-box">
-				<div class="p-result__story-tit">
-					<h2>ある1日のストーリー</h2>
-					<span class="l-fixed__open p-result__story-btn c-btn__small c-btn__small-black target u-hover-op js-fixed-open" data-fixed="target">ターゲット選択</span>
+				<div class="c-area__btns column02 narrow js-btns">
+					<button class="c-btn c-btn__contents blue" type="submit">結果一覧に保存する</button>
+					<a class="c-btn c-btn__contents blue" href="#">CSVで出力</a>
+					<a class="c-btn c-btn__contents black" href="./">入力に戻る</a>
 				</div>
-				<ul class="p-result__story-target">
-					<li class="js-target-item" data-target="target01">
-						<figure class="p-result__story-ico">
-							<img src="assets/image/ico_story_01.svg" width="100" height="100" alt="こども"/>
+			</form>
+		</main>
+		<div class="l-fixed js-fixed" id="target">
+			<div class="l-fixed__box p-result__story-box c-area__scroll js-fixed-box">
+				<h2>ターゲット選択</h2>
+				<div class="p-result__story-select">
+					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+						<input class="js-target" type="radio" name="target" value="target01">
+						<figure>
+							<img loading="lazy" src="assets/image/ico_story_01.svg" width="100" height="100"
+								alt="こども" />
 							<figcaption>こども</figcaption>
 						</figure>
-						<div class="p-result__story-fukidashi">
-							<span class="p-result__story-txt c-area__scroll">こどもダミーテキストです。</span>
-						</div>
-					</li>
-					<li class="js-target-item" data-target="target02" class="current">
-						<figure class="p-result__story-ico">
-							<img src="assets/image/ico_story_02.svg" width="100" height="100" alt="学生"/>
+					</label>
+					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+						<input class="js-target" type="radio" name="target" value="target02" checked>
+						<figure>
+							<img loading="lazy" src="assets/image/ico_story_02.svg" width="100" height="100" alt="学生" />
 							<figcaption>学生</figcaption>
 						</figure>
-						<div class="p-result__story-fukidashi">
-							<span class="p-result__story-txt c-area__scroll"><span class="u-ib">大学までの通学時間が20分短縮されて、寝られる時間が伸びた！</span><span class="u-ib">大学からの帰り道に商業施設に寄りやすくなって、街が賑わっている</span>	・・・・・</span>
-						</div>
-					</li>
-					<li class="js-target-item" data-target="target03">
-						<figure class="p-result__story-ico">
-							<img src="assets/image/ico_story_03.svg" width="100" height="100" alt="主婦／主夫"/>
+					</label>
+					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+						<input class="js-target" type="radio" name="target" value="target03">
+						<figure>
+							<img loading="lazy" src="assets/image/ico_story_03.svg" width="100" height="100"
+								alt="主婦／主夫" />
 							<figcaption>主婦／主夫</figcaption>
 						</figure>
-						<div class="p-result__story-fukidashi">
-							<span class="p-result__story-txt c-area__scroll">主婦／主夫ダミーテキストです。</span>
-						</div>
-					</li>
-					<li class="js-target-item" data-target="target04">
-						<figure class="p-result__story-ico">
-							<img src="assets/image/ico_story_04.svg" width="100" height="100" alt="会社員"/>
+					</label>
+					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+						<input class="js-target" type="radio" name="target" value="target04">
+						<figure>
+							<img loading="lazy" src="assets/image/ico_story_04.svg" width="100" height="100"
+								alt="会社員" />
 							<figcaption>会社員</figcaption>
 						</figure>
-						<div class="p-result__story-fukidashi">
-							<span class="p-result__story-txt c-area__scroll">会社員ダミーテキストです。</span>
-						</div>
-					</li>
-					<li class="js-target-item" data-target="target05">
-						<figure class="p-result__story-ico">
-							<img src="assets/image/ico_story_05.svg" width="100" height="100" alt="高齢者"/>
+					</label>
+					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+						<input class="js-target" type="radio" name="target" value="target05">
+						<figure>
+							<img loading="lazy" src="assets/image/ico_story_05.svg" width="100" height="100"
+								alt="高齢者" />
 							<figcaption>高齢者</figcaption>
 						</figure>
-						<div class="p-result__story-fukidashi">
-							<span class="p-result__story-txt c-area__scroll">高齢者ダミーテキストです。</span>
-						</div>
-					</li>
-					<li class="js-target-item" data-target="target06">
-						<figure class="p-result__story-ico">
-							<img src="assets/image/ico_story_06.svg" width="100" height="100" alt="観光客"/>
+					</label>
+					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+						<input class="js-target" type="radio" name="target" value="target06">
+						<figure>
+							<img loading="lazy" src="assets/image/ico_story_06.svg" width="100" height="100"
+								alt="観光客" />
 							<figcaption>観光客</figcaption>
 						</figure>
-						<div class="p-result__story-fukidashi">
-							<span class="p-result__story-txt c-area__scroll">観光客ダミーテキストです。</span>
-						</div>
-					</li>
-					<li class="js-target-item" data-target="target07">
-						<figure class="p-result__story-ico">
-							<img src="assets/image/ico_story_07.svg" width="100" height="100" alt="出張"/>
+					</label>
+					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+						<input class="js-target" type="radio" name="target" value="target07">
+						<figure>
+							<img loading="lazy" src="assets/image/ico_story_07.svg" width="100" height="100" alt="出張" />
 							<figcaption>出張</figcaption>
 						</figure>
-						<div class="p-result__story-fukidashi">
-							<span class="p-result__story-txt c-area__scroll">出張ダミーテキストです。</span>
-						</div>
-					</li>
-					<li class="js-target-item" data-target="target08">
-						<figure class="p-result__story-ico">
-							<img src="assets/image/ico_story_08.svg" width="100" height="100" alt="行政"/>
+					</label>
+					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+						<input class="js-target" type="radio" name="target" value="target08">
+						<figure>
+							<img loading="lazy" src="assets/image/ico_story_08.svg" width="100" height="100" alt="行政" />
 							<figcaption>行政</figcaption>
 						</figure>
-						<div class="p-result__story-fukidashi">
-							<span class="p-result__story-txt c-area__scroll">行政ダミーテキストです。</span>
-						</div>
-					</li>
-				</ul>
+					</label>
+				</div>
+				<div class="c-area__btns single l-fixed__btns">
+					<span class="c-btn c-btn__contents blue l-fixed__close js-fixed-close">ターゲット選択を閉じる</span>
+				</div>
 			</div>
-			<div class="c-area__btns column02 narrow js-btns">
-				<button class="c-btn c-btn__contents blue" type="submit">結果一覧</button>
-				<a class="c-btn c-btn__contents blue" href="#">CSVで出力</a>
-				<a class="c-btn c-btn__contents black" href="./">入力に戻る</a>
-			</div>
-		</form>
-	</main>
-	<div class="l-fixed js-fixed" id="target">
-		<div class="l-fixed__box p-result__story-box c-area__scroll js-fixed-box">
-			<h2>ターゲット選択</h2>
-			<div class="p-result__story-select">
-				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-					<input class="js-target" type="radio" name="target" value="target01">
-					<figure>
-						<img loading="lazy" src="assets/image/ico_story_01.svg" width="100" height="100" alt="こども"/>
-						<figcaption>こども</figcaption>
-					</figure>
-				</label>
-				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-					<input class="js-target" type="radio" name="target" value="target02" checked>
-					<figure>
-						<img loading="lazy" src="assets/image/ico_story_02.svg" width="100" height="100" alt="学生"/>
-						<figcaption>学生</figcaption>
-					</figure>
-				</label>
-				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-					<input class="js-target" type="radio" name="target" value="target03">
-					<figure>
-						<img loading="lazy" src="assets/image/ico_story_03.svg" width="100" height="100" alt="主婦／主夫"/>
-						<figcaption>主婦／主夫</figcaption>
-					</figure>
-				</label>
-				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-					<input class="js-target" type="radio" name="target" value="target04">
-					<figure>
-						<img loading="lazy" src="assets/image/ico_story_04.svg" width="100" height="100" alt="会社員"/>
-						<figcaption>会社員</figcaption>
-					</figure>
-				</label>
-				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-					<input class="js-target" type="radio" name="target" value="target05">
-					<figure>
-						<img loading="lazy" src="assets/image/ico_story_05.svg" width="100" height="100" alt="高齢者"/>
-						<figcaption>高齢者</figcaption>
-					</figure>
-				</label>
-				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-					<input class="js-target" type="radio" name="target" value="target06">
-					<figure>
-						<img loading="lazy" src="assets/image/ico_story_06.svg" width="100" height="100" alt="観光客"/>
-						<figcaption>観光客</figcaption>
-					</figure>
-				</label>
-				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-					<input class="js-target" type="radio" name="target" value="target07">
-					<figure>
-						<img loading="lazy" src="assets/image/ico_story_07.svg" width="100" height="100" alt="出張"/>
-						<figcaption>出張</figcaption>
-					</figure>
-				</label>
-				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-					<input class="js-target" type="radio" name="target" value="target08">
-					<figure>
-						<img loading="lazy" src="assets/image/ico_story_08.svg" width="100" height="100" alt="行政"/>
-						<figcaption>行政</figcaption>
-					</figure>
-				</label>
-			</div>
-			<div class="c-area__btns single l-fixed__btns">
-				<span class="c-btn c-btn__contents blue l-fixed__close js-fixed-close">ターゲット選択を閉じる</span>
-			</div>
+			<div class="l-fixed__bg js-fixed-close"></div>
 		</div>
-		<div class="l-fixed__bg js-fixed-close"></div>
 	</div>
-</div>
-<script src="assets/js/jszip.min.js"></script>
-<script src="assets/js/leaflet/leaflet.js"></script>
-<script src="assets/js/chart.min.js"></script>
-<script src="assets/js/common.js"></script>
-<script src="assets/js/map.js"></script>
-<script src="assets/js/results.js"></script>
-<script>
-// 総合評価の初期化
-const initialTotalDataA = [5, 4, 5, 4, 5, 2];
-const initialTotalDataB = [3, 2, 3, 3, 3, 4];
-const totalChart = new Chart(document.getElementById('totalChart'), {
-	type: 'radar',
-	data: {
-		labels: ["平均所要時間", "交通事故発生率", "平均乗客数", "交流発生効果", "渋滞発生頻度", "運行コスト"],
-		datasets: [{
-			label: "入力",
-      data: initialTotalDataA,
-      backgroundColor:"rgba(245,129,60,0.5)",
-      borderColor: "rgba(245,129,60,1)",
-      borderWidth: 1,
-    },{
-			label: "現在",
-			data: initialTotalDataB,
-      backgroundColor: "rgba(49,89,158,0.5)",
-			borderColor: "rgba(49,89,158,1)",
-			borderWidth: 1,
-		}]
-	},
-	options: {
-		scales: {
-			r: {
-				min: 0,
-				max: 5,
-				ticks: {
-					stepSize: 1,
-				},
-				backgroundColor: '#f8f8f8',
-				grid: {
-					color: '#DDD',
-				},
-				angleLines: {
-					color: '#DDD',
-				},
-				pointLabels: {
-					color: '#333',
-				},
+	<script src="assets/js/jszip.min.js"></script>
+	<script src="assets/js/leaflet/leaflet.js"></script>
+	<script src="assets/js/chart.min.js"></script>
+	<script src="assets/js/common.js"></script>
+	<script src="assets/js/map.js"></script>
+	<script src="assets/js/results.js"></script>
+	<script>
+		// 総合評価の初期化
+		const initialTotalDataA = [5, 4, 5, 4, 5, 2];
+		const initialTotalDataB = [3, 2, 3, 3, 3, 4];
+		const totalChart = new Chart(document.getElementById('totalChart'), {
+			type: 'radar',
+			data: {
+				labels: ["平均所要時間", "交通事故発生率", "平均乗客数", "交流発生効果", "渋滞発生頻度", "運行コスト"],
+				datasets: [{
+					label: "入力",
+					data: initialTotalDataA,
+					backgroundColor: "rgba(245,129,60,0.5)",
+					borderColor: "rgba(245,129,60,1)",
+					borderWidth: 1,
+				}, {
+					label: "現在",
+					data: initialTotalDataB,
+					backgroundColor: "rgba(49,89,158,0.5)",
+					borderColor: "rgba(49,89,158,1)",
+					borderWidth: 1,
+				}]
 			},
-		},
-		plugins: {
-			legend: {
-				display: false,
-			}
-		},
-		maintainAspectRatio: false
-	}
-});
-// 平均所要時間の初期化
-const initialTimeData = [28, 20];
-const timeChart = new Chart(document.getElementById('timeChart'), {
-	type: 'bar',
-	data: {
-		labels: barLabels,
-		datasets: [{
-			data: initialTimeData,
-			backgroundColor: barBgColor,
-		}]
-	},
-	options: {
-		scales: {
-			x: barX,
-			y: {
-				suggestedMax: 30,
-				ticks: {
-					stepSize: 10,
-					callback: function(value, index, ticks) {
-						return index < ticks.length - 1 ?
-						this.getLabelForValue(value):
-						['(分)', this.getLabelForValue(value)];
+			options: {
+				scales: {
+					r: {
+						min: 0,
+						max: 5,
+						ticks: {
+							stepSize: 1,
+						},
+						backgroundColor: '#f8f8f8',
+						grid: {
+							color: '#DDD',
+						},
+						angleLines: {
+							color: '#DDD',
+						},
+						pointLabels: {
+							color: '#333',
+						},
+					},
+				},
+				plugins: {
+					legend: {
+						display: false,
 					}
 				},
+				maintainAspectRatio: false
 			}
-		},
-		plugins: {
-			legend: {
-				display: false,
-			}
-		},
-		maintainAspectRatio: false
-	}
-});
-// 交通事故発生率の初期化
-const initialAccidentData = [10,8];
-const accidentChart = new Chart(document.getElementById('accidentChart'), {
-	type: 'bar',
-	data: {
-		labels: barLabels,
-		datasets: [{
-			data: initialAccidentData,
-			backgroundColor: barBgColor,
-		}]
-	},
-	options: {
-		scales: {
-			x: barX,
-			y: {
-				suggestedMax: 100,
-				ticks: {
-					stepSize: 50,
-					callback: function(value, index, ticks) {
-						return index < ticks.length - 1 ?
-						this.getLabelForValue(value):
-						['(％)', this.getLabelForValue(value)];
+		});
+		// 平均所要時間の初期化
+		const initialTimeData = [28, 20];
+		const timeChart = new Chart(document.getElementById('timeChart'), {
+			type: 'bar',
+			data: {
+				labels: barLabels,
+				datasets: [{
+					data: initialTimeData,
+					backgroundColor: barBgColor,
+				}]
+			},
+			options: {
+				scales: {
+					x: barX,
+					y: {
+						suggestedMax: 30,
+						ticks: {
+							stepSize: 10,
+							callback: function (value, index, ticks) {
+								return index < ticks.length - 1 ?
+									this.getLabelForValue(value) :
+									['(分)', this.getLabelForValue(value)];
+							}
+						},
 					}
 				},
-			}
-		},
-		plugins: {
-			legend: {
-				display: false,
-			}
-		},
-		maintainAspectRatio: false
-	}
-});
-// 平均乗客数の初期化
-const initialPassengersData = [20,40];
-const passengersChart = new Chart(document.getElementById('passengersChart'), {
-	type: 'bar',
-	data: {
-		labels: barLabels,
-		datasets: [{
-			data: initialPassengersData,
-			backgroundColor: barBgColor,
-		}]
-	},
-	options: {
-		scales: {
-			x: barX,
-			y: {
-				suggestedMax: 40,
-				ticks: {
-					stepSize: 10,
-					callback: function(value, index, ticks) {
-						return index < ticks.length - 1 ?
-						this.getLabelForValue(value):
-						['(人)', this.getLabelForValue(value)];
+				plugins: {
+					legend: {
+						display: false,
 					}
 				},
+				maintainAspectRatio: false
 			}
-		},
-		plugins: {
-			legend: {
-				display: false,
-			}
-		},
-		maintainAspectRatio: false
-	}
-});
-// 交流発生効果の初期化
-const initialExchangeData = [50, 80];
-const exchangeChart = new Chart(document.getElementById('exchangeChart'), {
-	type: 'bar',
-	data: {
-		labels: barLabels,
-		datasets: [{
-			data: initialExchangeData,
-			backgroundColor: barBgColor,
-		}]
-	},
-	options: {
-		scales: {
-			x: barX,
-			y: {
-				suggestedMax: 100,
-				ticks: {
-					stepSize: 10,
-					callback: function(value, index, ticks) {
-						return index < ticks.length - 1 ?
-						this.getLabelForValue(value):
-						['(％)', this.getLabelForValue(value)];
+		});
+		// 交通事故発生率の初期化
+		const initialAccidentData = [10, 8];
+		const accidentChart = new Chart(document.getElementById('accidentChart'), {
+			type: 'bar',
+			data: {
+				labels: barLabels,
+				datasets: [{
+					data: initialAccidentData,
+					backgroundColor: barBgColor,
+				}]
+			},
+			options: {
+				scales: {
+					x: barX,
+					y: {
+						suggestedMax: 100,
+						ticks: {
+							stepSize: 50,
+							callback: function (value, index, ticks) {
+								return index < ticks.length - 1 ?
+									this.getLabelForValue(value) :
+									['(％)', this.getLabelForValue(value)];
+							}
+						},
 					}
 				},
-			}
-		},
-		plugins: {
-			legend: {
-				display: false,
-			}
-		},
-		maintainAspectRatio: false
-	}
-});
-// 渋滞発生頻度の初期化
-const initialTrafficjamData = [50,80];
-const trafficjamChart = new Chart(document.getElementById('trafficjamChart'), {
-	type: 'bar',
-	data: {
-		labels: barLabels,
-		datasets: [{
-			data: initialTrafficjamData,
-			backgroundColor: barBgColor,
-		}]
-	},
-	options: {
-		scales: {
-			x: barX,
-			y: {
-				suggestedMax: 100,
-				ticks: {
-					stepSize: 50,
-					callback: function(value, index, ticks) {
-						return index < ticks.length - 1 ?
-						this.getLabelForValue(value):
-						['(％)', this.getLabelForValue(value)];
+				plugins: {
+					legend: {
+						display: false,
 					}
 				},
+				maintainAspectRatio: false
 			}
-		},
-		plugins: {
-			legend: {
-				display: false,
-			}
-		},
-		maintainAspectRatio: false
-	}
-});
-// 運用コストの初期化
-const initialCostData = [300,500];
-const costChart  = new Chart(document.getElementById('costChart'), {
-	type: 'bar',
-	data: {
-		labels: barLabels,
-		datasets: [{
-			data: initialCostData,
-			backgroundColor: barBgColor,
-		}]
-	},
-	options: {
-		scales: {
-			x: barX,
-			y: {
-				suggestedMax: 600,
-				ticks: {
-					stepSize: 50,
-					callback: function(value, index, ticks) {
-						return index < ticks.length - 1 ?
-						this.getLabelForValue(value):
-						['(円)', this.getLabelForValue(value)];
+		});
+		// 平均乗客数の初期化
+		const initialPassengersData = [20, 40];
+		const passengersChart = new Chart(document.getElementById('passengersChart'), {
+			type: 'bar',
+			data: {
+				labels: barLabels,
+				datasets: [{
+					data: initialPassengersData,
+					backgroundColor: barBgColor,
+				}]
+			},
+			options: {
+				scales: {
+					x: barX,
+					y: {
+						suggestedMax: 40,
+						ticks: {
+							stepSize: 10,
+							callback: function (value, index, ticks) {
+								return index < ticks.length - 1 ?
+									this.getLabelForValue(value) :
+									['(人)', this.getLabelForValue(value)];
+							}
+						},
 					}
 				},
+				plugins: {
+					legend: {
+						display: false,
+					}
+				},
+				maintainAspectRatio: false
 			}
-		},
-		plugins: {
-			legend: {
-				display: false,
+		});
+		// 交流発生効果の初期化
+		const initialExchangeData = [50, 80];
+		const exchangeChart = new Chart(document.getElementById('exchangeChart'), {
+			type: 'bar',
+			data: {
+				labels: barLabels,
+				datasets: [{
+					data: initialExchangeData,
+					backgroundColor: barBgColor,
+				}]
+			},
+			options: {
+				scales: {
+					x: barX,
+					y: {
+						suggestedMax: 100,
+						ticks: {
+							stepSize: 10,
+							callback: function (value, index, ticks) {
+								return index < ticks.length - 1 ?
+									this.getLabelForValue(value) :
+									['(％)', this.getLabelForValue(value)];
+							}
+						},
+					}
+				},
+				plugins: {
+					legend: {
+						display: false,
+					}
+				},
+				maintainAspectRatio: false
 			}
-		},
-		maintainAspectRatio: false
-	}
-});
+		});
+		// 渋滞発生頻度の初期化
+		const initialTrafficjamData = [50, 80];
+		const trafficjamChart = new Chart(document.getElementById('trafficjamChart'), {
+			type: 'bar',
+			data: {
+				labels: barLabels,
+				datasets: [{
+					data: initialTrafficjamData,
+					backgroundColor: barBgColor,
+				}]
+			},
+			options: {
+				scales: {
+					x: barX,
+					y: {
+						suggestedMax: 100,
+						ticks: {
+							stepSize: 50,
+							callback: function (value, index, ticks) {
+								return index < ticks.length - 1 ?
+									this.getLabelForValue(value) :
+									['(％)', this.getLabelForValue(value)];
+							}
+						},
+					}
+				},
+				plugins: {
+					legend: {
+						display: false,
+					}
+				},
+				maintainAspectRatio: false
+			}
+		});
+		// 運用コストの初期化
+		const initialCostData = [300, 500];
+		const costChart = new Chart(document.getElementById('costChart'), {
+			type: 'bar',
+			data: {
+				labels: barLabels,
+				datasets: [{
+					data: initialCostData,
+					backgroundColor: barBgColor,
+				}]
+			},
+			options: {
+				scales: {
+					x: barX,
+					y: {
+						suggestedMax: 600,
+						ticks: {
+							stepSize: 50,
+							callback: function (value, index, ticks) {
+								return index < ticks.length - 1 ?
+									this.getLabelForValue(value) :
+									['(円)', this.getLabelForValue(value)];
+							}
+						},
+					}
+				},
+				plugins: {
+					legend: {
+						display: false,
+					}
+				},
+				maintainAspectRatio: false
+			}
+		});
 
-const initialTripData = false;
-const initialBCData = false;
-function updateCharts(properties) {
-	// 総合評価の更新
-	totalChart.data.datasets[0].data = [
-		properties.dataTotalAA, //平均所要時間；入力
-		properties.dataTotalAB, //交通事故発生率；入力
-		properties.dataTotalAC, //平均乗客数；入力
-		properties.dataTotalAD, //交流発生効果；入力
-		properties.dataTotalAE, //渋滞発生頻度；入力
-		properties.dataTotalAF, //運行コスト；入力
-	];
-	totalChart.data.datasets[1].data = [
-		properties.dataTotalBA, //平均所要時間；現在
-		properties.dataTotalBB, //交通事故発生率；現在
-		properties.dataTotalBC, //平均乗客数；現在
-		properties.dataTotalBD, //交流発生効果；現在
-		properties.dataTotalBE, //渋滞発生頻度；現在
-		properties.dataTotalBF, //運行コスト；現在
-	];
-	totalChart.update();
-	// 平均所要時間の更新
-	timeChart.data.datasets[0].data = [
-		properties.dataTimeA, //現在
-		properties.dataTimeB, //入力
-	];
-	timeChart.update();
-	// 交通事故発生率の更新
-	accidentChart.data.datasets[0].data = [
-		properties.dataAccidentA, //現在
-		properties.dataAccidentB, //入力
-	];
-	accidentChart.update();
-	// 平均乗客数の更新
-	passengersChart.data.datasets[0].data = [
-		properties.dataPassengersA, //現在
-		properties.dataPassengersB, //入力
-	];
-	passengersChart.update();
-	// 交流発生効果の更新
-	exchangeChart.data.datasets[0].data = [
-		properties.dataExchangeA, //現在
-		properties.dataExchangeB, //入力
-	];
-	exchangeChart.update();
-	// 渋滞発生頻度の更新
-	trafficjamChart.data.datasets[0].data = [
-		properties.dataTrafficjamA, //現在
-		properties.dataTrafficjamB, //入力
-	];
-	trafficjamChart.update();
-	// 運用コストの更新
-	costChart.data.datasets[0].data = [
-		properties.dataCostA, //現在
-		properties.dataCostB, //入力
-	];
-	costChart.update();
-}
-</script>
+		const initialTripData = false;
+		const initialBCData = false;
+		function updateCharts(properties) {
+			// 総合評価の更新
+			totalChart.data.datasets[0].data = [
+				properties.dataTotalAA, //平均所要時間；入力
+				properties.dataTotalAB, //交通事故発生率；入力
+				properties.dataTotalAC, //平均乗客数；入力
+				properties.dataTotalAD, //交流発生効果；入力
+				properties.dataTotalAE, //渋滞発生頻度；入力
+				properties.dataTotalAF, //運行コスト；入力
+			];
+			totalChart.data.datasets[1].data = [
+				properties.dataTotalBA, //平均所要時間；現在
+				properties.dataTotalBB, //交通事故発生率；現在
+				properties.dataTotalBC, //平均乗客数；現在
+				properties.dataTotalBD, //交流発生効果；現在
+				properties.dataTotalBE, //渋滞発生頻度；現在
+				properties.dataTotalBF, //運行コスト；現在
+			];
+			totalChart.update();
+			// 平均所要時間の更新
+			timeChart.data.datasets[0].data = [
+				properties.dataTimeA, //現在
+				properties.dataTimeB, //入力
+			];
+			timeChart.update();
+			// 交通事故発生率の更新
+			accidentChart.data.datasets[0].data = [
+				properties.dataAccidentA, //現在
+				properties.dataAccidentB, //入力
+			];
+			accidentChart.update();
+			// 平均乗客数の更新
+			passengersChart.data.datasets[0].data = [
+				properties.dataPassengersA, //現在
+				properties.dataPassengersB, //入力
+			];
+			passengersChart.update();
+			// 交流発生効果の更新
+			exchangeChart.data.datasets[0].data = [
+				properties.dataExchangeA, //現在
+				properties.dataExchangeB, //入力
+			];
+			exchangeChart.update();
+			// 渋滞発生頻度の更新
+			trafficjamChart.data.datasets[0].data = [
+				properties.dataTrafficjamA, //現在
+				properties.dataTrafficjamB, //入力
+			];
+			trafficjamChart.update();
+			// 運用コストの更新
+			costChart.data.datasets[0].data = [
+				properties.dataCostA, //現在
+				properties.dataCostB, //入力
+			];
+			costChart.update();
+		}
+	</script>
 </body>
+
 </html>
