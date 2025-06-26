@@ -210,6 +210,7 @@
 <script src="assets/js/chart.min.js"></script>
 <script src="assets/js/common.js"></script>
 <script src="assets/js/map.js"></script>
+<script src="assets/js/matsim.js"></script>
 <script src="assets/js/results.js"></script>
 <script>
 // 総合評価の初期化
@@ -494,9 +495,19 @@ const costChart  = new Chart(document.getElementById('costChart'), {
 				display: false,
 			}
 		},
-		maintainAspectRatio: false
-	}
+                maintainAspectRatio: false
+        }
 });
+
+// MATSim results integration
+MATSim.loadTripMetrics('assets/data/0.trips.csv.gz')
+        .then(r => {
+                const time = Math.round(r.averageTravelTime);
+                initialTimeData[1] = time;
+                timeChart.data.datasets[0].data[1] = time;
+                timeChart.update();
+        })
+        .catch(console.error);
 let costChartData = null;
 document.querySelectorAll('input[name="chart06"]').forEach(button => {
 	button.addEventListener('change', () => {
