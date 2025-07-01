@@ -7,6 +7,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="assets/js/leaflet/leaflet.css" />
 	<link rel="stylesheet" href="assets/css/common.css" />
+
 	<style>
 		details.c-route {
 			position: relative;
@@ -29,101 +30,64 @@
 	</style>
 
 	<style>
-		/* Main range styling */
-		.c-input__range-wrap.dual {
+		.c-input__range-wrap {
 			position: relative;
+			margin-top: 12px;
 			height: 36px;
-			margin-top: 10px;
 		}
 
-		.c-input__range-wrap.dual input[type=range] {
-			position: absolute;
-			width: 100%;
-			height: 6px;
-			margin: 0;
-			-webkit-appearance: none;
-			background: transparent;
-			pointer-events: none;
-			/* Disable interaction on track */
-			z-index: 1;
-		}
-
-		.c-input__range-wrap.dual input[type=range]#fareRangeMin {
-			z-index: 1;
-		}
-
-		.c-input__range-wrap.dual input[type=range]#fareRangeMax {
-			z-index: 2;
-		}
-
-		.c-input__range-wrap.dual input[type=range]::-webkit-slider-thumb {
-			-webkit-appearance: none;
-			pointer-events: all;
-			/* Enable interaction only on thumb */
-			width: 16px;
-			height: 16px;
-			background: #007bff;
-			border: 2px solid #fff;
-			border-radius: 50%;
-			box-shadow: 0 0 1px rgba(0, 0, 0, 0.4);
-			cursor: pointer;
-			margin-top: -5px;
-		}
-
-		.c-input__range-wrap.dual input[type=range]::-moz-range-thumb {
-			pointer-events: all;
-			width: 16px;
-			height: 16px;
-			background: #007bff;
-			border: 2px solid #fff;
-			border-radius: 50%;
-			cursor: pointer;
-		}
-
-
-		.c-input__range-wrap.dual input[type=range]:nth-child(2) {
-			z-index: 2;
-			/* ensures upper thumb is on top */
-		}
-
-		.c-input__range-wrap.dual input[type=range]::-webkit-slider-runnable-track {
-			height: 6px;
-			background: #ccc;
-			border-radius: 3px;
-		}
-
-		.c-input__range-wrap.dual input[type=range]::-webkit-slider-thumb {
-			-webkit-appearance: none;
-			pointer-events: all;
-			width: 16px;
-			height: 16px;
-			background: #ffae00;
-			border: 2px solid #fff;
-			border-radius: 50%;
-			box-shadow: 0 0 1px rgba(0, 0, 0, 0.4);
-			cursor: pointer;
-			margin-top: -5px;
-		}
-
-		.c-input__range-wrap.dual input[type=range]::-moz-range-thumb {
-			width: 16px;
-			height: 16px;
-			background: #ff9100;
-			border: 2px solid #fff;
-			border-radius: 50%;
-			cursor: pointer;
-		}
-
-		.c-input__range-mark {
+		.range-track {
 			position: absolute;
 			top: 50%;
-			left: 0;
-			right: 0;
-			height: 6px;
-			background: rgba(0, 123, 255, 0.2);
-			border-radius: 3px;
 			transform: translateY(-50%);
-			z-index: 0;
+			height: 6px;
+			background: #ccc;
+			width: 100%;
+			border-radius: 3px;
+			z-index: 1;
+		}
+
+		.range-highlight {
+			position: absolute;
+			top: 50%;
+			height: 16px;
+			margin-top: -8px;
+			background: orange;
+			border-radius: 4px;
+			z-index: 2;
+			cursor: grab;
+			transition: background 0.2s;
+		}
+
+		.range-highlight:hover {
+			background: darkorange;
+		}
+
+		.range-highlight:active {
+			cursor: grabbing;
+		}
+
+		.c-input__range-wrap input[type=range] {
+			-webkit-appearance: none;
+			width: 100%;
+			height: 36px;
+			background: none;
+			position: relative;
+			z-index: 3;
+		}
+
+		/* Hide the range thumb */
+		.c-input__range-wrap input[type=range]::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			width: 0;
+			height: 0;
+			border: none;
+		}
+
+		.c-input__range-wrap input[type=range]::-moz-range-thumb {
+			width: 0;
+			height: 0;
+			border: none;
 		}
 
 		.fare-inputs {
@@ -133,7 +97,6 @@
 			gap: 10px;
 		}
 
-		/* Display styling */
 		.c-input__range-display {
 			display: flex;
 			align-items: baseline;
@@ -308,9 +271,12 @@
 											<label class="c-input__radio-label"><input type="radio" name="current_a_brt"
 													value="1">有</label>
 										</dd>
-										<dt>運賃
+										<dt class="fare-label">
+											運賃
 											<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="current_a_fare">リセット</span>
+												data-reset="current_a_fare">
+												リセット
+											</span>
 										</dt>
 										<dd class="c-input__range" id="current_a_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
@@ -325,27 +291,21 @@
 												</div>
 
 												<div class="c-input__range-minmax u-en">
-													<span class="js-range-min">0</span>
-													<span class="js-range-max">1000</span>
+													<span>0</span><span style="float:right;">1000</span>
 												</div>
 
-												<div class="c-input__range-wrap dual">
-													<input type="range" id="fareRangeMin" min="0" max="1000" value="120"
-														class="c-input__range-slider js-range-slider" />
-													<input type="range" id="fareRangeMax" min="0" max="1000" value="390"
-														class="c-input__range-slider js-range-slider" />
-													<i class="c-input__range-mark js-range-mark equal"></i>
+												<div class="c-input__range-wrap">
+													<div class="range-track"></div>
+													<div class="range-highlight js-range-mark"></div>
+													<input type="range" id="rangeSlider" min="0" max="730" step="10"
+														value="0" />
 												</div>
 
 												<div class="fare-inputs u-en">
-													<input type="number" id="fareMinInput" value="120" min="0"
-														max="1000"> 円 ～
-													<input type="number" id="fareMaxInput" value="390" min="0"
-														max="1000"> 円
+													<label for="fareShiftInput" class="fare-label-text">調整:</label>
+													<input type="number" id="fareShiftInput" value="0" step="10" min="0"
+														max="610" /> 円 ～
 												</div>
-
-												<span
-													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
 											</div>
 										</dd>
 
@@ -1811,71 +1771,107 @@
 	<script src="assets/js/simulation.js"></script>
 
 	<script>
-		const fareMinA = document.getElementById('fareRangeMin');
-		const fareMaxA = document.getElementById('fareRangeMax');
-		const inputMinA = document.getElementById('fareMinInput');
-		const inputMaxA = document.getElementById('fareMaxInput');
-		const rangeMarkA = document.querySelector('#current_a_fare .js-range-mark');
+		const slider = document.getElementById('rangeSlider');
+		const highlight = document.querySelector('.js-range-mark');
+		const inputShift = document.getElementById('fareShiftInput');
 
-		function updateVisualA(minVal, maxVal) {
-			const total = +fareMinA.max - +fareMinA.min;
-			const pctMin = ((minVal - +fareMinA.min) / total) * 100;
-			const pctMax = ((maxVal - +fareMinA.min) / total) * 100;
+		const baseStart = 120;
+		const baseEnd = 390;
+		const fixedWidth = baseEnd - baseStart;
 
-			rangeMarkA.style.left = pctMin + '%';
-			rangeMarkA.style.width = (pctMax - pctMin) + '%';
+		const minShift = -baseStart; // allow shift below 120
+		const maxShift = 1000 - baseEnd;
 
-			// update the display text
-			document.querySelector('#current_a_fare .js-range-min-value').textContent = minVal;
-			document.querySelector('#current_a_fare .js-range-max-value').textContent = maxVal;
-			document.querySelector('#current_a_fare .js-range-diff').textContent = `(±${maxVal - minVal})`;
+		function updateVisual(shiftVal) {
+			const shift = parseInt(shiftVal);
+			const start = baseStart + shift;
+			const end = start + fixedWidth;
+
+			const pctLeft = (start / 1000) * 100;
+			const pctWidth = (fixedWidth / 1000) * 100;
+
+			highlight.style.left = pctLeft + '%';
+			highlight.style.width = pctWidth + '%';
+
+			// Update display values
+			document.querySelector('.js-range-min-value').textContent = start;
+			document.querySelector('.js-range-max-value').textContent = end;
+
+			inputShift.value = shift;
+			slider.value = shift;
+
+			// Simplified diff
+			let diffText = '(±0)';
+			if (shift > 0) {
+				diffText = `(+${shift})`;
+			} else if (shift < 0) {
+				diffText = `(${shift})`;
+			}
+			document.querySelector('.js-range-diff').textContent = diffText;
 		}
 
-		function syncSlidersA() {
-			let minV = +fareMinA.value, maxV = +fareMaxA.value;
-			if (minV > maxV) { minV = maxV; fareMinA.value = minV; }
-			if (maxV < minV) { maxV = minV; fareMaxA.value = maxV; }
-			inputMinA.value = minV;
-			inputMaxA.value = maxV;
-			updateVisualA(minV, maxV);
-		}
+		// Input field listener
+		inputShift.addEventListener('input', () => {
+			let val = parseInt(inputShift.value);
+			if (isNaN(val)) val = 0;
+			val = Math.max(minShift, Math.min(val, maxShift));
+			val = Math.round(val / 10) * 10;
+			updateVisual(val);
+		});
 
-		function syncInputsA() {
-			let minV = +inputMinA.value, maxV = +inputMaxA.value;
-			minV = isNaN(minV) ? +fareMinA.min : Math.max(+fareMinA.min, Math.min(minV, +fareMinA.max));
-			maxV = isNaN(maxV) ? +fareMaxA.max : Math.max(+fareMaxA.min, Math.min(maxV, +fareMaxA.max));
-			if (minV > maxV) minV = maxV;
-			if (maxV < minV) maxV = minV;
-			fareMinA.value = minV; fareMaxA.value = maxV;
-			inputMinA.value = minV; inputMaxA.value = maxV;
-			updateVisualA(minV, maxV);
-		}
+		// Slider listener
+		slider.addEventListener('input', () => {
+			let val = parseInt(slider.value);
+			if (isNaN(val)) val = 0;
+			val = Math.max(minShift, Math.min(val, maxShift));
+			val = Math.round(val / 10) * 10;
+			updateVisual(val);
+		});
 
-		// bind A events
-		fareMinA.addEventListener('input', syncSlidersA);
-		fareMaxA.addEventListener('input', syncSlidersA);
-		inputMinA.addEventListener('input', syncInputsA);
-		inputMaxA.addEventListener('input', syncInputsA);
+		// Reset button
+		document.querySelector('[data-reset="current_a_fare"]').addEventListener('click', () => {
+			updateVisual(0);
+		});
 
-		// thumb z-index swap
-		fareMinA.addEventListener('pointerdown', () => { fareMinA.style.zIndex = 3; fareMaxA.style.zIndex = 2; });
-		fareMaxA.addEventListener('pointerdown', () => { fareMaxA.style.zIndex = 3; fareMinA.style.zIndex = 2; });
+		// Dragging bar directly
+		let isDragging = false;
+		let startX = 0;
+		let startShift = 0;
 
-		// Initial state for A
-		fareMinA.value = 120;
-		fareMaxA.value = 390;
-		inputMinA.value = 120;
-		inputMaxA.value = 390;
-		updateVisualA(120, 390);
+		highlight.addEventListener('pointerdown', (e) => {
+			isDragging = true;
+			startX = e.clientX;
+			startShift = parseInt(slider.value);
+			highlight.setPointerCapture(e.pointerId);
+		});
 
-		document.querySelector('[data-reset="current_a_fare"]')
-			.addEventListener('click', () => {
-				fareMinA.value = 120;
-				fareMaxA.value = 390;
-				inputMinA.value = 120;
-				inputMaxA.value = 390;
-				updateVisualA(120, 390);
-			});
+		highlight.addEventListener('pointermove', (e) => {
+			if (!isDragging) return;
+			const dx = e.clientX - startX;
+			const trackWidth = slider.offsetWidth;
+			const ratio = dx / trackWidth;
+			const valueDelta = Math.round((ratio * 1000) / 10) * 10;
+
+			let newShift = startShift + valueDelta;
+			newShift = Math.max(minShift, Math.min(newShift, maxShift));
+			updateVisual(newShift);
+		});
+
+		highlight.addEventListener('pointerup', () => {
+			isDragging = false;
+		});
+
+		// Initialize
+		slider.setAttribute('min', minShift);
+		slider.setAttribute('max', maxShift);
+		slider.setAttribute('step', 10);
+		slider.value = 0;
+
+		inputShift.setAttribute('min', minShift);
+		inputShift.setAttribute('max', maxShift);
+		inputShift.setAttribute('step', 10);
+
+		updateVisual(0);
 	</script>
 
 
@@ -2356,15 +2352,15 @@
 		});
 	</script>
 	<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const breadcrumbLinks = document.querySelectorAll('.breadcrumb-arrow a');
-    breadcrumbLinks.forEach(link => {
-      link.addEventListener('click', function (e) {
-        e.preventDefault(); // Block navigation
-      });
-    });
-  });
-</script>
+		document.addEventListener("DOMContentLoaded", function () {
+			const breadcrumbLinks = document.querySelectorAll('.breadcrumb-arrow a');
+			breadcrumbLinks.forEach(link => {
+				link.addEventListener('click', function (e) {
+					e.preventDefault(); // Block navigation
+				});
+			});
+		});
+	</script>
 
 
 
