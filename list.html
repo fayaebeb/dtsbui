@@ -450,7 +450,16 @@
 			updateCompareButtonState(); // initial state
 		});
 	</script>
-
+	<script>
+		document.addEventListener("DOMContentLoaded", function () {
+			const breadcrumbLinks = document.querySelectorAll('.breadcrumb-arrow a');
+			breadcrumbLinks.forEach(link => {
+				link.addEventListener('click', function (e) {
+					e.preventDefault();
+				});
+			});
+		});
+	</script>
 
 
 

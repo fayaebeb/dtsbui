@@ -78,14 +78,14 @@
 		<main class="l-contents p-result__map">
 			<header class="l-contents__head">
 				<div class="breadcrumb-wrapper">
-  <nav class="breadcrumb-arrow" aria-label="ページ階層">
-    <ul>
-      <li class="step step-input"><a href="index.html">入力</a></li>
-      <li class="step step-results"><a href="results.html" aria-current="page">結果</a></li>
-      <li class="step step-list"><a href="list.html">結果一覧</a></li>
-    </ul>
-  </nav>
-</div>
+					<nav class="breadcrumb-arrow" aria-label="ページ階層">
+						<ul>
+							<li class="step step-input"><a href="index.html">入力</a></li>
+							<li class="step step-results"><a href="results.html" aria-current="page">結果</a></li>
+							<li class="step step-list"><a href="list.html">結果一覧</a></li>
+						</ul>
+					</nav>
+				</div>
 
 
 				<h1 class="l-contents__tit">結果</h1>
@@ -733,6 +733,16 @@
 			];
 			costChart.update();
 		}
+	</script>
+	<script>
+		document.addEventListener("DOMContentLoaded", function () {
+			const breadcrumbLinks = document.querySelectorAll('.breadcrumb-arrow a');
+			breadcrumbLinks.forEach(link => {
+				link.addEventListener('click', function (e) {
+					e.preventDefault(); // Block navigation
+				});
+			});
+		});
 	</script>
 </body>
 
