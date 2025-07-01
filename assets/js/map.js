@@ -1,22 +1,56 @@
-// 地図の作成
-var map = L.map('map', {minZoom: 9}).setView([34.41580706, 132.73627134], 14);
+var map = L.map('map', {minZoom: 9}).setView([31.5, 132.5], 8);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 	attribution: '© OpenStreetMap contributors',
 }).addTo(map);
 
-// レイヤー追加
-map.createPane('rectanglePane').style.zIndex = 430; //黒いレイヤー
-map.createPane('populationPane').style.zIndex = 450; //人口推計
-map.createPane('linePane').style.zIndex = 460; //路線
-map.createPane('circles').style.zIndex = 470; //賑わい
-map.createPane('commentaryPane').style.zIndex = 660; //解説
-map.createPane('meshPane').style.zIndex = 500; //メッシュ
+map.createPane('rectanglePane').style.zIndex = 430; 
+map.createPane('populationPane').style.zIndex = 450; 
+map.createPane('linePane').style.zIndex = 460; 
+map.createPane('circles').style.zIndex = 470; 
+map.createPane('commentaryPane').style.zIndex = 660; 
+map.createPane('meshPane').style.zIndex = 500; 
 document.addEventListener('DOMContentLoaded', function () {
-	map.createPane('selectRosen').style.zIndex = 480; //専用レーン
-	map.createPane('selectStop').style.zIndex = 490; //専用レーンバス停
+	map.createPane('selectRosen').style.zIndex = 480; 
+	map.createPane('selectStop').style.zIndex = 490; 
 });
 
-// 黒いレイヤーを表示
+let routeA; // MATSim route layer
+
+const routeCheckbox = document.getElementById('data_root');
+
+
+fetch("matsim_data/network_atlantis_reprojected.geojson")
+  .then((response) => response.json())
+  .then((data) => {
+    console.log("MATSim network loaded:", data.features.length, "features");
+    routeA = L.geoJSON(data, {
+      pane: "linePane",
+      style: {
+        color: "#31599E",
+        weight: 2,
+        opacity: 0.8,
+      },
+      onEachFeature: function (feature, layer) {
+        if (feature.properties && feature.properties.id) {
+          layer.bindTooltip(`Link ID: ${feature.properties.id}`, {
+            permanent: false,
+            direction: "top",
+            className: "l-contents__map-route",
+          });
+        }
+      },
+    });
+
+    // Optional: zoom to bounds
+    map.fitBounds(routeA.getBounds());
+
+    // If checkbox is already checked, add the layer
+    if (routeCheckbox.checked) {
+      routeA.addTo(map);
+    }
+  });
+
+
 let rectangle;
 let rectanglePane;
 function updateRectangle() {
@@ -36,9 +70,7 @@ updateRectangle();
 map.on('moveend zoomend', updateRectangle);
 window.addEventListener('resize', updateRectangle);
 
-// 路線の表示
-const fileRouteA = 'assets/data/BRT_route_a.geojson';
-const fileRouteB = 'assets/data/BRT_route_b.geojson';
+
 const fileStopA = 'assets/data/BRT_stops_a.geojson';
 const fileStopB = 'assets/data/BRT_stops_b.geojson';
 const routeDefault = '#CCC';//'#B7D1FF';
@@ -108,8 +140,6 @@ if (routeOpen && routeOpen.includes('_b')) {
 	currentB = false;
 }
 
-let routeA = L.geoJSON(null, { pane: "linePane", color: routeAcolor, weight: 3 }).addTo(map);
-let routeB = L.geoJSON(null, { pane: "linePane", color: routeBcolor, weight: 3 }).addTo(map);
 let stopsA = L.geoJSON(null, { pane: "linePane", pointToLayer: stopAstyle }).addTo(map);
 let stopsB = L.geoJSON(null, { pane: "linePane", pointToLayer: stopBstyle }).addTo(map);
 /* fetch(fileStopA).then(response => response.json()).then(data => {
@@ -166,51 +196,26 @@ fetch(fileStopB)
       }
     });
   });
-fetch(fileRouteA)
-	.then(response => response.json())
-	.then(data => {
-		routeA.addData(data);
-		const routeAName = data.name;
-		routeA.bindTooltip(routeAName, {
-			permanent: true,
-			direction: 'top',
-			offset: [0, -5],
-			className: 'l-contents__map-route ' + currentA
-		});
-	});
-fetch(fileRouteB)
-	.then(response => response.json())
-	.then(data => {
-		routeB.addData(data);
-		const routeBName = data.name;
-		routeB.bindTooltip(routeBName, {
-			permanent: true,
-			direction: 'top',
-			offset: [0, -5],
-			className: 'l-contents__map-route ' + currentB
-		});
-	});
-const routeCheckbox = document.getElementById('data_root');
+
 function routeCheckboxChange() {
-	const stopElements = document.querySelectorAll('.leaflet-commentary-pane .stop');
-	if (routeCheckbox.checked) {
-		routeA.addTo(map);
-		routeB.addTo(map);
-		stopsA.addTo(map);
-		stopsB.addTo(map);
-		stopElements.forEach(element => {
-			element.style.display = 'block';
-		});
-	} else {
-		routeA.remove();
-		routeB.remove();
-		stopsA.remove();
-		stopsB.remove();
-		stopElements.forEach(element => {
-			element.style.display = 'none';
-		});
-	}
+  const stopElements = document.querySelectorAll('.leaflet-commentary-pane .stop');
+  if (routeCheckbox.checked) {
+    if (routeA) routeA.addTo(map);
+    stopsA.addTo(map);
+    stopsB.addTo(map);
+    stopElements.forEach(element => {
+      element.style.display = 'block';
+    });
+  } else {
+    if (routeA) routeA.remove();
+    stopsA.remove();
+    stopsB.remove();
+    stopElements.forEach(element => {
+      element.style.display = 'none';
+    });
+  }
 }
+
 routeCheckboxChange();
 routeCheckbox.addEventListener('change', routeCheckboxChange);
 
