@@ -25,6 +25,7 @@ fetch("matsim_data/network_bus_and_rail.geojson")
 		console.log("✅ MATSim network loaded:", data.features.length, "features");
 		routeA = L.geoJSON(data, {
 			pane: "linePane",
+			renderer: L.canvas(),
 			style: {
 				color: "#31599E",
 				weight: 2,
