@@ -11,7 +11,6 @@ map.createPane('commentaryPane').style.zIndex = 660;
 map.createPane('meshPane').style.zIndex = 500;
 document.addEventListener('DOMContentLoaded', function () {
 	map.createPane('selectRosen').style.zIndex = 480;
-	map.createPane('selectStop').style.zIndex = 490;
 });
 
 let routeA; // MATSim route layer
@@ -70,150 +69,12 @@ updateRectangle();
 map.on('moveend zoomend', updateRectangle);
 window.addEventListener('resize', updateRectangle);
 
-
-const fileStopA = 'assets/data/BRT_stops_a.geojson';
-const fileStopB = 'assets/data/BRT_stops_b.geojson';
-const routeDefault = '#CCC';//'#B7D1FF';
-const routSelect = '#FAC09D';
-function stopDefault(feature, latlng) {
-	const marker = L.circleMarker(latlng, {
-		pane: "linePane",
-		radius: 5,
-		fillColor: '#FFF',
-		color: '#AAA',
-		weight: 1,
-		fillOpacity: 1
-	});
-	marker.bindTooltip(feature.properties.stop_name, {
-		permanent: true,
-		direction: 'bottom',
-		offset: [0, 0],
-		className: 'l-contents__map-stop'
-	});
-	return marker;
-}
-function stopSelect(feature, latlng) {
-	const icon = L.icon({
-		iconUrl: 'assets/image/ico_pin_02.svg',
-		iconSize: [24, 36],
-		iconAnchor: [12, 36],
-		popupAnchor: [1, -34]
-	});
-	const marker = L.marker(latlng, { pane: "linePane", icon: icon });
-	marker.bindTooltip(feature.properties.stop_name, {
-		permanent: true,
-		direction: 'bottom',
-		offset: [0, 0],
-		className: 'l-contents__map-stop current'
-	});
-	return marker;
-}
-
-let routeAcolor;
-let routeBcolor;
-let stopAstyle;
-let stopBstyle;
-let currentA;
-let currentB;
-let routeOpen;
-if (document.querySelector('.js-parameter-content')) {
-	routeOpen = document.querySelector('.js-parameter-content.current .js-route[open]').dataset.route;
-} else {
-	routeOpen = null;
-}
-if (routeOpen && routeOpen.includes('_a')) {
-	routeAcolor = routSelect;
-	stopAstyle = stopSelect;
-	currentA = 'current';
-} else {
-	routeAcolor = routeDefault;
-	stopAstyle = stopDefault;
-	currentA = false;
-}
-if (routeOpen && routeOpen.includes('_b')) {
-	routeBcolor = routSelect;
-	stopBstyle = stopSelect;
-	currentB = 'current';
-} else {
-	routeBcolor = routeDefault;
-	stopBstyle = stopDefault;
-	currentB = false;
-}
-
-
-let stopsA = L.geoJSON(null, { pane: "linePane", pointToLayer: stopAstyle }).addTo(map);
-let stopsB = L.geoJSON(null, { pane: "linePane", pointToLayer: stopBstyle }).addTo(map);
-/* fetch(fileStopA).then(response => response.json()).then(data => {
-	L.geoJSON(data, { pointToLayer: stopAstyle }).eachLayer(layer => {
-		stopsA.addLayer(layer);
-	});
-}); */
-fetch(fileStopA)
-	.then(response => response.json())
-	.then(data => {
-		L.geoJSON(data, {
-			pointToLayer: stopAstyle,
-			onEachFeature: function (feature, layer) {
-				if (feature.properties && feature.properties.comment && window.location.href.includes("results")) {
-					var commentaryMarker = L.marker(layer.getLatLng(), {
-						icon: L.divIcon({
-							className: `l-contents__map-hide`,
-							html: `<div class="l-contents__map-comment stop ${feature.properties.icon}">${feature.properties.comment}</div>`,
-							iconSize: [null, null], // 自動調整
-							iconAnchor: [0, 0] // テキストの左上を基準に配置
-						}),
-						pane: 'commentaryPane'
-					});
-					commentaryLayerGroup.addLayer(commentaryMarker);
-				}
-				stopsA.addLayer(layer);
-			}
-		});
-	});
-/* fetch(fileStopB).then(response => response.json()).then(data => {
-	L.geoJSON(data, { pointToLayer: stopBstyle }).eachLayer(layer => {
-		stopsB.addLayer(layer);
-	});
-}); */
-fetch(fileStopB)
-	.then(response => response.json())
-	.then(data => {
-		L.geoJSON(data, {
-			pointToLayer: stopBstyle,
-			onEachFeature: function (feature, layer) {
-				if (feature.properties && feature.properties.comment && window.location.href.includes("results")) {
-					var commentaryMarker = L.marker(layer.getLatLng(), {
-						icon: L.divIcon({
-							className: `l-contents__map-hide`,
-							html: `<div class="l-contents__map-comment stop ${feature.properties.icon}">${feature.properties.comment}</div>`,
-							iconSize: [null, null], // 自動調整
-							iconAnchor: [0, 0] // テキストの左上を基準に配置
-						}),
-						pane: 'commentaryPane'
-					});
-					commentaryLayerGroup.addLayer(commentaryMarker);
-				}
-				stopsB.addLayer(layer);
-			}
-		});
-	});
-
 function routeCheckboxChange() {
 	const stopElements = document.querySelectorAll('.leaflet-commentary-pane .stop');
 	if (routeCheckbox.checked) {
 		if (routeA) routeA.addTo(map);
-		stopsA.addTo(map);
-		stopsB.addTo(map);
-		stopElements.forEach(element => {
-			element.style.display = 'block';
-		});
 	} else {
 		if (routeA) routeA.remove();
-		stopsA.remove();
-		stopsB.remove();
-		stopElements.forEach(element => {
-			element.style.display = 'none';
-		});
 	}
 }
 
