@@ -19,10 +19,10 @@ let routeA; // MATSim route layer
 const routeCheckbox = document.getElementById('data_root');
 
 
-fetch("/matsim_data/network_atlantis_reprojected.geojson")
+fetch("matsim_data/network_atlantis_reprojected.geojson")
   .then((response) => response.json())
   .then((data) => {
-    console.log("MATSim network loaded:", data.features.length, "features");
+    console.log("✅ MATSim network loaded:", data.features.length, "features");
     routeA = L.geoJSON(data, {
       pane: "linePane",
       style: {
@@ -139,6 +139,7 @@ if (routeOpen && routeOpen.includes('_b')) {
 	stopBstyle = stopDefault;
 	currentB = false;
 }
+
 
 let stopsA = L.geoJSON(null, { pane: "linePane", pointToLayer: stopAstyle }).addTo(map);
 let stopsB = L.geoJSON(null, { pane: "linePane", pointToLayer: stopBstyle }).addTo(map);
