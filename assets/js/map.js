@@ -19,7 +19,7 @@ let routeA; // MATSim route layer
 const routeCheckbox = document.getElementById('data_root');
 
 
-fetch("matsim_data/network_atlantis_reprojected.geojson")
+fetch("/matsim_data/network_atlantis_reprojected.geojson")
   .then((response) => response.json())
   .then((data) => {
     console.log("MATSim network loaded:", data.features.length, "features");
