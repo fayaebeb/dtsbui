@@ -522,31 +522,25 @@
 												</div>
 
 												<div class="c-input__range-minmax u-en">
-													<span class="js-range-min">0</span>
-													<span class="js-range-max">1000</span>
+													<span>0</span><span style="float:right;">1000</span>
 												</div>
 
-												<div class="c-input__range-wrap dual">
-													<!-- B-specific IDs here: -->
-													<input type="range" id="fareRangeMinB" min="0" max="1000"
-														value="120" class="c-input__range-slider js-range-slider" />
-													<input type="range" id="fareRangeMaxB" min="0" max="1000"
-														value="390" class="c-input__range-slider js-range-slider" />
-													<i class="c-input__range-mark js-range-mark equal"></i>
+												<div class="c-input__range-wrap">
+													<div class="range-track"></div>
+													<div class="range-highlight js-range-mark"></div>
+													<input type="range" id="rangeSlider_current_b_fare" step="10" />
 												</div>
 
 												<div class="fare-inputs u-en">
-													<input type="number" id="fareMinInputB" value="120" min="0"
-														max="1000"> 円 ～
-													<input type="number" id="fareMaxInputB" value="390" min="0"
-														max="1000"> 円
+													<input type="number" id="fareShiftInput_current_b_fare" step="10"> 円
+													～
 												</div>
 
-												<!-- hidden for form submission -->
 												<input type="hidden" name="current_b_fare_min"
-													id="current_b_fare_min_hidden" value="120">
+													id="current_b_fare_min_hidden">
 												<input type="hidden" name="current_b_fare_max"
-													id="current_b_fare_max_hidden" value="390">
+													id="current_b_fare_max_hidden">
+
 												<span
 													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
 											</div>
@@ -756,10 +750,8 @@
 											<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="scenario01_a_fare">リセット</span>
 										</dt>
-
 										<dd class="c-input__range" id="scenario01_a_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
-
 											<div class="c-input__range-container js-range">
 												<div class="c-input__range-display u-en js-range-change"
 													aria-label="Fare range">
@@ -771,32 +763,24 @@
 												</div>
 
 												<div class="c-input__range-minmax u-en">
-													<span class="js-range-min">0</span>
-													<span class="js-range-max">1000</span>
+													<span>0</span><span style="float:right;">1000</span>
 												</div>
 
-												<div class="c-input__range-wrap dual">
-													<input type="range" id="fareRangeMin_scenario01_a" min="0"
-														max="1000" value="140"
-														class="c-input__range-slider js-range-slider" />
-													<input type="range" id="fareRangeMax_scenario01_a" min="0"
-														max="1000" value="410"
-														class="c-input__range-slider js-range-slider" />
-													<i class="c-input__range-mark js-range-mark equal"></i>
+												<div class="c-input__range-wrap">
+													<div class="range-track"></div>
+													<div class="range-highlight js-range-mark"></div>
+													<input type="range" id="rangeSlider_scenario01_a_fare" step="10" />
 												</div>
 
 												<div class="fare-inputs u-en">
-													<input type="number" id="fareMinInput_scenario01_a" value="140"
-														min="0" max="1000"> 円 ～
-													<input type="number" id="fareMaxInput_scenario01_a" value="410"
-														min="0" max="1000"> 円
+													<input type="number" id="fareShiftInput_scenario01_a_fare"
+														step="10"> 円 ～
 												</div>
 
-												<!-- hidden inputs to preserve form data -->
 												<input type="hidden" name="scenario01_a_fare_min"
-													id="scenario01_a_fare_min" value="140">
+													id="scenario01_a_fare_min_hidden">
 												<input type="hidden" name="scenario01_a_fare_max"
-													id="scenario01_a_fare_max" value="410">
+													id="scenario01_a_fare_max_hidden">
 
 												<span
 													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
@@ -1017,38 +1001,29 @@
 												</div>
 
 												<div class="c-input__range-minmax u-en">
-													<span class="js-range-min">0</span>
-													<span class="js-range-max">1000</span>
+													<span>0</span><span style="float:right;">1000</span>
 												</div>
 
-												<div class="c-input__range-wrap dual">
-													<input type="range" id="fareRangeMin_scenario01_b" min="0"
-														max="1000" value="120"
-														class="c-input__range-slider js-range-slider" />
-													<input type="range" id="fareRangeMax_scenario01_b" min="0"
-														max="1000" value="390"
-														class="c-input__range-slider js-range-slider" />
-													<i class="c-input__range-mark js-range-mark equal"></i>
+												<div class="c-input__range-wrap">
+													<div class="range-track"></div>
+													<div class="range-highlight js-range-mark"></div>
+													<input type="range" id="rangeSlider_scenario01_b_fare" step="10" />
 												</div>
 
 												<div class="fare-inputs u-en">
-													<input type="number" id="fareMinInput_scenario01_b" value="120"
-														min="0" max="1000"> 円 ～
-													<input type="number" id="fareMaxInput_scenario01_b" value="390"
-														min="0" max="1000"> 円
+													<input type="number" id="fareShiftInput_scenario01_b_fare"
+														step="10"> 円 ～
 												</div>
 
-												<!-- Hidden for form submission -->
 												<input type="hidden" name="scenario01_b_fare_min"
-													id="scenario01_b_fare_min" value="120">
+													id="scenario01_b_fare_min_hidden">
 												<input type="hidden" name="scenario01_b_fare_max"
-													id="scenario01_b_fare_max" value="390">
+													id="scenario01_b_fare_max_hidden">
 
 												<span
 													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
 											</div>
 										</dd>
-
 										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="scenario01_b_frequency">まとめてリセット</span></dt>
 										<dd id="scenario01_b_frequency">
@@ -1256,7 +1231,6 @@
 										</dt>
 										<dd class="c-input__range" id="scenario02_a_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
-
 											<div class="c-input__range-container js-range">
 												<div class="c-input__range-display u-en js-range-change"
 													aria-label="Fare range">
@@ -1264,36 +1238,31 @@
 													<span class="c-input__range-separator">〜</span>
 													<strong class="js-range-max-value">430</strong>
 													<span class="c-input__range-unit">円</span>
-													<small class="js-range-diff c-input__range-diff">(+40)</small>
+													<small class="js-range-diff c-input__range-diff">(±0)</small>
 												</div>
 
 												<div class="c-input__range-minmax u-en">
-													<span class="js-range-min">0</span>
-													<span class="js-range-max">1000</span>
+													<span>0</span><span style="float:right;">1000</span>
 												</div>
 
-												<div class="c-input__range-wrap dual">
-													<input type="range" id="fareRangeMin_scenario02_a" min="0"
-														max="1000" value="160"
-														class="c-input__range-slider js-range-slider" />
-													<input type="range" id="fareRangeMax_scenario02_a" min="0"
-														max="1000" value="430"
-														class="c-input__range-slider js-range-slider" />
-													<i class="c-input__range-mark js-range-mark equal"></i>
+												<div class="c-input__range-wrap">
+													<div class="range-track"></div>
+													<div class="range-highlight js-range-mark"></div>
+													<input type="range" id="rangeSlider_scenario02_a_fare" step="10" />
 												</div>
 
 												<div class="fare-inputs u-en">
-													<input type="number" id="fareMinInput_scenario02_a" value="160"
-														min="0" max="1000"> 円 ～
-													<input type="number" id="fareMaxInput_scenario02_a" value="430"
-														min="0" max="1000"> 円
+													<input type="number" id="fareShiftInput_scenario02_a_fare"
+														step="10"> 円 ～
 												</div>
 
-												<!-- Hidden inputs for form submission -->
 												<input type="hidden" name="scenario02_a_fare_min"
-													id="scenario02_a_fare_min" value="160">
+													id="scenario02_a_fare_min_hidden">
 												<input type="hidden" name="scenario02_a_fare_max"
-													id="scenario02_a_fare_max" value="430">
+													id="scenario02_a_fare_max_hidden">
+
+												<span
+													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
 											</div>
 										</dd>
 
@@ -1500,7 +1469,6 @@
 										</dt>
 										<dd class="c-input__range" id="scenario02_b_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
-
 											<div class="c-input__range-container js-range">
 												<div class="c-input__range-display u-en js-range-change"
 													aria-label="Fare range">
@@ -1512,32 +1480,24 @@
 												</div>
 
 												<div class="c-input__range-minmax u-en">
-													<span class="js-range-min">0</span>
-													<span class="js-range-max">1000</span>
+													<span>0</span><span style="float:right;">1000</span>
 												</div>
 
-												<div class="c-input__range-wrap dual">
-													<input type="range" id="fareRangeMin_scenario02_b" min="0"
-														max="1000" value="120"
-														class="c-input__range-slider js-range-slider" />
-													<input type="range" id="fareRangeMax_scenario02_b" min="0"
-														max="1000" value="390"
-														class="c-input__range-slider js-range-slider" />
-													<i class="c-input__range-mark js-range-mark equal"></i>
+												<div class="c-input__range-wrap">
+													<div class="range-track"></div>
+													<div class="range-highlight js-range-mark"></div>
+													<input type="range" id="rangeSlider_scenario02_b_fare" step="10" />
 												</div>
 
 												<div class="fare-inputs u-en">
-													<input type="number" id="fareMinInput_scenario02_b" value="120"
-														min="0" max="1000"> 円 ～
-													<input type="number" id="fareMaxInput_scenario02_b" value="390"
-														min="0" max="1000"> 円
+													<input type="number" id="fareShiftInput_scenario02_b_fare"
+														step="10"> 円 ～
 												</div>
 
-												<!-- Hidden inputs for form submission -->
 												<input type="hidden" name="scenario02_b_fare_min"
-													id="scenario02_b_fare_min" value="120">
+													id="scenario02_b_fare_min_hidden">
 												<input type="hidden" name="scenario02_b_fare_max"
-													id="scenario02_b_fare_max" value="390">
+													id="scenario02_b_fare_max_hidden">
 
 												<span
 													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
@@ -1876,468 +1836,431 @@
 
 
 	<script>
-		const fareMinB = document.getElementById('fareRangeMinB');
-		const fareMaxB = document.getElementById('fareRangeMaxB');
-		const inputMinB = document.getElementById('fareMinInputB');
-		const inputMaxB = document.getElementById('fareMaxInputB');
-		const hiddenMinB = document.getElementById('current_b_fare_min_hidden');
-		const hiddenMaxB = document.getElementById('current_b_fare_max_hidden');
-		const rangeMarkB = document.querySelector('#current_b_fare .js-range-mark');
+		(function () {
+			const id = "current_b_fare";
+			const startBase = 120;
+			const endBase = 390;
+			const range = endBase - startBase;
+			const minShift = -startBase;
+			const maxShift = 1000 - endBase;
 
-		function updateVisualB(minVal, maxVal) {
-			const total = +fareMinB.max - +fareMinB.min;
-			const pctMin = ((minVal - +fareMinB.min) / total) * 100;
-			const pctMax = ((maxVal - +fareMinB.min) / total) * 100;
+			const input = document.getElementById(`fareShiftInput_${id}`);
+			const slider = document.getElementById(`rangeSlider_${id}`);
+			const mark = document.querySelector(`#${id} .js-range-mark`);
+			const displayMin = document.querySelector(`#${id} .js-range-min-value`);
+			const displayMax = document.querySelector(`#${id} .js-range-max-value`);
+			const diff = document.querySelector(`#${id} .js-range-diff`);
+			const hiddenMin = document.getElementById(`${id}_min_hidden`);
+			const hiddenMax = document.getElementById(`${id}_max_hidden`);
 
-			rangeMarkB.style.left = pctMin + '%';
-			rangeMarkB.style.width = (pctMax - pctMin) + '%';
+			function update(val) {
+				const shift = parseInt(val);
+				const s = startBase + shift;
+				const e = s + range;
+				const pctLeft = (s / 1000) * 100;
+				const pctWidth = (range / 1000) * 100;
 
-			document.querySelector('#current_b_fare .js-range-min-value').textContent = minVal;
-			document.querySelector('#current_b_fare .js-range-max-value').textContent = maxVal;
-			document.querySelector('#current_b_fare .js-range-diff').textContent = `(±${maxVal - minVal})`;
+				mark.style.left = pctLeft + "%";
+				mark.style.width = pctWidth + "%";
 
-			hiddenMinB.value = minVal;
-			hiddenMaxB.value = maxVal;
-		}
+				displayMin.textContent = s;
+				displayMax.textContent = e;
+				input.value = shift;
+				slider.value = shift;
+				hiddenMin.value = s;
+				hiddenMax.value = e;
 
-		function syncSlidersB() {
-			let minV = +fareMinB.value, maxV = +fareMaxB.value;
-			if (minV > maxV) { minV = maxV; fareMinB.value = minV; }
-			if (maxV < minV) { maxV = minV; fareMaxB.value = maxV; }
-			inputMinB.value = minV;
-			inputMaxB.value = maxV;
-			updateVisualB(minV, maxV);
-		}
+				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
+			}
 
-		function syncInputsB() {
-			let minV = +inputMinB.value, maxV = +inputMaxB.value;
-			minV = isNaN(minV) ? +fareMinB.min : Math.max(+fareMinB.min, Math.min(minV, +fareMinB.max));
-			maxV = isNaN(maxV) ? +fareMaxB.max : Math.max(+fareMaxB.min, Math.min(maxV, +fareMaxB.max));
-			if (minV > maxV) minV = maxV;
-			if (maxV < minV) maxV = minV;
-			fareMinB.value = minV; fareMaxB.value = maxV;
-			inputMinB.value = minV; inputMaxB.value = maxV;
-			updateVisualB(minV, maxV);
-		}
-
-		// bind events for B
-		fareMinB.addEventListener('input', syncSlidersB);
-		fareMaxB.addEventListener('input', syncSlidersB);
-		inputMinB.addEventListener('input', syncInputsB);
-		inputMaxB.addEventListener('input', syncInputsB);
-
-		// keep thumb on top when dragging
-		fareMinB.addEventListener('pointerdown', () => {
-			fareMinB.style.zIndex = 3;
-			fareMaxB.style.zIndex = 2;
-		});
-		fareMaxB.addEventListener('pointerdown', () => {
-			fareMaxB.style.zIndex = 3;
-			fareMinB.style.zIndex = 2;
-		});
-
-		// initialize B on load
-		fareMinB.value = 120;
-		fareMaxB.value = 390;
-		inputMinB.value = 120;
-		inputMaxB.value = 390;
-		updateVisualB(120, 390);
-
-		// reset button for B
-		document.querySelector('[data-reset="current_b_fare"]')
-			.addEventListener('click', () => {
-				fareMinB.value = 120;
-				fareMaxB.value = 390;
-				inputMinB.value = 120;
-				inputMaxB.value = 390;
-				updateVisualB(120, 390);
+			input.setAttribute("min", minShift);
+			input.setAttribute("max", maxShift);
+			input.setAttribute("step", 10);
+			input.value = 0;
+			input.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
+				update(v);
 			});
+
+			slider.setAttribute("min", minShift);
+			slider.setAttribute("max", maxShift);
+			slider.setAttribute("step", 10);
+			slider.value = 0;
+			slider.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
+				update(v);
+			});
+
+			document.querySelector(`[data-reset="${id}"]`).addEventListener("click", () => update(0));
+
+			// drag bar
+			let isDragging = false;
+			let startX = 0;
+			let startVal = 0;
+
+			mark.addEventListener("pointerdown", (e) => {
+				isDragging = true;
+				startX = e.clientX;
+				startVal = parseInt(slider.value);
+				mark.setPointerCapture(e.pointerId);
+			});
+
+			mark.addEventListener("pointermove", (e) => {
+				if (!isDragging) return;
+				const dx = e.clientX - startX;
+				const ratio = dx / slider.offsetWidth;
+				const delta = Math.round((ratio * 1000) / 10) * 10;
+				update(Math.max(minShift, Math.min(startVal + delta, maxShift)));
+			});
+
+			mark.addEventListener("pointerup", () => {
+				isDragging = false;
+			});
+
+			update(0);
+		})();
 	</script>
 
 	<script>
-		const minSlider = document.getElementById('fareRangeMin_scenario01_a');
-		const maxSlider = document.getElementById('fareRangeMax_scenario01_a');
-		const minInput = document.getElementById('fareMinInput_scenario01_a');
-		const maxInput = document.getElementById('fareMaxInput_scenario01_a');
-		const hiddenMin = document.getElementById('scenario01_a_fare_min');
-		const hiddenMax = document.getElementById('scenario01_a_fare_max');
-		const mark = document.querySelector('#scenario01_a_fare .js-range-mark');
+		(function () {
+			const id = "scenario01_a_fare";
+			const startBase = 140;
+			const endBase = 410;
+			const range = endBase - startBase;
+			const minShift = -startBase;
+			const maxShift = 1000 - endBase;
 
-		function updateScenario01Visual(minVal, maxVal) {
-			const total = +minSlider.max - +minSlider.min;
-			const pctMin = ((minVal - +minSlider.min) / total) * 100;
-			const pctMax = ((maxVal - +minSlider.min) / total) * 100;
-			mark.style.left = pctMin + '%';
-			mark.style.width = (pctMax - pctMin) + '%';
+			const input = document.getElementById(`fareShiftInput_${id}`);
+			const slider = document.getElementById(`rangeSlider_${id}`);
+			const mark = document.querySelector(`#${id} .js-range-mark`);
+			const displayMin = document.querySelector(`#${id} .js-range-min-value`);
+			const displayMax = document.querySelector(`#${id} .js-range-max-value`);
+			const diff = document.querySelector(`#${id} .js-range-diff`);
+			const hiddenMin = document.getElementById(`${id}_min_hidden`);
+			const hiddenMax = document.getElementById(`${id}_max_hidden`);
 
-			document.querySelector('#scenario01_a_fare .js-range-min-value').textContent = minVal;
-			document.querySelector('#scenario01_a_fare .js-range-max-value').textContent = maxVal;
-			document.querySelector('#scenario01_a_fare .js-range-diff').textContent = `(±${maxVal - minVal})`;
+			function update(val) {
+				const shift = parseInt(val);
+				const s = startBase + shift;
+				const e = s + range;
+				const pctLeft = (s / 1000) * 100;
+				const pctWidth = (range / 1000) * 100;
 
-			hiddenMin.value = minVal;
-			hiddenMax.value = maxVal;
-		}
+				mark.style.left = pctLeft + "%";
+				mark.style.width = pctWidth + "%";
 
-		function syncScenario01FromSliders() {
-			let minVal = +minSlider.value;
-			let maxVal = +maxSlider.value;
-			if (minVal > maxVal) {
-				minVal = maxVal;
-				minSlider.value = minVal;
+				displayMin.textContent = s;
+				displayMax.textContent = e;
+				input.value = shift;
+				slider.value = shift;
+				hiddenMin.value = s;
+				hiddenMax.value = e;
+
+				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
 			}
-			if (maxVal < minVal) {
-				maxVal = minVal;
-				maxSlider.value = maxVal;
-			}
-			minInput.value = minVal;
-			maxInput.value = maxVal;
-			updateScenario01Visual(minVal, maxVal);
-		}
 
-		function syncScenario01FromInputs() {
-			let minVal = +minInput.value;
-			let maxVal = +maxInput.value;
-
-			minVal = isNaN(minVal) ? +minSlider.min : Math.max(+minSlider.min, Math.min(minVal, +minSlider.max));
-			maxVal = isNaN(maxVal) ? +maxSlider.max : Math.max(+maxSlider.min, Math.min(maxVal, +maxSlider.max));
-
-			if (minVal > maxVal) minVal = maxVal;
-			if (maxVal < minVal) maxVal = minVal;
-
-			minSlider.value = minVal;
-			maxSlider.value = maxVal;
-			minInput.value = minVal;
-			maxInput.value = maxVal;
-			updateScenario01Visual(minVal, maxVal);
-		}
-
-		// Z-index behavior
-		minSlider.addEventListener('pointerdown', () => {
-			minSlider.style.zIndex = 3;
-			maxSlider.style.zIndex = 2;
-		});
-
-		maxSlider.addEventListener('pointerdown', () => {
-			maxSlider.style.zIndex = 3;
-			minSlider.style.zIndex = 2;
-		});
-
-		// Bind events
-		minSlider.addEventListener('input', syncScenario01FromSliders);
-		maxSlider.addEventListener('input', syncScenario01FromSliders);
-		minInput.addEventListener('input', syncScenario01FromInputs);
-		maxInput.addEventListener('input', syncScenario01FromInputs);
-
-		// Initial setup
-		minSlider.value = 140;
-		maxSlider.value = 410;
-		minInput.value = 140;
-		maxInput.value = 410;
-		updateScenario01Visual(140, 410);
-
-		// Reset button
-		document.querySelector('[data-reset="scenario01_a_fare"]')
-			.addEventListener('click', () => {
-				minSlider.value = 120;
-				maxSlider.value = 390;
-				minInput.value = 120;
-				maxInput.value = 390;
-				updateScenario01Visual(120, 390);
+			input.setAttribute("min", minShift);
+			input.setAttribute("max", maxShift);
+			input.setAttribute("step", 10);
+			input.value = 0;
+			input.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
+				update(v);
 			});
+
+			slider.setAttribute("min", minShift);
+			slider.setAttribute("max", maxShift);
+			slider.setAttribute("step", 10);
+			slider.value = 0;
+			slider.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
+				update(v);
+			});
+
+			document.querySelector(`[data-reset="${id}"]`).addEventListener("click", () => update(0));
+
+			// drag bar
+			let isDragging = false;
+			let startX = 0;
+			let startVal = 0;
+
+			mark.addEventListener("pointerdown", (e) => {
+				isDragging = true;
+				startX = e.clientX;
+				startVal = parseInt(slider.value);
+				mark.setPointerCapture(e.pointerId);
+			});
+
+			mark.addEventListener("pointermove", (e) => {
+				if (!isDragging) return;
+				const dx = e.clientX - startX;
+				const ratio = dx / slider.offsetWidth;
+				const delta = Math.round((ratio * 1000) / 10) * 10;
+				update(Math.max(minShift, Math.min(startVal + delta, maxShift)));
+			});
+
+			mark.addEventListener("pointerup", () => {
+				isDragging = false;
+			});
+
+			update(0);
+		})();
 	</script>
 
 	<script>
-		const fareMinB2 = document.getElementById('fareRangeMin_scenario01_b');
-		const fareMaxB2 = document.getElementById('fareRangeMax_scenario01_b');
-		const inputMinB2 = document.getElementById('fareMinInput_scenario01_b');
-		const inputMaxB2 = document.getElementById('fareMaxInput_scenario01_b');
-		const hiddenMinB2 = document.getElementById('scenario01_b_fare_min');
-		const hiddenMaxB2 = document.getElementById('scenario01_b_fare_max');
-		const rangeMarkB2 = document.querySelector('#scenario01_b_fare .js-range-mark');
+		(function () {
+			const id = "scenario01_b_fare";
+			const startBase = 120;
+			const endBase = 390;
+			const range = endBase - startBase;
+			const minShift = -startBase;
+			const maxShift = 1000 - endBase;
 
-		function updateVisualB2(minVal, maxVal) {
-			const total = +fareMinB2.max - +fareMinB2.min;
-			const pctMin = ((minVal - +fareMinB2.min) / total) * 100;
-			const pctMax = ((maxVal - +fareMinB2.min) / total) * 100;
+			const input = document.getElementById(`fareShiftInput_${id}`);
+			const slider = document.getElementById(`rangeSlider_${id}`);
+			const mark = document.querySelector(`#${id} .js-range-mark`);
+			const displayMin = document.querySelector(`#${id} .js-range-min-value`);
+			const displayMax = document.querySelector(`#${id} .js-range-max-value`);
+			const diff = document.querySelector(`#${id} .js-range-diff`);
+			const hiddenMin = document.getElementById(`${id}_min_hidden`);
+			const hiddenMax = document.getElementById(`${id}_max_hidden`);
 
-			rangeMarkB2.style.left = pctMin + '%';
-			rangeMarkB2.style.width = (pctMax - pctMin) + '%';
+			function update(val) {
+				const shift = parseInt(val);
+				const s = startBase + shift;
+				const e = s + range;
+				const pctLeft = (s / 1000) * 100;
+				const pctWidth = (range / 1000) * 100;
 
-			document.querySelector('#scenario01_b_fare .js-range-min-value').textContent = minVal;
-			document.querySelector('#scenario01_b_fare .js-range-max-value').textContent = maxVal;
-			document.querySelector('#scenario01_b_fare .js-range-diff').textContent = `(±${maxVal - minVal})`;
+				mark.style.left = pctLeft + "%";
+				mark.style.width = pctWidth + "%";
 
-			hiddenMinB2.value = minVal;
-			hiddenMaxB2.value = maxVal;
-		}
+				displayMin.textContent = s;
+				displayMax.textContent = e;
+				input.value = shift;
+				slider.value = shift;
+				hiddenMin.value = s;
+				hiddenMax.value = e;
 
-		function syncSlidersB2() {
-			let minVal = +fareMinB2.value;
-			let maxVal = +fareMaxB2.value;
-
-			if (minVal > maxVal) {
-				minVal = maxVal;
-				fareMinB2.value = minVal;
+				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
 			}
-			if (maxVal < minVal) {
-				maxVal = minVal;
-				fareMaxB2.value = maxVal;
-			}
 
-			inputMinB2.value = minVal;
-			inputMaxB2.value = maxVal;
-			updateVisualB2(minVal, maxVal);
-		}
-
-		function syncInputsB2() {
-			let minVal = +inputMinB2.value;
-			let maxVal = +inputMaxB2.value;
-
-			minVal = isNaN(minVal) ? +fareMinB2.min : Math.max(+fareMinB2.min, Math.min(minVal, +fareMinB2.max));
-			maxVal = isNaN(maxVal) ? +fareMaxB2.max : Math.max(+fareMaxB2.min, Math.min(maxVal, +fareMaxB2.max));
-
-			if (minVal > maxVal) minVal = maxVal;
-			if (maxVal < minVal) maxVal = minVal;
-
-			fareMinB2.value = minVal;
-			fareMaxB2.value = maxVal;
-			inputMinB2.value = minVal;
-			inputMaxB2.value = maxVal;
-			updateVisualB2(minVal, maxVal);
-		}
-
-		fareMinB2.addEventListener('input', syncSlidersB2);
-		fareMaxB2.addEventListener('input', syncSlidersB2);
-		inputMinB2.addEventListener('input', syncInputsB2);
-		inputMaxB2.addEventListener('input', syncInputsB2);
-
-		fareMinB2.addEventListener('pointerdown', () => {
-			fareMinB2.style.zIndex = 3;
-			fareMaxB2.style.zIndex = 2;
-		});
-
-		fareMaxB2.addEventListener('pointerdown', () => {
-			fareMaxB2.style.zIndex = 3;
-			fareMinB2.style.zIndex = 2;
-		});
-
-		// Initialize
-		fareMinB2.value = 120;
-		fareMaxB2.value = 390;
-		inputMinB2.value = 120;
-		inputMaxB2.value = 390;
-		updateVisualB2(120, 390);
-
-		// Reset
-		document.querySelector('[data-reset="scenario01_b_fare"]')
-			.addEventListener('click', () => {
-				fareMinB2.value = 120;
-				fareMaxB2.value = 390;
-				inputMinB2.value = 120;
-				inputMaxB2.value = 390;
-				updateVisualB2(120, 390);
+			input.setAttribute("min", minShift);
+			input.setAttribute("max", maxShift);
+			input.setAttribute("step", 10);
+			input.value = 0;
+			input.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
+				update(v);
 			});
+
+			slider.setAttribute("min", minShift);
+			slider.setAttribute("max", maxShift);
+			slider.setAttribute("step", 10);
+			slider.value = 0;
+			slider.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
+				update(v);
+			});
+
+			document.querySelector(`[data-reset="${id}"]`).addEventListener("click", () => update(0));
+
+			let isDragging = false;
+			let startX = 0;
+			let startVal = 0;
+
+			mark.addEventListener("pointerdown", (e) => {
+				isDragging = true;
+				startX = e.clientX;
+				startVal = parseInt(slider.value);
+				mark.setPointerCapture(e.pointerId);
+			});
+
+			mark.addEventListener("pointermove", (e) => {
+				if (!isDragging) return;
+				const dx = e.clientX - startX;
+				const ratio = dx / slider.offsetWidth;
+				const delta = Math.round((ratio * 1000) / 10) * 10;
+				update(Math.max(minShift, Math.min(startVal + delta, maxShift)));
+			});
+
+			mark.addEventListener("pointerup", () => {
+				isDragging = false;
+			});
+
+			update(0);
+		})();
 	</script>
 
 	<script>
-		const fareMin02A = document.getElementById('fareRangeMin_scenario02_a');
-		const fareMax02A = document.getElementById('fareRangeMax_scenario02_a');
-		const inputMin02A = document.getElementById('fareMinInput_scenario02_a');
-		const inputMax02A = document.getElementById('fareMaxInput_scenario02_a');
-		const hiddenMin02A = document.getElementById('scenario02_a_fare_min');
-		const hiddenMax02A = document.getElementById('scenario02_a_fare_max');
-		const mark02A = document.querySelector('#scenario02_a_fare .js-range-mark');
+		(function () {
+			const id = "scenario02_a_fare";
+			const startBase = 160;
+			const endBase = 430;
+			const range = endBase - startBase;
+			const minShift = -startBase;
+			const maxShift = 1000 - endBase;
 
-		const defaultMin = 120;
-		const defaultMax = 390;
+			const input = document.getElementById(`fareShiftInput_${id}`);
+			const slider = document.getElementById(`rangeSlider_${id}`);
+			const mark = document.querySelector(`#${id} .js-range-mark`);
+			const displayMin = document.querySelector(`#${id} .js-range-min-value`);
+			const displayMax = document.querySelector(`#${id} .js-range-max-value`);
+			const diff = document.querySelector(`#${id} .js-range-diff`);
+			const hiddenMin = document.getElementById(`${id}_min_hidden`);
+			const hiddenMax = document.getElementById(`${id}_max_hidden`);
 
-		function updateVisual02A(minVal, maxVal) {
-			const total = +fareMin02A.max - +fareMin02A.min;
-			const pctMin = ((minVal - +fareMin02A.min) / total) * 100;
-			const pctMax = ((maxVal - +fareMin02A.min) / total) * 100;
+			function update(val) {
+				const shift = parseInt(val);
+				const s = startBase + shift;
+				const e = s + range;
+				const pctLeft = (s / 1000) * 100;
+				const pctWidth = (range / 1000) * 100;
 
-			mark02A.style.left = pctMin + '%';
-			mark02A.style.width = (pctMax - pctMin) + '%';
+				mark.style.left = pctLeft + "%";
+				mark.style.width = pctWidth + "%";
 
-			document.querySelector('#scenario02_a_fare .js-range-min-value').textContent = minVal;
-			document.querySelector('#scenario02_a_fare .js-range-max-value').textContent = maxVal;
+				displayMin.textContent = s;
+				displayMax.textContent = e;
+				input.value = shift;
+				slider.value = shift;
+				hiddenMin.value = s;
+				hiddenMax.value = e;
 
-			const delta = (maxVal - defaultMax) + (minVal - defaultMin);
-			const diffText = delta === 0 ? '(±0)' : (delta > 0 ? `(+${delta})` : `(${delta})`);
-			document.querySelector('#scenario02_a_fare .js-range-diff').textContent = diffText;
-
-			hiddenMin02A.value = minVal;
-			hiddenMax02A.value = maxVal;
-		}
-
-		function syncSliders02A() {
-			let minVal = +fareMin02A.value;
-			let maxVal = +fareMax02A.value;
-
-			if (minVal > maxVal) {
-				minVal = maxVal;
-				fareMin02A.value = minVal;
-			}
-			if (maxVal < minVal) {
-				maxVal = minVal;
-				fareMax02A.value = maxVal;
+				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
 			}
 
-			inputMin02A.value = minVal;
-			inputMax02A.value = maxVal;
-			updateVisual02A(minVal, maxVal);
-		}
-
-		function syncInputs02A() {
-			let minVal = +inputMin02A.value;
-			let maxVal = +inputMax02A.value;
-
-			minVal = isNaN(minVal) ? +fareMin02A.min : Math.max(+fareMin02A.min, Math.min(minVal, +fareMin02A.max));
-			maxVal = isNaN(maxVal) ? +fareMax02A.max : Math.max(+fareMax02A.min, Math.min(maxVal, +fareMax02A.max));
-
-			if (minVal > maxVal) minVal = maxVal;
-			if (maxVal < minVal) maxVal = minVal;
-
-			fareMin02A.value = minVal;
-			fareMax02A.value = maxVal;
-			inputMin02A.value = minVal;
-			inputMax02A.value = maxVal;
-
-			updateVisual02A(minVal, maxVal);
-		}
-
-		// Events
-		fareMin02A.addEventListener('input', syncSliders02A);
-		fareMax02A.addEventListener('input', syncSliders02A);
-		inputMin02A.addEventListener('input', syncInputs02A);
-		inputMax02A.addEventListener('input', syncInputs02A);
-
-		fareMin02A.addEventListener('pointerdown', () => {
-			fareMin02A.style.zIndex = 3;
-			fareMax02A.style.zIndex = 2;
-		});
-
-		fareMax02A.addEventListener('pointerdown', () => {
-			fareMax02A.style.zIndex = 3;
-			fareMin02A.style.zIndex = 2;
-		});
-
-		// Initial State
-		fareMin02A.value = 160;
-		fareMax02A.value = 430;
-		inputMin02A.value = 160;
-		inputMax02A.value = 430;
-		updateVisual02A(160, 430);
-
-		// Reset
-		document.querySelector('[data-reset="scenario02_a_fare"]')
-			.addEventListener('click', () => {
-				fareMin02A.value = defaultMin;
-				fareMax02A.value = defaultMax;
-				inputMin02A.value = defaultMin;
-				inputMax02A.value = defaultMax;
-				updateVisual02A(defaultMin, defaultMax);
+			input.setAttribute("min", minShift);
+			input.setAttribute("max", maxShift);
+			input.setAttribute("step", 10);
+			input.value = 0;
+			input.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
+				update(v);
 			});
+
+			slider.setAttribute("min", minShift);
+			slider.setAttribute("max", maxShift);
+			slider.setAttribute("step", 10);
+			slider.value = 0;
+			slider.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
+				update(v);
+			});
+
+			document.querySelector(`[data-reset="${id}"]`).addEventListener("click", () => update(0));
+
+			// drag bar
+			let isDragging = false;
+			let startX = 0;
+			let startVal = 0;
+
+			mark.addEventListener("pointerdown", (e) => {
+				isDragging = true;
+				startX = e.clientX;
+				startVal = parseInt(slider.value);
+				mark.setPointerCapture(e.pointerId);
+			});
+
+			mark.addEventListener("pointermove", (e) => {
+				if (!isDragging) return;
+				const dx = e.clientX - startX;
+				const ratio = dx / slider.offsetWidth;
+				const delta = Math.round((ratio * 1000) / 10) * 10;
+				update(Math.max(minShift, Math.min(startVal + delta, maxShift)));
+			});
+
+			mark.addEventListener("pointerup", () => {
+				isDragging = false;
+			});
+
+			update(0);
+		})();
 	</script>
 
 	<script>
-		const fareMin02B = document.getElementById('fareRangeMin_scenario02_b');
-		const fareMax02B = document.getElementById('fareRangeMax_scenario02_b');
-		const inputMin02B = document.getElementById('fareMinInput_scenario02_b');
-		const inputMax02B = document.getElementById('fareMaxInput_scenario02_b');
-		const hiddenMin02B = document.getElementById('scenario02_b_fare_min');
-		const hiddenMax02B = document.getElementById('scenario02_b_fare_max');
-		const mark02B = document.querySelector('#scenario02_b_fare .js-range-mark');
+		(function () {
+			const id = "scenario02_b_fare";
+			const startBase = 120;
+			const endBase = 390;
+			const range = endBase - startBase;
+			const minShift = -startBase;
+			const maxShift = 1000 - endBase;
 
-		const defaultMinB = 120;
-		const defaultMaxB = 390;
+			const input = document.getElementById(`fareShiftInput_${id}`);
+			const slider = document.getElementById(`rangeSlider_${id}`);
+			const mark = document.querySelector(`#${id} .js-range-mark`);
+			const displayMin = document.querySelector(`#${id} .js-range-min-value`);
+			const displayMax = document.querySelector(`#${id} .js-range-max-value`);
+			const diff = document.querySelector(`#${id} .js-range-diff`);
+			const hiddenMin = document.getElementById(`${id}_min_hidden`);
+			const hiddenMax = document.getElementById(`${id}_max_hidden`);
 
-		function updateVisual02B(minVal, maxVal) {
-			const total = +fareMin02B.max - +fareMin02B.min;
-			const pctMin = ((minVal - +fareMin02B.min) / total) * 100;
-			const pctMax = ((maxVal - +fareMin02B.min) / total) * 100;
+			function update(val) {
+				const shift = parseInt(val);
+				const s = startBase + shift;
+				const e = s + range;
+				const pctLeft = (s / 1000) * 100;
+				const pctWidth = (range / 1000) * 100;
 
-			mark02B.style.left = pctMin + '%';
-			mark02B.style.width = (pctMax - pctMin) + '%';
+				mark.style.left = pctLeft + "%";
+				mark.style.width = pctWidth + "%";
 
-			document.querySelector('#scenario02_b_fare .js-range-min-value').textContent = minVal;
-			document.querySelector('#scenario02_b_fare .js-range-max-value').textContent = maxVal;
+				displayMin.textContent = s;
+				displayMax.textContent = e;
+				input.value = shift;
+				slider.value = shift;
+				hiddenMin.value = s;
+				hiddenMax.value = e;
 
-			const delta = (maxVal - defaultMaxB) + (minVal - defaultMinB);
-			const diffText = delta === 0 ? '(±0)' : (delta > 0 ? `(+${delta})` : `(${delta})`);
-			document.querySelector('#scenario02_b_fare .js-range-diff').textContent = diffText;
-
-			hiddenMin02B.value = minVal;
-			hiddenMax02B.value = maxVal;
-		}
-
-		function syncSliders02B() {
-			let minVal = +fareMin02B.value;
-			let maxVal = +fareMax02B.value;
-
-			if (minVal > maxVal) {
-				minVal = maxVal;
-				fareMin02B.value = minVal;
-			}
-			if (maxVal < minVal) {
-				maxVal = minVal;
-				fareMax02B.value = maxVal;
+				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
 			}
 
-			inputMin02B.value = minVal;
-			inputMax02B.value = maxVal;
-			updateVisual02B(minVal, maxVal);
-		}
-
-		function syncInputs02B() {
-			let minVal = +inputMin02B.value;
-			let maxVal = +inputMax02B.value;
-
-			minVal = isNaN(minVal) ? +fareMin02B.min : Math.max(+fareMin02B.min, Math.min(minVal, +fareMin02B.max));
-			maxVal = isNaN(maxVal) ? +fareMax02B.max : Math.max(+fareMax02B.min, Math.min(maxVal, +fareMax02B.max));
-
-			if (minVal > maxVal) minVal = maxVal;
-			if (maxVal < minVal) maxVal = minVal;
-
-			fareMin02B.value = minVal;
-			fareMax02B.value = maxVal;
-			inputMin02B.value = minVal;
-			inputMax02B.value = maxVal;
-			updateVisual02B(minVal, maxVal);
-		}
-
-		// Event bindings
-		fareMin02B.addEventListener('input', syncSliders02B);
-		fareMax02B.addEventListener('input', syncSliders02B);
-		inputMin02B.addEventListener('input', syncInputs02B);
-		inputMax02B.addEventListener('input', syncInputs02B);
-
-		fareMin02B.addEventListener('pointerdown', () => {
-			fareMin02B.style.zIndex = 3;
-			fareMax02B.style.zIndex = 2;
-		});
-
-		fareMax02B.addEventListener('pointerdown', () => {
-			fareMax02B.style.zIndex = 3;
-			fareMin02B.style.zIndex = 2;
-		});
-
-		// Initialize on load
-		fareMin02B.value = defaultMinB;
-		fareMax02B.value = defaultMaxB;
-		inputMin02B.value = defaultMinB;
-		inputMax02B.value = defaultMaxB;
-		updateVisual02B(defaultMinB, defaultMaxB);
-
-		// Reset
-		document.querySelector('[data-reset="scenario02_b_fare"]')
-			.addEventListener('click', () => {
-				fareMin02B.value = defaultMinB;
-				fareMax02B.value = defaultMaxB;
-				inputMin02B.value = defaultMinB;
-				inputMax02B.value = defaultMaxB;
-				updateVisual02B(defaultMinB, defaultMaxB);
+			input.setAttribute("min", minShift);
+			input.setAttribute("max", maxShift);
+			input.setAttribute("step", 10);
+			input.value = 0;
+			input.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
+				update(v);
 			});
+
+			slider.setAttribute("min", minShift);
+			slider.setAttribute("max", maxShift);
+			slider.setAttribute("step", 10);
+			slider.value = 0;
+			slider.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
+				update(v);
+			});
+
+			document.querySelector(`[data-reset="${id}"]`).addEventListener("click", () => update(0));
+
+			let isDragging = false;
+			let startX = 0;
+			let startVal = 0;
+
+			mark.addEventListener("pointerdown", (e) => {
+				isDragging = true;
+				startX = e.clientX;
+				startVal = parseInt(slider.value);
+				mark.setPointerCapture(e.pointerId);
+			});
+
+			mark.addEventListener("pointermove", (e) => {
+				if (!isDragging) return;
+				const dx = e.clientX - startX;
+				const ratio = dx / slider.offsetWidth;
+				const delta = Math.round((ratio * 1000) / 10) * 10;
+				update(Math.max(minShift, Math.min(startVal + delta, maxShift)));
+			});
+
+			mark.addEventListener("pointerup", () => {
+				isDragging = false;
+			});
+
+			update(0);
+		})();
 	</script>
 
 	<script>
