@@ -1,600 +1,620 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<title>【シミュレーション結果】デジタルツインサンドボックス</title>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="assets/js/leaflet/leaflet.css" />
-<link rel="stylesheet" href="assets/css/common.css" />
+	<title>【シミュレーション結果】デジタルツインサンドボックス</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="assets/js/leaflet/leaflet.css" />
+	<link rel="stylesheet" href="assets/css/common.css" />
 </head>
+
 <body>
-<div class="l-container js-menu-toggle p-result">
-	<header class="l-header">
-		<div class="l-header__tit js-menu-toggle">
-			<span class="l-header__tit-en">DTSB</span>
-			<h1 class="l-header__tit-jp">デジタルツインサンドボックス</h1>
-		</div>
-		<nav class="l-header__nav">
-			<a href="#" class="l-header__nav-link logout js-menu-toggle"><span>ログアウト</span></a>
-			<a href="./" class="l-header__nav-link simulation current js-menu-toggle js-menu-simulation"><span>シミュレーション</span></a>
-			<a href="list.html" class="l-header__nav-link results js-menu-toggle"><span>結果一覧</span></a>
-			<span class="l-header__nav-link menu js-menu-open js-menu-toggle"><span>メニューを閉じる</span></span>
-		</nav>
-	</header>
-	<main class="l-contents p-result__graph">
-		<header class="l-contents__head">
-			<h1 class="l-contents__tit">シミュレーション結果</h1>
-			<dl class="l-contents__dl">
-				<dt class="l-contents__dl-dt">総合評価</dt>
-				<dd class="l-contents__dl-dd l-contents__evaluation">
-					<ol class="l-contents__evaluation-star">
-						<li class="c-ico__star fill"></li>
-						<li class="c-ico__star fill"></li>
-						<li class="c-ico__star fill"></li>
-						<li class="c-ico__star fill"></li>
-						<li class="c-ico__star"></li>
-					</ol>
-					<span class="l-contents__evaluation-num u-en">4</span>
-				</dd>
-			</dl>
-			<dl class="l-contents__dl">
-				<dt class="l-contents__dl-dt">名称</dt>
-				<dd class="l-contents__dl-dd c-area__name js-name">
-					<input class="l-contents__name-input c-area__name-input js-name-input" type="text" name="analysis_title" value="○○を意識した解析" readonly>
-					<button class="l-contents__name-edit js-name-edit c-btn__edit" type="button"><img src="assets/image/ico_edit_01.svg" width="15" height="15" alt="編集"/></button>
-				</dd>
-			</dl>
-		</header>
-		<div class="l-contents__main column02">
-			<div class="l-contents__map">
-				<div class="l-contents__main-tit">
-					<h2 class="tit">地図</h2>
-					<small>※メッシュをクリックすると、メッシュごとの結果が表示されます。</small>
-					<!-- <label class="l-contents__main-mesh c-input__checkbox">メッシュ表示<i class="c-ico__loading js-mesh-loading hidden"></i><input class="js-mesh" type="checkbox" name="mesh" value="1"><i class="c-input__checkbox-switch"></i></label> -->
-				</div>
-				<div class="l-contents__map-load" id="map"></div>
-				<div class="l-contents__map-data">
-					<div class="scroll">
-						<span class="c-btn__small c-btn__small-black legends u-hover-op js-legends" data-fixed="legends">凡例</span>
-						<dl class="l-contents__map-view">
-							<dt>表示切替</dt>
-							<dd>
-								<label class="l-contents__map-btn">
-									<input type="checkbox" id="data_root" name="data_root" checked>
-									<span class="btn">路線</span>
-								</label>
-								<label class="l-contents__map-btn">
-									<input type="checkbox" id="data_commentary" name="data_commentary" checked>
-									<span class="btn">解説</span>
-								</label>
-								<label class="l-contents__map-btn">
-									<input type="checkbox" id="data_bustle" name="data_bustle" checked>
-									<span class="btn">にぎわい</span>
-								</label>
-								<label class="l-contents__map-btn">
-									<input type="checkbox" id="data_time" name="data_time">
-									<span class="btn">所用時間</span>
-								</label>
-								<label class="l-contents__map-btn">
-									<input type="checkbox" id="data_passengers" name="data_passengers">
-									<span class="btn">乗降客数</span>
-								</label>
-							</dd>
-						</dl>
-						<div class="l-contents__map-population">
-							<label class="l-contents__map-btn">
-								<input type="checkbox" class="js-population" name="data_population">
-								<span class="btn">人口推計</span>
-							</label>
-							<label class="l-contents__map-year">
-								<span class="tit">年代</span>
-								<div class="range-wrap">
-									<div class="years u-en">
-										<span class="min-value js-year-min">2015</span>
-										<span class="current-value js-year-current">2025</span>
-										<span class="max-value js-year-max">2050</span>
-									</div>
-									<div class="range-box">
-										<input class="range js-year" type="range" name="data_year" value="2025" min="2015" max="2050" step="5" />
-										<ul class="scale">
-											<li class="min"></li>
-											<li></li><li></li><li></li><li></li><li></li><li></li>
-											<li class="max"></li>
-										</ul>
-									</div>
-								</div>
-							</label>
-						</div>
-					</div>
-					<div class="l-contents__map-legends js-legends-contents">
-						<i class="close js-legends-close"></i>
-						<dl>
-							<dt>人口推計</dt>
-							<dd>
-								<ul class="population">
-									<li><span>0 - 10</span></li>
-									<li><span>11 - 50</span></li>
-									<li><span>51 - 100</span></li>
-									<li><span>101 - 200</span></li>
-									<li><span>201 - 300</span></li>
-									<li><span>301 - 600</span></li>
-									<li><span>601 - 1000</span></li>
-									<li><span>1001 - 2000</span></li>
-									<li><span>2001 - 5000</span></li>
-									<li><span>5001 - 7000</span></li>
-									<li><span>7001 以上</span></li>
-								</ul>
-							</dd>
-						</dl>
-					</div>
-				</div>
+	<div class="l-container js-menu-toggle p-result">
+		<header class="l-header">
+			<div class="l-header__tit js-menu-toggle">
+				<span class="l-header__tit-en">DTSB</span>
+				<h1 class="l-header__tit-jp">デジタルツインサンドボックス</h1>
 			</div>
-			<form class="l-contents__data" action="list.html">
-				<div class="l-contents__main-tit">
-					<h2 class="tit">グラフ</h2>
-					<a class="c-btn__small c-btn__small-black zoomout u-hover-op" href="results.html">グラフを小さく表示</a>
+			<nav class="l-header__nav">
+				<a href="#" class="l-header__nav-link logout js-menu-toggle"><span>ログアウト</span></a>
+				<a href="./"
+					class="l-header__nav-link simulation current js-menu-toggle js-menu-simulation"><span>シミュレーション</span></a>
+				<a href="list.html" class="l-header__nav-link results js-menu-toggle"><span>結果一覧</span></a>
+				<span class="l-header__nav-link menu js-menu-open js-menu-toggle"><span>メニューを閉じる</span></span>
+			</nav>
+		</header>
+		<main class="l-contents p-result__graph">
+			<header class="l-contents__head">
+				<h1 class="l-contents__tit">シミュレーション結果</h1>
+				<dl class="l-contents__dl">
+					<dt class="l-contents__dl-dt">総合評価</dt>
+					<dd class="l-contents__dl-dd l-contents__evaluation">
+						<ol class="l-contents__evaluation-star">
+							<li class="c-ico__star fill"></li>
+							<li class="c-ico__star fill"></li>
+							<li class="c-ico__star fill"></li>
+							<li class="c-ico__star fill"></li>
+							<li class="c-ico__star"></li>
+						</ol>
+						<span class="l-contents__evaluation-num u-en">4</span>
+					</dd>
+				</dl>
+				<dl class="l-contents__dl">
+					<dt class="l-contents__dl-dt">名称</dt>
+					<dd class="l-contents__dl-dd c-area__name js-name">
+						<input class="l-contents__name-input c-area__name-input js-name-input" type="text"
+							name="analysis_title" value="○○を意識した解析" readonly>
+						<button class="l-contents__name-edit js-name-edit c-btn__edit" type="button"><img
+								src="assets/image/ico_edit_01.svg" width="15" height="15" alt="編集" /></button>
+					</dd>
+				</dl>
+			</header>
+			<div class="l-contents__main column02">
+				<div class="l-contents__map">
+					<div class="l-contents__main-tit">
+						<h2 class="tit">地図</h2>
+						<small>※メッシュをクリックすると、メッシュごとの結果が表示されます。</small>
+						<!-- <label class="l-contents__main-mesh c-input__checkbox">メッシュ表示<i class="c-ico__loading js-mesh-loading hidden"></i><input class="js-mesh" type="checkbox" name="mesh" value="1"><i class="c-input__checkbox-switch"></i></label> -->
+					</div>
+					<div class="l-contents__map-load" id="map"></div>
+					<div class="l-contents__map-data">
+						<div class="scroll">
+							<button type="button" class="c-btn__small c-btn__small-black legends u-hover-op js-legends"
+								data-fixed="legends">
+								凡例
+							</button>
+							<dl class="l-contents__map-view">
+								<dt>表示切替</dt>
+								<dd>
+									<label class="l-contents__map-btn">
+										<input type="checkbox" id="data_root" name="data_root" checked>
+										<span class="btn">路線</span>
+									</label>
+									<label class="l-contents__map-btn">
+										<input type="checkbox" id="data_commentary" name="data_commentary" checked>
+										<span class="btn">解説</span>
+									</label>
+									<label class="l-contents__map-btn">
+										<input type="checkbox" id="data_bustle" name="data_bustle" checked>
+										<span class="btn">にぎわい</span>
+									</label>
+									<label class="l-contents__map-btn">
+										<input type="checkbox" id="data_time" name="data_time">
+										<span class="btn">所用時間</span>
+									</label>
+									<label class="l-contents__map-btn">
+										<input type="checkbox" id="data_passengers" name="data_passengers">
+										<span class="btn">乗降客数</span>
+									</label>
+								</dd>
+							</dl>
+							<div class="l-contents__map-population">
+								<label class="l-contents__map-btn">
+									<input type="checkbox" class="js-population" name="data_population">
+									<span class="btn">人口推計</span>
+								</label>
+								<label class="l-contents__map-year">
+									<span class="tit">年代</span>
+									<div class="range-wrap">
+										<div class="years u-en">
+											<span class="min-value js-year-min">2015</span>
+											<span class="current-value js-year-current">2025</span>
+											<span class="max-value js-year-max">2050</span>
+										</div>
+										<div class="range-box">
+											<input class="range js-year" type="range" name="data_year" value="2025"
+												min="2015" max="2050" step="5" />
+											<ul class="scale">
+												<li class="min"></li>
+												<li></li>
+												<li></li>
+												<li></li>
+												<li></li>
+												<li></li>
+												<li></li>
+												<li class="max"></li>
+											</ul>
+										</div>
+									</div>
+								</label>
+							</div>
+						</div>
+						<div class="l-contents__map-legends js-legends-contents">
+							<i class="close js-legends-close"></i>
+							<dl>
+								<dt>人口推計</dt>
+								<dd>
+									<ul class="population">
+										<li><span>0 - 10</span></li>
+										<li><span>11 - 50</span></li>
+										<li><span>51 - 100</span></li>
+										<li><span>101 - 200</span></li>
+										<li><span>201 - 300</span></li>
+										<li><span>301 - 600</span></li>
+										<li><span>601 - 1000</span></li>
+										<li><span>1001 - 2000</span></li>
+										<li><span>2001 - 5000</span></li>
+										<li><span>5001 - 7000</span></li>
+										<li><span>7001 以上</span></li>
+									</ul>
+								</dd>
+							</dl>
+						</div>
+					</div>
 				</div>
-				<div class="c-area__grid column03 c-area__scroll">
-					<div class="c-box p-result__graph-total">
-						<h2 class="c-box__result-tit total">結果</h2>
-						<div class="c-chart"><canvas id="totalChart"></canvas></div>
+				<form class="l-contents__data" action="list.html">
+					<div class="l-contents__main-tit">
+						<h2 class="tit">グラフ</h2>
+						<a class="c-btn__small c-btn__small-black zoomout u-hover-op" href="results.html">グラフを小さく表示</a>
 					</div>
-					<div class="c-box">
-						<div class="c-box__result-tit">
-							<strong class="c-box__result-rating"><small>評価</small><span>A</span></strong>
-							<h2>平均所要時間</h2>
+					<div class="c-area__grid column03 c-area__scroll">
+						<div class="c-box p-result__graph-total">
+							<h2 class="c-box__result-tit total">結果</h2>
+							<div class="c-chart"><canvas id="totalChart"></canvas></div>
 						</div>
-						<div class="c-chart"><canvas id="timeChart"></canvas></div>
-					</div>
-					<div class="c-box">
-						<div class="c-box__result-tit">
-							<strong class="c-box__result-rating"><small>評価</small><span>B</span></strong>
-							<h2><span class="u-ib">交通事故</span><span class="u-ib">発生率</span></h2>
-						</div>
-						<div class="c-chart"><canvas id="accidentChart"></canvas></div>
-					</div>
-					<div class="c-box">
-						<div class="c-box__result-tit">
-							<strong class="c-box__result-rating"><small>評価</small><span>A</span></strong>
-							<h2>平均乗客数</h2>
-						</div>
-						<div class="c-chart"><canvas id="passengersChart"></canvas></div>
-					</div>
-					<div class="c-box">
-						<div class="c-box__result-tit">
-							<strong class="c-box__result-rating"><small>評価</small><span>B</span></strong>
-							<div class="c-box__result-select js-chart-select">
-								<h2 class="js-chart-tit">交流発生効果</h2>
-								<i class="c-box__result-arrow"></i>
+						<div class="c-box">
+							<div class="c-box__result-tit">
+								<strong class="c-box__result-rating"><small>評価</small><span>A</span></strong>
+								<h2>平均所要時間</h2>
 							</div>
-							<div class="c-box__result-option js-chart-change" data-select="exchangeChart">
-								<label class="js-chart-item">交流発生効果<input class="js-chart-radio" name="chart04" type="radio" value="data04_01" data-option="交流発生効果" checked></label>
-								<label class="js-chart-item">誘発トリップ数<input class="js-chart-radio" name="chart04" type="radio" value="data04_02" data-option="誘発トリップ数"></label>
-							</div>
+							<div class="c-chart"><canvas id="timeChart"></canvas></div>
 						</div>
-						<div class="c-chart"><canvas id="exchangeChart"></canvas></div>
-					</div>
-					<div class="c-box">
-						<div class="c-box__result-tit">
-							<strong class="c-box__result-rating"><small>評価</small><span>A</span></strong>
-							<h2>渋滞発生頻度</h2>
-						</div>
-						<div class="c-chart"><canvas id="trafficjamChart"></canvas></div>
-					</div>
-					<div class="c-box">
-						<div class="c-box__result-tit">
-							<strong class="c-box__result-rating"><small>評価</small><span>D</span></strong>
-							<div class="c-box__result-select js-chart-select">
-								<h2 class="js-chart-tit"><span class="u-ib">運用</span><span class="u-ib">コスト</span></h2>
-								<i class="c-box__result-arrow"></i>
+						<div class="c-box">
+							<div class="c-box__result-tit">
+								<strong class="c-box__result-rating"><small>評価</small><span>B</span></strong>
+								<h2><span class="u-ib">交通事故</span><span class="u-ib">発生率</span></h2>
 							</div>
-							<div class="c-box__result-option js-chart-change" data-select="costChart">
-								<label class="js-chart-item">運用コスト<input class="js-chart-radio" name="chart06" type="radio" value="data06_01" data-option="運用コスト" checked></label>
-								<label class="js-chart-item">B/C<input class="js-chart-radio" name="chart06" type="radio" value="data06_02" data-option="B/C"></label>
-							</div>
+							<div class="c-chart"><canvas id="accidentChart"></canvas></div>
 						</div>
-						<div class="c-chart"><canvas id="costChart"></canvas></div>
+						<div class="c-box">
+							<div class="c-box__result-tit">
+								<strong class="c-box__result-rating"><small>評価</small><span>A</span></strong>
+								<h2>平均乗客数</h2>
+							</div>
+							<div class="c-chart"><canvas id="passengersChart"></canvas></div>
+						</div>
+						<div class="c-box">
+							<div class="c-box__result-tit">
+								<strong class="c-box__result-rating"><small>評価</small><span>B</span></strong>
+								<div class="c-box__result-select js-chart-select">
+									<h2 class="js-chart-tit">交流発生効果</h2>
+									<i class="c-box__result-arrow"></i>
+								</div>
+								<div class="c-box__result-option js-chart-change" data-select="exchangeChart">
+									<label class="js-chart-item">交流発生効果<input class="js-chart-radio" name="chart04"
+											type="radio" value="data04_01" data-option="交流発生効果" checked></label>
+									<label class="js-chart-item">誘発トリップ数<input class="js-chart-radio" name="chart04"
+											type="radio" value="data04_02" data-option="誘発トリップ数"></label>
+								</div>
+							</div>
+							<div class="c-chart"><canvas id="exchangeChart"></canvas></div>
+						</div>
+						<div class="c-box">
+							<div class="c-box__result-tit">
+								<strong class="c-box__result-rating"><small>評価</small><span>A</span></strong>
+								<h2>渋滞発生頻度</h2>
+							</div>
+							<div class="c-chart"><canvas id="trafficjamChart"></canvas></div>
+						</div>
+						<div class="c-box">
+							<div class="c-box__result-tit">
+								<strong class="c-box__result-rating"><small>評価</small><span>D</span></strong>
+								<div class="c-box__result-select js-chart-select">
+									<h2 class="js-chart-tit"><span class="u-ib">運用</span><span class="u-ib">コスト</span>
+									</h2>
+									<i class="c-box__result-arrow"></i>
+								</div>
+								<div class="c-box__result-option js-chart-change" data-select="costChart">
+									<label class="js-chart-item">運用コスト<input class="js-chart-radio" name="chart06"
+											type="radio" value="data06_01" data-option="運用コスト" checked></label>
+									<label class="js-chart-item">B/C<input class="js-chart-radio" name="chart06"
+											type="radio" value="data06_02" data-option="B/C"></label>
+								</div>
+							</div>
+							<div class="c-chart"><canvas id="costChart"></canvas></div>
+						</div>
 					</div>
-				</div>
-				<div class="c-area__btns column03 js-btns">
-					<button class="c-btn c-btn__contents blue" type="submit">結果を登録</button>
-					<a class="c-btn c-btn__contents blue" href="#">CSVで出力</a>
-					<a class="c-btn c-btn__contents black" href="./">入力に戻る</a>
-				</div>
-			</form>
-		</div>
-	</main>
-</div>
-<script src="assets/js/jszip.min.js"></script>
-<script src="assets/js/leaflet/leaflet.js"></script>
-<script src="assets/js/chart.min.js"></script>
-<script src="assets/js/common.js"></script>
-<script src="assets/js/map.js"></script>
-<script src="assets/js/results.js"></script>
-<script>
-// 総合評価の初期化
-const initialTotalDataA = [5, 4, 5, 4, 5, 2];
-const initialTotalDataB = [3, 2, 3, 3, 3, 4];
-const totalChart = new Chart(document.getElementById('totalChart'), {
-	type: 'radar',
-	data: {
-		labels: ["平均所要時間", "交通事故発生率", "平均乗客数", "交流発生効果", "渋滞発生頻度", "運行コスト"],
-		datasets: [{
-			label: "入力",
-      data: initialTotalDataA,
-      backgroundColor:"rgba(245,129,60,0.5)",
-      borderColor: "rgba(245,129,60,1)",
-      borderWidth: 1,
-    },{
-			label: "現在",
-			data: initialTotalDataB,
-      backgroundColor: "rgba(49,89,158,0.5)",
-			borderColor: "rgba(49,89,158,1)",
-			borderWidth: 1,
-		}]
-	},
-	options: {
-		scales: {
-			r: {
-				min: 0,
-				max: 5,
-				ticks: {
-					stepSize: 1,
-				},
-				backgroundColor: '#f8f8f8',
-				grid: {
-					color: '#DDD',
-				},
-				angleLines: {
-					color: '#DDD',
-				},
-				pointLabels: {
-					color: '#333',
-				},
+					<div class="c-area__btns column03 js-btns">
+						<button class="c-btn c-btn__contents blue" type="submit">結果を登録</button>
+						<a class="c-btn c-btn__contents blue" href="#">CSVで出力</a>
+						<a class="c-btn c-btn__contents black" href="./">入力に戻る</a>
+					</div>
+				</form>
+			</div>
+		</main>
+	</div>
+	<script src="assets/js/jszip.min.js"></script>
+	<script src="assets/js/leaflet/leaflet.js"></script>
+	<script src="assets/js/chart.min.js"></script>
+	<script src="assets/js/common.js"></script>
+	<script src="assets/js/map.js"></script>
+	<script src="assets/js/results.js"></script>
+	<script>
+		// 総合評価の初期化
+		const initialTotalDataA = [5, 4, 5, 4, 5, 2];
+		const initialTotalDataB = [3, 2, 3, 3, 3, 4];
+		const totalChart = new Chart(document.getElementById('totalChart'), {
+			type: 'radar',
+			data: {
+				labels: ["平均所要時間", "交通事故発生率", "平均乗客数", "交流発生効果", "渋滞発生頻度", "運行コスト"],
+				datasets: [{
+					label: "入力",
+					data: initialTotalDataA,
+					backgroundColor: "rgba(245,129,60,0.5)",
+					borderColor: "rgba(245,129,60,1)",
+					borderWidth: 1,
+				}, {
+					label: "現在",
+					data: initialTotalDataB,
+					backgroundColor: "rgba(49,89,158,0.5)",
+					borderColor: "rgba(49,89,158,1)",
+					borderWidth: 1,
+				}]
 			},
-		},
-		plugins: {
-			legend: {
-				display: false,
-			}
-		},
-		maintainAspectRatio: false
-	}
-});
-// 平均所要時間の初期化
-const initialTimeData = [28, 20];
-const timeChart = new Chart(document.getElementById('timeChart'), {
-	type: 'bar',
-	data: {
-		labels: barLabels,
-		datasets: [{
-			data: initialTimeData,
-			backgroundColor: barBgColor,
-		}]
-	},
-	options: {
-		scales: {
-			x: barX,
-			y: {
-				suggestedMax: 30,
-				ticks: {
-					stepSize: 10,
-					callback: function(value, index, ticks) {
-						return index < ticks.length - 1 ?
-						this.getLabelForValue(value):
-						['(分)', this.getLabelForValue(value)];
+			options: {
+				scales: {
+					r: {
+						min: 0,
+						max: 5,
+						ticks: {
+							stepSize: 1,
+						},
+						backgroundColor: '#f8f8f8',
+						grid: {
+							color: '#DDD',
+						},
+						angleLines: {
+							color: '#DDD',
+						},
+						pointLabels: {
+							color: '#333',
+						},
+					},
+				},
+				plugins: {
+					legend: {
+						display: false,
 					}
 				},
+				maintainAspectRatio: false
 			}
-		},
-		plugins: {
-			legend: {
-				display: false,
-			}
-		},
-		maintainAspectRatio: false
-	}
-});
-// 交通事故発生率の初期化
-const initialAccidentData = [10,8];
-const accidentChart = new Chart(document.getElementById('accidentChart'), {
-	type: 'bar',
-	data: {
-		labels: barLabels,
-		datasets: [{
-			data: initialAccidentData,
-			backgroundColor: barBgColor,
-		}]
-	},
-	options: {
-		scales: {
-			x: barX,
-			y: {
-				suggestedMax: 100,
-				ticks: {
-					stepSize: 50,
-					callback: function(value, index, ticks) {
-						return index < ticks.length - 1 ?
-						this.getLabelForValue(value):
-						['(％)', this.getLabelForValue(value)];
+		});
+		// 平均所要時間の初期化
+		const initialTimeData = [28, 20];
+		const timeChart = new Chart(document.getElementById('timeChart'), {
+			type: 'bar',
+			data: {
+				labels: barLabels,
+				datasets: [{
+					data: initialTimeData,
+					backgroundColor: barBgColor,
+				}]
+			},
+			options: {
+				scales: {
+					x: barX,
+					y: {
+						suggestedMax: 30,
+						ticks: {
+							stepSize: 10,
+							callback: function (value, index, ticks) {
+								return index < ticks.length - 1 ?
+									this.getLabelForValue(value) :
+									['(分)', this.getLabelForValue(value)];
+							}
+						},
 					}
 				},
-			}
-		},
-		plugins: {
-			legend: {
-				display: false,
-			}
-		},
-		maintainAspectRatio: false
-	}
-});
-// 平均乗客数の初期化
-const initialPassengersData = [20,40];
-const passengersChart = new Chart(document.getElementById('passengersChart'), {
-	type: 'bar',
-	data: {
-		labels: barLabels,
-		datasets: [{
-			data: initialPassengersData,
-			backgroundColor: barBgColor,
-		}]
-	},
-	options: {
-		scales: {
-			x: barX,
-			y: {
-				suggestedMax: 40,
-				ticks: {
-					stepSize: 20,
-					callback: function(value, index, ticks) {
-						return index < ticks.length - 1 ?
-						this.getLabelForValue(value):
-						['(人)', this.getLabelForValue(value)];
+				plugins: {
+					legend: {
+						display: false,
 					}
 				},
+				maintainAspectRatio: false
 			}
-		},
-		plugins: {
-			legend: {
-				display: false,
-			}
-		},
-		maintainAspectRatio: false
-	}
-});
-// 交流発生効果の初期化
-document.querySelector('input[value="data04_01"]').checked = true;
-const initialExchangeData = [50, 80];
-const initialExchangeUnit = '(％)';
-const initialTripData = [20, 20];
-const initialTripUnit = '';
-const exchangeChart = new Chart(document.getElementById('exchangeChart'), {
-	type: 'bar',
-	data: {
-		labels: barLabels,
-		datasets: [{
-			data: initialExchangeData,
-			backgroundColor: barBgColor,
-		}]
-	},
-	options: {
-		scales: {
-			x: barX,
-			y: {
-				suggestedMax: 100,
-				ticks: {
-					stepSize: 50,
-					callback: function (value, index, ticks) {
-						return index < ticks.length - 1 ?
-							this.getLabelForValue(value) :
-							[initialExchangeUnit, this.getLabelForValue(value)];
+		});
+		// 交通事故発生率の初期化
+		const initialAccidentData = [10, 8];
+		const accidentChart = new Chart(document.getElementById('accidentChart'), {
+			type: 'bar',
+			data: {
+				labels: barLabels,
+				datasets: [{
+					data: initialAccidentData,
+					backgroundColor: barBgColor,
+				}]
+			},
+			options: {
+				scales: {
+					x: barX,
+					y: {
+						suggestedMax: 100,
+						ticks: {
+							stepSize: 50,
+							callback: function (value, index, ticks) {
+								return index < ticks.length - 1 ?
+									this.getLabelForValue(value) :
+									['(％)', this.getLabelForValue(value)];
+							}
+						},
 					}
 				},
+				plugins: {
+					legend: {
+						display: false,
+					}
+				},
+				maintainAspectRatio: false
 			}
-		},
-		plugins: {
-			legend: {
-				display: false,
+		});
+		// 平均乗客数の初期化
+		const initialPassengersData = [20, 40];
+		const passengersChart = new Chart(document.getElementById('passengersChart'), {
+			type: 'bar',
+			data: {
+				labels: barLabels,
+				datasets: [{
+					data: initialPassengersData,
+					backgroundColor: barBgColor,
+				}]
+			},
+			options: {
+				scales: {
+					x: barX,
+					y: {
+						suggestedMax: 40,
+						ticks: {
+							stepSize: 20,
+							callback: function (value, index, ticks) {
+								return index < ticks.length - 1 ?
+									this.getLabelForValue(value) :
+									['(人)', this.getLabelForValue(value)];
+							}
+						},
+					}
+				},
+				plugins: {
+					legend: {
+						display: false,
+					}
+				},
+				maintainAspectRatio: false
 			}
-		},
-		maintainAspectRatio: false
-	}
-});
-let exchangeChartData = null;
-document.querySelectorAll('input[name="chart04"]').forEach(button => {
-	button.addEventListener('change', () => {
-		if(currentMesh){
-			exchangeChartData = {
-				data04_01: { data: [currentMesh.dataExchangeA, currentMesh.dataExchangeB], unit: initialExchangeUnit },
-				data04_02: { data: [currentMesh.dataTripA, currentMesh.dataTripB], unit: initialTripUnit }
-			};
-		} else {
-			exchangeChartData = {
-				data04_01: { data: initialExchangeData, unit: initialExchangeUnit },
-				data04_02: { data: initialTripData, unit: initialTripUnit }
-			};
+		});
+		// 交流発生効果の初期化
+		document.querySelector('input[value="data04_01"]').checked = true;
+		const initialExchangeData = [50, 80];
+		const initialExchangeUnit = '(％)';
+		const initialTripData = [20, 20];
+		const initialTripUnit = '';
+		const exchangeChart = new Chart(document.getElementById('exchangeChart'), {
+			type: 'bar',
+			data: {
+				labels: barLabels,
+				datasets: [{
+					data: initialExchangeData,
+					backgroundColor: barBgColor,
+				}]
+			},
+			options: {
+				scales: {
+					x: barX,
+					y: {
+						suggestedMax: 100,
+						ticks: {
+							stepSize: 50,
+							callback: function (value, index, ticks) {
+								return index < ticks.length - 1 ?
+									this.getLabelForValue(value) :
+									[initialExchangeUnit, this.getLabelForValue(value)];
+							}
+						},
+					}
+				},
+				plugins: {
+					legend: {
+						display: false,
+					}
+				},
+				maintainAspectRatio: false
+			}
+		});
+		let exchangeChartData = null;
+		document.querySelectorAll('input[name="chart04"]').forEach(button => {
+			button.addEventListener('change', () => {
+				if (currentMesh) {
+					exchangeChartData = {
+						data04_01: { data: [currentMesh.dataExchangeA, currentMesh.dataExchangeB], unit: initialExchangeUnit },
+						data04_02: { data: [currentMesh.dataTripA, currentMesh.dataTripB], unit: initialTripUnit }
+					};
+				} else {
+					exchangeChartData = {
+						data04_01: { data: initialExchangeData, unit: initialExchangeUnit },
+						data04_02: { data: initialTripData, unit: initialTripUnit }
+					};
+				}
+				const selectedData = exchangeChartData[button.value];
+				exchangeChart.data.datasets[0].data = selectedData.data;
+				exchangeChart.options.scales.y.ticks.callback = function (value, index, ticks) {
+					return index < ticks.length - 1 ?
+						this.getLabelForValue(value) :
+						[selectedData.unit, this.getLabelForValue(value)];
+				};
+				exchangeChart.update();
+			});
+		});
+		// 渋滞発生頻度の初期化
+		const initialTrafficjamData = [50, 80];
+		const trafficjamChart = new Chart(document.getElementById('trafficjamChart'), {
+			type: 'bar',
+			data: {
+				labels: barLabels,
+				datasets: [{
+					data: initialTrafficjamData,
+					backgroundColor: barBgColor,
+				}]
+			},
+			options: {
+				scales: {
+					x: barX,
+					y: {
+						suggestedMax: 100,
+						ticks: {
+							stepSize: 50,
+							callback: function (value, index, ticks) {
+								return index < ticks.length - 1 ?
+									this.getLabelForValue(value) :
+									['(％)', this.getLabelForValue(value)];
+							}
+						},
+					}
+				},
+				plugins: {
+					legend: {
+						display: false,
+					}
+				},
+				maintainAspectRatio: false
+			}
+		});
+		// 運用コストの初期化
+		document.querySelector('input[value="data06_01"]').checked = true;
+		const initialCostData = [300, 500];
+		const initialCostUnit = '(円)';
+		const initialBCData = [50, 50];
+		const initialBCUnit = '';
+		const costChart = new Chart(document.getElementById('costChart'), {
+			type: 'bar',
+			data: {
+				labels: barLabels,
+				datasets: [{
+					data: initialCostData,
+					backgroundColor: barBgColor,
+				}]
+			},
+			options: {
+				scales: {
+					x: barX,
+					y: {
+						suggestedMax: 600,
+						ticks: {
+							stepSize: 50,
+							callback: function (value, index, ticks) {
+								return index < ticks.length - 1 ?
+									this.getLabelForValue(value) :
+									[initialCostUnit, this.getLabelForValue(value)];
+							}
+						},
+					}
+				},
+				plugins: {
+					legend: {
+						display: false,
+					}
+				},
+				maintainAspectRatio: false
+			}
+		});
+		let costChartData = null;
+		document.querySelectorAll('input[name="chart06"]').forEach(button => {
+			button.addEventListener('change', () => {
+				if (currentMesh) {
+					costChartData = {
+						data06_01: { data: [currentMesh.dataCostA, currentMesh.dataCostB], unit: initialCostUnit },
+						data06_02: { data: [currentMesh.dataBCA, currentMesh.dataBCB], unit: initialBCUnit }
+					};
+				} else {
+					costChartData = {
+						data06_01: { data: initialCostData, unit: initialCostUnit },
+						data06_02: { data: initialBCData, unit: initialBCUnit }
+					};
+				}
+				const selectedData = costChartData[button.value];
+				costChart.data.datasets[0].data = selectedData.data;
+				costChart.options.scales.y.ticks.callback = function (value, index, ticks) {
+					return index < ticks.length - 1 ?
+						this.getLabelForValue(value) :
+						[selectedData.unit, this.getLabelForValue(value)];
+				};
+				costChart.update();
+			});
+		});
+		function updateCharts(properties) {
+			// 総合評価の更新
+			totalChart.data.datasets[0].data = [
+				properties.dataTotalAA, //平均所要時間；入力
+				properties.dataTotalAB, //交通事故発生率；入力
+				properties.dataTotalAC, //平均乗客数；入力
+				properties.dataTotalAD, //交流発生効果；入力
+				properties.dataTotalAE, //渋滞発生頻度；入力
+				properties.dataTotalAF, //運行コスト；入力
+			];
+			totalChart.data.datasets[1].data = [
+				properties.dataTotalBA, //平均所要時間；現在
+				properties.dataTotalBB, //交通事故発生率；現在
+				properties.dataTotalBC, //平均乗客数；現在
+				properties.dataTotalBD, //交流発生効果；現在
+				properties.dataTotalBE, //渋滞発生頻度；現在
+				properties.dataTotalBF, //運行コスト；現在
+			];
+			totalChart.update();
+			// 平均所要時間の更新
+			timeChart.data.datasets[0].data = [
+				properties.dataTimeA, //現在
+				properties.dataTimeB, //入力
+			];
+			timeChart.update();
+			// 交通事故発生率の更新
+			accidentChart.data.datasets[0].data = [
+				properties.dataAccidentA, //現在
+				properties.dataAccidentB, //入力
+			];
+			accidentChart.update();
+			// 平均乗客数の更新
+			passengersChart.data.datasets[0].data = [
+				properties.dataPassengersA, //現在
+				properties.dataPassengersB, //入力
+			];
+			passengersChart.update();
+			// 交流発生効果・誘発トリップ数の更新
+			if (document.querySelector('input[value="data04_01"]').checked == true) {
+				exchangeChart.data.datasets[0].data = [
+					properties.dataExchangeA, //現在
+					properties.dataExchangeB, //入力
+				];
+			} else if (document.querySelector('input[value="data04_02"]').checked == true) {
+				exchangeChart.data.datasets[0].data = [
+					properties.dataTripA, //現在
+					properties.dataTripB, //入力
+				];
+			}
+			exchangeChart.update();
+			// 渋滞発生頻度の更新
+			trafficjamChart.data.datasets[0].data = [
+				properties.dataTrafficjamA, //現在
+				properties.dataTrafficjamB, //入力
+			];
+			trafficjamChart.update();
+			// 運用コスト・B/Cの更新
+			costChart.data.datasets[0].data = [
+				properties.dataCostA, //現在
+				properties.dataCostB, //入力
+			];
+			if (document.querySelector('input[value="data06_01"]').checked == true) {
+				costChart.data.datasets[0].data = [
+					properties.dataCostA, //現在
+					properties.dataCostB, //入力
+				];
+			} else if (document.querySelector('input[value="data06_02"]').checked == true) {
+				costChart.data.datasets[0].data = [
+					properties.dataBCA, //現在
+					properties.dataBCB, //入力
+				];
+			}
+			costChart.update();
 		}
-		const selectedData = exchangeChartData[button.value];
-		exchangeChart.data.datasets[0].data = selectedData.data;
-		exchangeChart.options.scales.y.ticks.callback = function(value, index, ticks) {
-			return index < ticks.length - 1 ?
-				this.getLabelForValue(value) :
-				[selectedData.unit, this.getLabelForValue(value)];
-		};
-		exchangeChart.update();
-	});
-});
-// 渋滞発生頻度の初期化
-const initialTrafficjamData = [50,80];
-const trafficjamChart = new Chart(document.getElementById('trafficjamChart'), {
-	type: 'bar',
-	data: {
-		labels: barLabels,
-		datasets: [{
-			data: initialTrafficjamData,
-			backgroundColor: barBgColor,
-		}]
-	},
-	options: {
-		scales: {
-			x: barX,
-			y: {
-				suggestedMax: 100,
-				ticks: {
-					stepSize: 50,
-					callback: function(value, index, ticks) {
-						return index < ticks.length - 1 ?
-						this.getLabelForValue(value):
-						['(％)', this.getLabelForValue(value)];
-					}
-				},
-			}
-		},
-		plugins: {
-			legend: {
-				display: false,
-			}
-		},
-		maintainAspectRatio: false
-	}
-});
-// 運用コストの初期化
-document.querySelector('input[value="data06_01"]').checked = true;
-const initialCostData = [300,500];
-const initialCostUnit = '(円)';
-const initialBCData = [50, 50];
-const initialBCUnit = '';
-const costChart  = new Chart(document.getElementById('costChart'), {
-	type: 'bar',
-	data: {
-		labels: barLabels,
-		datasets: [{
-			data: initialCostData,
-			backgroundColor: barBgColor,
-		}]
-	},
-	options: {
-		scales: {
-			x: barX,
-			y: {
-				suggestedMax: 600,
-				ticks: {
-					stepSize: 50,
-					callback: function(value, index, ticks) {
-						return index < ticks.length - 1 ?
-						this.getLabelForValue(value):
-						[initialCostUnit, this.getLabelForValue(value)];
-					}
-				},
-			}
-		},
-		plugins: {
-			legend: {
-				display: false,
-			}
-		},
-		maintainAspectRatio: false
-	}
-});
-let costChartData = null;
-document.querySelectorAll('input[name="chart06"]').forEach(button => {
-	button.addEventListener('change', () => {
-		if(currentMesh){
-			costChartData = {
-				data06_01: { data: [currentMesh.dataCostA, currentMesh.dataCostB], unit: initialCostUnit },
-				data06_02: { data: [currentMesh.dataBCA, currentMesh.dataBCB], unit: initialBCUnit }
-			};
-		} else {
-			costChartData = {
-				data06_01: { data: initialCostData, unit: initialCostUnit },
-				data06_02: { data: initialBCData, unit: initialBCUnit }
-			};
-		}
-		const selectedData = costChartData[button.value];
-		costChart.data.datasets[0].data = selectedData.data;
-		costChart.options.scales.y.ticks.callback = function(value, index, ticks) {
-			return index < ticks.length - 1 ?
-				this.getLabelForValue(value) :
-				[selectedData.unit, this.getLabelForValue(value)];
-		};
-		costChart.update();
-	});
-});
-function updateCharts(properties) {
-	// 総合評価の更新
-	totalChart.data.datasets[0].data = [
-		properties.dataTotalAA, //平均所要時間；入力
-		properties.dataTotalAB, //交通事故発生率；入力
-		properties.dataTotalAC, //平均乗客数；入力
-		properties.dataTotalAD, //交流発生効果；入力
-		properties.dataTotalAE, //渋滞発生頻度；入力
-		properties.dataTotalAF, //運行コスト；入力
-	];
-	totalChart.data.datasets[1].data = [
-		properties.dataTotalBA, //平均所要時間；現在
-		properties.dataTotalBB, //交通事故発生率；現在
-		properties.dataTotalBC, //平均乗客数；現在
-		properties.dataTotalBD, //交流発生効果；現在
-		properties.dataTotalBE, //渋滞発生頻度；現在
-		properties.dataTotalBF, //運行コスト；現在
-	];
-	totalChart.update();
-	// 平均所要時間の更新
-	timeChart.data.datasets[0].data = [
-		properties.dataTimeA, //現在
-		properties.dataTimeB, //入力
-	];
-	timeChart.update();
-	// 交通事故発生率の更新
-	accidentChart.data.datasets[0].data = [
-		properties.dataAccidentA, //現在
-		properties.dataAccidentB, //入力
-	];
-	accidentChart.update();
-	// 平均乗客数の更新
-	passengersChart.data.datasets[0].data = [
-		properties.dataPassengersA, //現在
-		properties.dataPassengersB, //入力
-	];
-	passengersChart.update();
-	// 交流発生効果・誘発トリップ数の更新
-	if(document.querySelector('input[value="data04_01"]').checked == true){
-		exchangeChart.data.datasets[0].data = [
-			properties.dataExchangeA, //現在
-			properties.dataExchangeB, //入力
-		];
-	} else if(document.querySelector('input[value="data04_02"]').checked == true){
-		exchangeChart.data.datasets[0].data = [
-			properties.dataTripA, //現在
-			properties.dataTripB, //入力
-		];
-	}
-	exchangeChart.update();
-	// 渋滞発生頻度の更新
-	trafficjamChart.data.datasets[0].data = [
-		properties.dataTrafficjamA, //現在
-		properties.dataTrafficjamB, //入力
-	];
-	trafficjamChart.update();
-	// 運用コスト・B/Cの更新
-	costChart.data.datasets[0].data = [
-		properties.dataCostA, //現在
-		properties.dataCostB, //入力
-	];
-	if(document.querySelector('input[value="data06_01"]').checked == true){
-		costChart.data.datasets[0].data = [
-			properties.dataCostA, //現在
-			properties.dataCostB, //入力
-		];
-	} else if(document.querySelector('input[value="data06_02"]').checked == true){
-		costChart.data.datasets[0].data = [
-			properties.dataBCA, //現在
-			properties.dataBCB, //入力
-		];
-	}
-	costChart.update();
-}
-</script>
+	</script>
 </body>
+
 </html>

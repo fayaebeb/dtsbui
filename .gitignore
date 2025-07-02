@@ -1,1 +1,2 @@
 /matsim_data/*
+!/matsim_data/network_bus_and_rail.geojson

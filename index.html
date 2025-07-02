@@ -10,8 +10,7 @@
 
 	<style>
 		details.c-route {
-			position: relative;
-			max-height: 400px;
+			max-height: 800px;
 			overflow-y: auto;
 		}
 
@@ -52,7 +51,7 @@
 			top: 50%;
 			height: 16px;
 			margin-top: -8px;
-			background: orange;
+			background: #F5813C;
 			border-radius: 4px;
 			z-index: 2;
 			cursor: grab;
@@ -60,7 +59,7 @@
 		}
 
 		.range-highlight:hover {
-			background: darkorange;
+			background: #F5813C;
 		}
 
 		.range-highlight:active {
@@ -123,6 +122,15 @@
 			margin-left: 8px;
 			font-size: 0.85em;
 		}
+
+		.c-area__btns {
+			display: flex;
+			justify-content: flex-end;
+		}
+
+		.c-btn.c-btn__contents {
+			min-width: 400px;
+		}
 	</style>
 
 </head>
@@ -169,7 +177,9 @@
 					<span class="l-contents__map-mode js-route-mode">専用レーンモード</span>
 					<div class="l-contents__map-data">
 						<div class="scroll">
-							<span class="c-btn__small c-btn__small-black legends u-hover-op js-legends">凡例</span>
+							<button type="button" class="c-btn__small c-btn__small-black legends u-hover-op js-legends">
+								凡例
+							</button>
 							<dl class="l-contents__map-view">
 								<dt>表示切替</dt>
 								<dd>
