@@ -428,17 +428,20 @@ html {
 .l-contents__dl {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
+  align-items: stretch; 
   background: #fff;
   border-radius: var(--commonRadius);
-  overflow: hidden
+  overflow: hidden;
 }
 
 .l-contents__dl-dt {
+  display: flex;
+  align-items: center;
+  height: 100%; 
   background: var(--colorMain);
   color: #fff;
-  align-content: center;
   padding: clamp(15px, 1em, 20px) min(2.196193265vw, 30px);
-  font-weight: bold
+  font-weight: bold;
 }
 
 .l-contents__dl-dd {
