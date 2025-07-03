@@ -54,7 +54,6 @@
 				<div class="l-contents__map">
 					<div class="l-contents__main-tit">
 						<h2 class="tit">地図</h2>
-						<small>※メッシュをクリックすると、メッシュごとの結果が表示されます。</small>
 						<!-- <label class="l-contents__main-mesh c-input__checkbox">メッシュ表示<i class="c-ico__loading js-mesh-loading hidden"></i><input class="js-mesh" type="checkbox" name="mesh" value="1"><i class="c-input__checkbox-switch"></i></label> -->
 					</div>
 					<div class="l-contents__map-load" id="map"></div>
@@ -151,6 +150,7 @@
 					<div class="c-area__grid column03 c-area__scroll">
 						<div class="c-box p-result__graph-total">
 							<h2 class="c-box__result-tit total">結果</h2>
+							<small>※メッシュをクリックすると、メッシュごとの結果が表示されます。</small>
 							<div class="c-chart"><canvas id="totalChart"></canvas></div>
 						</div>
 						<div class="c-box">
@@ -216,9 +216,9 @@
 						</div>
 					</div>
 					<div class="c-area__btns column03 js-btns">
-						<button class="c-btn c-btn__contents blue" type="submit">結果を登録</button>
-						<a class="c-btn c-btn__contents blue" href="#">CSVで出力</a>
 						<a class="c-btn c-btn__contents black" href="./">入力に戻る</a>
+						<a class="c-btn c-btn__contents blue" href="#">CSVで出力</a>
+						<button class="c-btn c-btn__contents blue" type="submit">結果一覧に保存する</button>
 					</div>
 				</form>
 			</div>

@@ -10,7 +10,7 @@
 	<style>
 		/* SCROLLABLE TABLE */
 		.c-area__scroll {
-			max-height: 400px;
+			max-height: 800px;
 			overflow-y: auto;
 			overflow-x: auto;
 			position: relative;
@@ -90,35 +90,35 @@
 
 		.bubble-checkbox-tip {
 			position: absolute;
-			top: 130px;
-			/* tweak this until it sits right under your H1 */
-			left: 80px;
-			/* roughly half the width of your checkbox column */
+			top: 145px;
+			left: 240px;
 			transform: translateX(-50%);
-			z-index: 999;
-			width: max-content;
-			max-width: 180px;
-			background: #fff;
-			color: #333;
-			border: 1px solid #ccc;
-			border-radius: 8px;
-			font-size: 12px;
-			padding: 6px 10px;
+			z-index: 1000;
+			display: inline-block;
+			max-width: 100vw;
+			min-width: 300px;
+			padding: 12px 24px;
+			background-color: #e6f0ff;
+			color: #002060;
+			border: 2px solid #6699ff;
+			border-radius: 12px;
+			font-size: 20px;
 			text-align: center;
-			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-			white-space: nowrap;
-			z-index: 999;
+			white-space: normal;
+			line-height: 1.7;
+			box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+			font-weight: 700;
 		}
 
 		.bubble-checkbox-tip::after {
 			content: '';
 			position: absolute;
-			bottom: -8px;
-			left: 50%;
-			transform: translateX(-50%);
-			border-width: 8px 8px 0 8px;
+			bottom: -10px;
+			left: 30px;
+			border-width: 10px 10px 0 10px;
 			border-style: solid;
-			border-color: #fff transparent transparent transparent;
+			border-color: #e6f0ff transparent transparent transparent;
+			filter: drop-shadow(0 -1px 1px rgba(0, 0, 0, 0.1));
 		}
 
 		.c-btn.disabled,
@@ -164,15 +164,14 @@
 			<div class="l-contents__main">
 				<div class="l-contents__data">
 					<div class="bubble-checkbox-tip">
-						2つ以上選択すると<br>グラフで比較できます
+						2つ以上選択するとグラフで比較できます
 					</div>
 
 					<div class="c-box c-area__scroll">
 						<table class="c-table p-list__table">
 							<thead>
 								<tr>
-
-
+									<th></th> <!-- Empty title for checkbox column -->
 									<th rowspan="2" class="u-ta-left">名称</th>
 									<th>
 										評価
@@ -224,8 +223,6 @@
 										</label>
 									</th>
 								</tr>
-
-
 							</thead>
 							<tbody>
 								<tr>
@@ -353,7 +350,7 @@
 					</div>
 					<div class="c-area__btns column03 wide js-btns">
 						<a id="compareButton" class="c-btn c-btn__contents blue disabled" href="list_graph.html"
-							aria-disabled="true">グラフで比較</a>
+							aria-disabled="true">グラフで比較する</a>
 						<a class="c-btn c-btn__contents blue" href="#">CSVで出力</a>
 						<a class="c-btn c-btn__contents black" href="./">入力に戻る</a>
 					</div>

@@ -176,12 +176,21 @@
 									</label>
 								</div>
 							</div>
-							<div class="l-contents__map-legends js-legends-contents">
+							<div class="l-contents__map-legends js-legends-contents"
+								style="font-family: 'Segoe UI', sans-serif; font-size: 14px; color: #333;">
 								<i class="close js-legends-close"></i>
+								<div
+									style="display: flex; align-items: center; padding: 8px 12px; background: #fff6f1; border: 1px solid #f5b088; border-radius: 6px; margin-bottom: 12px;">
+									<div
+										style="width: 20px; height: 20px; border-radius: 50%; background-color: #F5813C; margin-right: 10px;">
+									</div>
+									<span style="font-size: 15px; font-weight: 500;">にぎわい</span>
+								</div>
+
 								<dl>
-									<dt>人口推計</dt>
+									<dt style="margin-bottom: 6px; font-weight: bold;">人口推計</dt>
 									<dd>
-										<ul class="population">
+										<ul class="population" style="list-style: none; padding-left: 0; margin: 0;">
 											<li><span>0 - 10</span></li>
 											<li><span>11 - 50</span></li>
 											<li><span>51 - 100</span></li>
@@ -214,7 +223,7 @@
 							<small>※メッシュをクリックすると、メッシュごとの結果が表示されます。</small>
 
 							<div class="c-chart"><canvas id="totalChart"></canvas></div>
-						</details>
+						</details
 						<details class="c-details">
 							<summary class="c-details__summary">平均所要時間</summary>
 							<div class="p-result__map-bar c-chart"><canvas id="timeChart"></canvas></div>
@@ -328,10 +337,11 @@
 					</ul>
 				</div>
 				<div class="c-area__btns column02 narrow js-btns">
-					<button class="c-btn c-btn__contents blue" type="submit">結果一覧に保存する</button>
-					<a class="c-btn c-btn__contents blue" href="#">CSVで出力</a>
-					<a class="c-btn c-btn__contents black" href="./">入力に戻る</a>
-				</div>
+	<a class="c-btn c-btn__contents black" href="./">入力に戻る</a>
+	<a class="c-btn c-btn__contents blue" href="#">CSVで出力</a>
+	<button class="c-btn c-btn__contents blue" type="submit">結果一覧に保存する</button>
+</div>
+
 			</form>
 		</main>
 		<div class="l-fixed js-fixed" id="target">
