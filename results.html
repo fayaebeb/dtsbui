@@ -7,6 +7,26 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="assets/js/leaflet/leaflet.css" />
 	<link rel="stylesheet" href="assets/css/common.css" />
+
+	<style>
+
+.c-area__btns.column02 {
+  --column: 2;
+  display: grid;
+  grid-template-columns: repeat(var(--column), 1fr);
+  gap: min(1.953125vh, 15px) min(1.4641288433vw, 20px);
+}
+
+.c-area__btns.column02 > a {
+  grid-column: auto; /* default, 1 column each */
+}
+
+.c-area__btns.column02 > button {
+  grid-column: 1 / -1; /* spans full width (both columns) */
+}
+
+
+</style>
 </head>
 
 <body>
@@ -287,408 +307,403 @@
 					</li>
 				</ul>
 			</div>
-				<div class="c-area__btns column02 narrow js-btns">
+			<div class="c-area__btns column02 narrow js-btns">
 	<a class="c-btn c-btn__contents black" href="./">入力に戻る</a>
 	<a class="c-btn c-btn__contents blue" href="#">CSVで出力</a>
-	<button class="c-btn c-btn__contents blue" type="submit">結果一覧に保存する</button>
+<button class="c-btn c-btn__contents blue" type="submit">結果一覧に保存する</button>
 </div>
-
-			</form>
-		</main>
-		<div class="l-fixed js-fixed" id="target">
-			<div class="l-fixed__box p-result__story-box c-area__scroll js-fixed-box">
-				<h2>ターゲット選択</h2>
-				<div class="p-result__story-select">
-					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-						<input class="js-target" type="radio" name="target" value="target01">
-						<figure>
-							<img loading="lazy" src="assets/image/ico_story_01.svg" width="100" height="100"
-								alt="こども" />
-							<figcaption>こども</figcaption>
-						</figure>
-					</label>
-					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-						<input class="js-target" type="radio" name="target" value="target02" checked>
-						<figure>
-							<img loading="lazy" src="assets/image/ico_story_02.svg" width="100" height="100" alt="学生" />
-							<figcaption>学生</figcaption>
-						</figure>
-					</label>
-					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-						<input class="js-target" type="radio" name="target" value="target03">
-						<figure>
-							<img loading="lazy" src="assets/image/ico_story_03.svg" width="100" height="100"
-								alt="主婦／主夫" />
-							<figcaption>主婦／主夫</figcaption>
-						</figure>
-					</label>
-					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-						<input class="js-target" type="radio" name="target" value="target04">
-						<figure>
-							<img loading="lazy" src="assets/image/ico_story_04.svg" width="100" height="100"
-								alt="会社員" />
-							<figcaption>会社員</figcaption>
-						</figure>
-					</label>
-					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-						<input class="js-target" type="radio" name="target" value="target05">
-						<figure>
-							<img loading="lazy" src="assets/image/ico_story_05.svg" width="100" height="100"
-								alt="高齢者" />
-							<figcaption>高齢者</figcaption>
-						</figure>
-					</label>
-					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-						<input class="js-target" type="radio" name="target" value="target06">
-						<figure>
-							<img loading="lazy" src="assets/image/ico_story_06.svg" width="100" height="100"
-								alt="観光客" />
-							<figcaption>観光客</figcaption>
-						</figure>
-					</label>
-					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-						<input class="js-target" type="radio" name="target" value="target07">
-						<figure>
-							<img loading="lazy" src="assets/image/ico_story_07.svg" width="100" height="100" alt="出張" />
-							<figcaption>出張</figcaption>
-						</figure>
-					</label>
-					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
-						<input class="js-target" type="radio" name="target" value="target08">
-						<figure>
-							<img loading="lazy" src="assets/image/ico_story_08.svg" width="100" height="100" alt="行政" />
-							<figcaption>行政</figcaption>
-						</figure>
-					</label>
-				</div>
-				<div class="c-area__btns single l-fixed__btns">
-					<span class="c-btn c-btn__contents blue l-fixed__close js-fixed-close">ターゲット選択を閉じる</span>
-				</div>
+		</form>
+	</main>
+	<div class="l-fixed js-fixed" id="target">
+		<div class="l-fixed__box p-result__story-box c-area__scroll js-fixed-box">
+			<h2>ターゲット選択</h2>
+			<div class="p-result__story-select">
+				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+					<input class="js-target" type="radio" name="target" value="target01">
+					<figure>
+						<img loading="lazy" src="assets/image/ico_story_01.svg" width="100" height="100" alt="こども"/>
+						<figcaption>こども</figcaption>
+					</figure>
+				</label>
+				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+					<input class="js-target" type="radio" name="target" value="target02" checked>
+					<figure>
+						<img loading="lazy" src="assets/image/ico_story_02.svg" width="100" height="100" alt="学生"/>
+						<figcaption>学生</figcaption>
+					</figure>
+				</label>
+				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+					<input class="js-target" type="radio" name="target" value="target03">
+					<figure>
+						<img loading="lazy" src="assets/image/ico_story_03.svg" width="100" height="100" alt="主婦／主夫"/>
+						<figcaption>主婦／主夫</figcaption>
+					</figure>
+				</label>
+				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+					<input class="js-target" type="radio" name="target" value="target04">
+					<figure>
+						<img loading="lazy" src="assets/image/ico_story_04.svg" width="100" height="100" alt="会社員"/>
+						<figcaption>会社員</figcaption>
+					</figure>
+				</label>
+				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+					<input class="js-target" type="radio" name="target" value="target05">
+					<figure>
+						<img loading="lazy" src="assets/image/ico_story_05.svg" width="100" height="100" alt="高齢者"/>
+						<figcaption>高齢者</figcaption>
+					</figure>
+				</label>
+				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+					<input class="js-target" type="radio" name="target" value="target06">
+					<figure>
+						<img loading="lazy" src="assets/image/ico_story_06.svg" width="100" height="100" alt="観光客"/>
+						<figcaption>観光客</figcaption>
+					</figure>
+				</label>
+				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+					<input class="js-target" type="radio" name="target" value="target07">
+					<figure>
+						<img loading="lazy" src="assets/image/ico_story_07.svg" width="100" height="100" alt="出張"/>
+						<figcaption>出張</figcaption>
+					</figure>
+				</label>
+				<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
+					<input class="js-target" type="radio" name="target" value="target08">
+					<figure>
+						<img loading="lazy" src="assets/image/ico_story_08.svg" width="100" height="100" alt="行政"/>
+						<figcaption>行政</figcaption>
+					</figure>
+				</label>
 			</div>
-			<div class="l-fixed__bg js-fixed-close"></div>
+			<div class="c-area__btns single l-fixed__btns">
+				<span class="c-btn c-btn__contents blue l-fixed__close js-fixed-close">ターゲット選択を閉じる</span>
+			</div>
 		</div>
+		<div class="l-fixed__bg js-fixed-close"></div>
 	</div>
-	<script src="assets/js/jszip.min.js"></script>
-	<script src="assets/js/leaflet/leaflet.js"></script>
-	<script src="assets/js/chart.min.js"></script>
-	<script src="assets/js/common.js"></script>
-	<script src="assets/js/map.js"></script>
-	<script src="assets/js/results.js"></script>
-	<script>
-		// 総合評価の初期化
-		const initialTotalDataA = [5, 4, 5, 4, 5, 2];
-		const initialTotalDataB = [3, 2, 3, 3, 3, 4];
-		const totalChart = new Chart(document.getElementById('totalChart'), {
-			type: 'radar',
-			data: {
-				labels: ["平均所要時間", "交通事故発生率", "平均乗客数", "交流発生効果", "渋滞発生頻度", "運行コスト"],
-				datasets: [{
-					label: "入力",
-					data: initialTotalDataA,
-					backgroundColor: "rgba(245,129,60,0.5)",
-					borderColor: "rgba(245,129,60,1)",
-					borderWidth: 1,
-				}, {
-					label: "現在",
-					data: initialTotalDataB,
-					backgroundColor: "rgba(49,89,158,0.5)",
-					borderColor: "rgba(49,89,158,1)",
-					borderWidth: 1,
-				}]
+</div>
+<script src="assets/js/jszip.min.js"></script>
+<script src="assets/js/leaflet/leaflet.js"></script>
+<script src="assets/js/chart.min.js"></script>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/map.js"></script>
+<script src="assets/js/results.js"></script>
+<script>
+// 総合評価の初期化
+const initialTotalDataA = [5, 4, 5, 4, 5, 2];
+const initialTotalDataB = [3, 2, 3, 3, 3, 4];
+const totalChart = new Chart(document.getElementById('totalChart'), {
+	type: 'radar',
+	data: {
+		labels: ["平均所要時間", "交通事故発生率", "平均乗客数", "交流発生効果", "渋滞発生頻度", "運行コスト"],
+		datasets: [{
+			label: "入力",
+      data: initialTotalDataA,
+      backgroundColor:"rgba(245,129,60,0.5)",
+      borderColor: "rgba(245,129,60,1)",
+      borderWidth: 1,
+    },{
+			label: "現在",
+			data: initialTotalDataB,
+      backgroundColor: "rgba(49,89,158,0.5)",
+			borderColor: "rgba(49,89,158,1)",
+			borderWidth: 1,
+		}]
+	},
+	options: {
+		scales: {
+			r: {
+				min: 0,
+				max: 5,
+				ticks: {
+					stepSize: 1,
+				},
+				backgroundColor: '#f8f8f8',
+				grid: {
+					color: '#DDD',
+				},
+				angleLines: {
+					color: '#DDD',
+				},
+				pointLabels: {
+					color: '#333',
+				},
 			},
-			options: {
-				scales: {
-					r: {
-						min: 0,
-						max: 5,
-						ticks: {
-							stepSize: 1,
-						},
-						backgroundColor: '#f8f8f8',
-						grid: {
-							color: '#DDD',
-						},
-						angleLines: {
-							color: '#DDD',
-						},
-						pointLabels: {
-							color: '#333',
-						},
-					},
-				},
-				plugins: {
-					legend: {
-						display: false,
-					}
-				},
-				maintainAspectRatio: false
+		},
+		plugins: {
+			legend: {
+				display: false,
 			}
-		});
-		// 平均所要時間の初期化
-		const initialTimeData = [28, 20];
-		const timeChart = new Chart(document.getElementById('timeChart'), {
-			type: 'bar',
-			data: {
-				labels: barLabels,
-				datasets: [{
-					data: initialTimeData,
-					backgroundColor: barBgColor,
-				}]
-			},
-			options: {
-				scales: {
-					x: barX,
-					y: {
-						suggestedMax: 30,
-						ticks: {
-							stepSize: 10,
-							callback: function (value, index, ticks) {
-								return index < ticks.length - 1 ?
-									this.getLabelForValue(value) :
-									['(分)', this.getLabelForValue(value)];
-							}
-						},
+		},
+		maintainAspectRatio: false
+	}
+});
+// 平均所要時間の初期化
+const initialTimeData = [28, 20];
+const timeChart = new Chart(document.getElementById('timeChart'), {
+	type: 'bar',
+	data: {
+		labels: barLabels,
+		datasets: [{
+			data: initialTimeData,
+			backgroundColor: barBgColor,
+		}]
+	},
+	options: {
+		scales: {
+			x: barX,
+			y: {
+				suggestedMax: 30,
+				ticks: {
+					stepSize: 10,
+					callback: function(value, index, ticks) {
+						return index < ticks.length - 1 ?
+						this.getLabelForValue(value):
+						['(分)', this.getLabelForValue(value)];
 					}
 				},
-				plugins: {
-					legend: {
-						display: false,
-					}
-				},
-				maintainAspectRatio: false
 			}
-		});
-		// 交通事故発生率の初期化
-		const initialAccidentData = [10, 8];
-		const accidentChart = new Chart(document.getElementById('accidentChart'), {
-			type: 'bar',
-			data: {
-				labels: barLabels,
-				datasets: [{
-					data: initialAccidentData,
-					backgroundColor: barBgColor,
-				}]
-			},
-			options: {
-				scales: {
-					x: barX,
-					y: {
-						suggestedMax: 100,
-						ticks: {
-							stepSize: 50,
-							callback: function (value, index, ticks) {
-								return index < ticks.length - 1 ?
-									this.getLabelForValue(value) :
-									['(％)', this.getLabelForValue(value)];
-							}
-						},
-					}
-				},
-				plugins: {
-					legend: {
-						display: false,
-					}
-				},
-				maintainAspectRatio: false
+		},
+		plugins: {
+			legend: {
+				display: false,
 			}
-		});
-		// 平均乗客数の初期化
-		const initialPassengersData = [20, 40];
-		const passengersChart = new Chart(document.getElementById('passengersChart'), {
-			type: 'bar',
-			data: {
-				labels: barLabels,
-				datasets: [{
-					data: initialPassengersData,
-					backgroundColor: barBgColor,
-				}]
-			},
-			options: {
-				scales: {
-					x: barX,
-					y: {
-						suggestedMax: 40,
-						ticks: {
-							stepSize: 10,
-							callback: function (value, index, ticks) {
-								return index < ticks.length - 1 ?
-									this.getLabelForValue(value) :
-									['(人)', this.getLabelForValue(value)];
-							}
-						},
+		},
+		maintainAspectRatio: false
+	}
+});
+// 交通事故発生率の初期化
+const initialAccidentData = [10,8];
+const accidentChart = new Chart(document.getElementById('accidentChart'), {
+	type: 'bar',
+	data: {
+		labels: barLabels,
+		datasets: [{
+			data: initialAccidentData,
+			backgroundColor: barBgColor,
+		}]
+	},
+	options: {
+		scales: {
+			x: barX,
+			y: {
+				suggestedMax: 100,
+				ticks: {
+					stepSize: 50,
+					callback: function(value, index, ticks) {
+						return index < ticks.length - 1 ?
+						this.getLabelForValue(value):
+						['(％)', this.getLabelForValue(value)];
 					}
 				},
-				plugins: {
-					legend: {
-						display: false,
-					}
-				},
-				maintainAspectRatio: false
 			}
-		});
-		// 交流発生効果の初期化
-		const initialExchangeData = [50, 80];
-		const exchangeChart = new Chart(document.getElementById('exchangeChart'), {
-			type: 'bar',
-			data: {
-				labels: barLabels,
-				datasets: [{
-					data: initialExchangeData,
-					backgroundColor: barBgColor,
-				}]
-			},
-			options: {
-				scales: {
-					x: barX,
-					y: {
-						suggestedMax: 100,
-						ticks: {
-							stepSize: 10,
-							callback: function (value, index, ticks) {
-								return index < ticks.length - 1 ?
-									this.getLabelForValue(value) :
-									['(％)', this.getLabelForValue(value)];
-							}
-						},
-					}
-				},
-				plugins: {
-					legend: {
-						display: false,
-					}
-				},
-				maintainAspectRatio: false
+		},
+		plugins: {
+			legend: {
+				display: false,
 			}
-		});
-		// 渋滞発生頻度の初期化
-		const initialTrafficjamData = [50, 80];
-		const trafficjamChart = new Chart(document.getElementById('trafficjamChart'), {
-			type: 'bar',
-			data: {
-				labels: barLabels,
-				datasets: [{
-					data: initialTrafficjamData,
-					backgroundColor: barBgColor,
-				}]
-			},
-			options: {
-				scales: {
-					x: barX,
-					y: {
-						suggestedMax: 100,
-						ticks: {
-							stepSize: 50,
-							callback: function (value, index, ticks) {
-								return index < ticks.length - 1 ?
-									this.getLabelForValue(value) :
-									['(％)', this.getLabelForValue(value)];
-							}
-						},
+		},
+		maintainAspectRatio: false
+	}
+});
+// 平均乗客数の初期化
+const initialPassengersData = [20,40];
+const passengersChart = new Chart(document.getElementById('passengersChart'), {
+	type: 'bar',
+	data: {
+		labels: barLabels,
+		datasets: [{
+			data: initialPassengersData,
+			backgroundColor: barBgColor,
+		}]
+	},
+	options: {
+		scales: {
+			x: barX,
+			y: {
+				suggestedMax: 40,
+				ticks: {
+					stepSize: 10,
+					callback: function(value, index, ticks) {
+						return index < ticks.length - 1 ?
+						this.getLabelForValue(value):
+						['(人)', this.getLabelForValue(value)];
 					}
 				},
-				plugins: {
-					legend: {
-						display: false,
-					}
-				},
-				maintainAspectRatio: false
 			}
-		});
-		// 運用コストの初期化
-		const initialCostData = [300, 500];
-		const costChart = new Chart(document.getElementById('costChart'), {
-			type: 'bar',
-			data: {
-				labels: barLabels,
-				datasets: [{
-					data: initialCostData,
-					backgroundColor: barBgColor,
-				}]
-			},
-			options: {
-				scales: {
-					x: barX,
-					y: {
-						suggestedMax: 600,
-						ticks: {
-							stepSize: 50,
-							callback: function (value, index, ticks) {
-								return index < ticks.length - 1 ?
-									this.getLabelForValue(value) :
-									['(円)', this.getLabelForValue(value)];
-							}
-						},
-					}
-				},
-				plugins: {
-					legend: {
-						display: false,
-					}
-				},
-				maintainAspectRatio: false
+		},
+		plugins: {
+			legend: {
+				display: false,
 			}
-		});
+		},
+		maintainAspectRatio: false
+	}
+});
+// 交流発生効果の初期化
+const initialExchangeData = [50, 80];
+const exchangeChart = new Chart(document.getElementById('exchangeChart'), {
+	type: 'bar',
+	data: {
+		labels: barLabels,
+		datasets: [{
+			data: initialExchangeData,
+			backgroundColor: barBgColor,
+		}]
+	},
+	options: {
+		scales: {
+			x: barX,
+			y: {
+				suggestedMax: 100,
+				ticks: {
+					stepSize: 10,
+					callback: function(value, index, ticks) {
+						return index < ticks.length - 1 ?
+						this.getLabelForValue(value):
+						['(％)', this.getLabelForValue(value)];
+					}
+				},
+			}
+		},
+		plugins: {
+			legend: {
+				display: false,
+			}
+		},
+		maintainAspectRatio: false
+	}
+});
+// 渋滞発生頻度の初期化
+const initialTrafficjamData = [50,80];
+const trafficjamChart = new Chart(document.getElementById('trafficjamChart'), {
+	type: 'bar',
+	data: {
+		labels: barLabels,
+		datasets: [{
+			data: initialTrafficjamData,
+			backgroundColor: barBgColor,
+		}]
+	},
+	options: {
+		scales: {
+			x: barX,
+			y: {
+				suggestedMax: 100,
+				ticks: {
+					stepSize: 50,
+					callback: function(value, index, ticks) {
+						return index < ticks.length - 1 ?
+						this.getLabelForValue(value):
+						['(％)', this.getLabelForValue(value)];
+					}
+				},
+			}
+		},
+		plugins: {
+			legend: {
+				display: false,
+			}
+		},
+		maintainAspectRatio: false
+	}
+});
+// 運用コストの初期化
+const initialCostData = [300,500];
+const costChart  = new Chart(document.getElementById('costChart'), {
+	type: 'bar',
+	data: {
+		labels: barLabels,
+		datasets: [{
+			data: initialCostData,
+			backgroundColor: barBgColor,
+		}]
+	},
+	options: {
+		scales: {
+			x: barX,
+			y: {
+				suggestedMax: 600,
+				ticks: {
+					stepSize: 50,
+					callback: function(value, index, ticks) {
+						return index < ticks.length - 1 ?
+						this.getLabelForValue(value):
+						['(円)', this.getLabelForValue(value)];
+					}
+				},
+			}
+		},
+		plugins: {
+			legend: {
+				display: false,
+			}
+		},
+		maintainAspectRatio: false
+	}
+});
 
-		const initialTripData = false;
-		const initialBCData = false;
-		function updateCharts(properties) {
-			// 総合評価の更新
-			totalChart.data.datasets[0].data = [
-				properties.dataTotalAA, //平均所要時間；入力
-				properties.dataTotalAB, //交通事故発生率；入力
-				properties.dataTotalAC, //平均乗客数；入力
-				properties.dataTotalAD, //交流発生効果；入力
-				properties.dataTotalAE, //渋滞発生頻度；入力
-				properties.dataTotalAF, //運行コスト；入力
-			];
-			totalChart.data.datasets[1].data = [
-				properties.dataTotalBA, //平均所要時間；現在
-				properties.dataTotalBB, //交通事故発生率；現在
-				properties.dataTotalBC, //平均乗客数；現在
-				properties.dataTotalBD, //交流発生効果；現在
-				properties.dataTotalBE, //渋滞発生頻度；現在
-				properties.dataTotalBF, //運行コスト；現在
-			];
-			totalChart.update();
-			// 平均所要時間の更新
-			timeChart.data.datasets[0].data = [
-				properties.dataTimeA, //現在
-				properties.dataTimeB, //入力
-			];
-			timeChart.update();
-			// 交通事故発生率の更新
-			accidentChart.data.datasets[0].data = [
-				properties.dataAccidentA, //現在
-				properties.dataAccidentB, //入力
-			];
-			accidentChart.update();
-			// 平均乗客数の更新
-			passengersChart.data.datasets[0].data = [
-				properties.dataPassengersA, //現在
-				properties.dataPassengersB, //入力
-			];
-			passengersChart.update();
-			// 交流発生効果の更新
-			exchangeChart.data.datasets[0].data = [
-				properties.dataExchangeA, //現在
-				properties.dataExchangeB, //入力
-			];
-			exchangeChart.update();
-			// 渋滞発生頻度の更新
-			trafficjamChart.data.datasets[0].data = [
-				properties.dataTrafficjamA, //現在
-				properties.dataTrafficjamB, //入力
-			];
-			trafficjamChart.update();
-			// 運用コストの更新
-			costChart.data.datasets[0].data = [
-				properties.dataCostA, //現在
-				properties.dataCostB, //入力
-			];
-			costChart.update();
-		}
-	</script>
-	<script>
+const initialTripData = false;
+const initialBCData = false;
+function updateCharts(properties) {
+	// 総合評価の更新
+	totalChart.data.datasets[0].data = [
+		properties.dataTotalAA, //平均所要時間；入力
+		properties.dataTotalAB, //交通事故発生率；入力
+		properties.dataTotalAC, //平均乗客数；入力
+		properties.dataTotalAD, //交流発生効果；入力
+		properties.dataTotalAE, //渋滞発生頻度；入力
+		properties.dataTotalAF, //運行コスト；入力
+	];
+	totalChart.data.datasets[1].data = [
+		properties.dataTotalBA, //平均所要時間；現在
+		properties.dataTotalBB, //交通事故発生率；現在
+		properties.dataTotalBC, //平均乗客数；現在
+		properties.dataTotalBD, //交流発生効果；現在
+		properties.dataTotalBE, //渋滞発生頻度；現在
+		properties.dataTotalBF, //運行コスト；現在
+	];
+	totalChart.update();
+	// 平均所要時間の更新
+	timeChart.data.datasets[0].data = [
+		properties.dataTimeA, //現在
+		properties.dataTimeB, //入力
+	];
+	timeChart.update();
+	// 交通事故発生率の更新
+	accidentChart.data.datasets[0].data = [
+		properties.dataAccidentA, //現在
+		properties.dataAccidentB, //入力
+	];
+	accidentChart.update();
+	// 平均乗客数の更新
+	passengersChart.data.datasets[0].data = [
+		properties.dataPassengersA, //現在
+		properties.dataPassengersB, //入力
+	];
+	passengersChart.update();
+	// 交流発生効果の更新
+	exchangeChart.data.datasets[0].data = [
+		properties.dataExchangeA, //現在
+		properties.dataExchangeB, //入力
+	];
+	exchangeChart.update();
+	// 渋滞発生頻度の更新
+	trafficjamChart.data.datasets[0].data = [
+		properties.dataTrafficjamA, //現在
+		properties.dataTrafficjamB, //入力
+	];
+	trafficjamChart.update();
+	// 運用コストの更新
+	costChart.data.datasets[0].data = [
+		properties.dataCostA, //現在
+		properties.dataCostB, //入力
+	];
+	costChart.update();
+}
+</script>
+
+<script>
 		document.addEventListener("DOMContentLoaded", function () {
 			const breadcrumbLinks = document.querySelectorAll('.breadcrumb-arrow a');
 			breadcrumbLinks.forEach(link => {
@@ -699,5 +714,4 @@
 		});
 	</script>
 </body>
-
 </html>
