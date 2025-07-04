@@ -9,9 +9,8 @@ map.createPane('linePane').style.zIndex = 460;
 map.createPane('circles').style.zIndex = 470;
 map.createPane('commentaryPane').style.zIndex = 660;
 map.createPane('meshPane').style.zIndex = 500;
-document.addEventListener('DOMContentLoaded', function () {
-	map.createPane('selectRosen').style.zIndex = 480;
-});
+map.createPane('selectRosen').style.zIndex = 480;
+map.createPane('selectStop').style.zIndex = 490;
 
 let routeA; // MATSim route layer
 

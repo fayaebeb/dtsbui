@@ -1,3 +1,18 @@
+const fileRouteA = 'assets/data/BRT_route_a.geojson';
+const fileRouteB = 'assets/data/BRT_route_b.geojson';
+const fileStopA = 'assets/data/BRT_stops_a.geojson';
+const fileStopB = 'assets/data/BRT_stops_b.geojson';
+
+const routeDefault = '#aaa';     // Example default color
+const routSelect = '#f00';       // Example selected color
+const stopDefault = (feature, latlng) => L.circleMarker(latlng, { color: '#666' });
+const stopSelect = (feature, latlng) => L.circleMarker(latlng, { color: '#f00' });
+
+let simulationRouteA = L.layerGroup().addTo(map);
+let routeB = L.layerGroup().addTo(map);
+let stopsA = L.layerGroup().addTo(map);
+let stopsB = L.layerGroup().addTo(map);
+
 document.addEventListener('DOMContentLoaded', function () {
 	// バス停データの取得と表示
 	function fetchAndDisplayStops(file, layer, pointToLayerFunc) {
@@ -13,18 +28,18 @@ document.addEventListener('DOMContentLoaded', function () {
 			stopsA.clearLayers();
 			stopsB.clearLayers();
 			if (routeData) {
-				let isRouteA = routeData.includes('_a');
+				let issimulationRouteA = routeData.includes('_a');
 				let isRouteB = routeData.includes('_b');
-				routeA.setStyle({ pane: "linePane", color: isRouteA ? routSelect : routeDefault });
+				simulationRouteA.setStyle({ pane: "linePane", color: issimulationRouteA ? routSelect : routeDefault });
 				routeB.setStyle({ pane: "linePane", color: isRouteB ? routSelect : routeDefault });
-				routeA.getTooltip().getElement().classList.toggle('current', isRouteA);
+				simulationRouteA.getTooltip().getElement().classList.toggle('current', issimulationRouteA);
 				routeB.getTooltip().getElement().classList.toggle('current', isRouteB);
-				fetchAndDisplayStops(fileStopA, stopsA, isRouteA ? stopSelect : stopDefault);
+				fetchAndDisplayStops(fileStopA, stopsA, issimulationRouteA ? stopSelect : stopDefault);
 				fetchAndDisplayStops(fileStopB, stopsB, isRouteB ? stopSelect : stopDefault);
 			} else {
-				routeA.setStyle({ pane: "linePane", color: routeDefault });
+				simulationRouteA.setStyle({ pane: "linePane", color: routeDefault });
 				routeB.setStyle({ pane: "linePane", color: routeDefault });
-				routeA.getTooltip().getElement().classList.remove('current');
+				simulationRouteA.getTooltip().getElement().classList.remove('current');
 				routeB.getTooltip().getElement().classList.remove('current');
 				fetchAndDisplayStops(fileStopA, stopsA, stopDefault);
 				fetchAndDisplayStops(fileStopB, stopsB, stopDefault);
@@ -171,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	}
 	// 初期クリックイベントリスナーを設定
-	routeA.on('click', () => handleRouteClick('_a'));
+	simulationRouteA.on('click', () => handleRouteClick('_a'));
 	routeB.on('click', () => handleRouteClick('_b'));
 });
 //リセットボタン
