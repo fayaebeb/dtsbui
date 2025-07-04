@@ -2541,16 +2541,3 @@ input:checked+.c-input__checkbox-switch::before {
   -webkit-backdrop-filter: blur(10px);
 }
 
-.c-btn:focus-visible,
-.l-header__nav-link:focus-visible {
-  outline: 2px solid var(--colorMain);
-  outline-offset: 2px;
-}
-
-.l-contents__main > * {
-  border-radius: var(--commonRadius);
-  box-shadow: var(--shadow-md);
- 
-  border: 1px solid var(--glass-border);
-}
-
