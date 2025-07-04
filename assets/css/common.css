@@ -470,28 +470,7 @@ html {
   background: url(../image/ico_useful_01.svg) no-repeat center/contain
 }
 
-.l-contents__dl {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  align-items: stretch; 
-  background: #fff;
-  border-radius: var(--commonRadius);
-  overflow: hidden;
-}
-
-.l-contents__dl-dt {
-  display: flex;
-  align-items: center;
-  height: 100%; 
-  background: var(--colorMain);
-  color: #fff;
-  padding: clamp(15px, 1em, 20px) min(2.196193265vw, 30px);
-  font-weight: bold;
-}
-
-.l-contents__dl-dd {
-  padding: clamp(15px, 1em, 20px) min(1.4641288433vw, 20px)
-}
+.l-contents__dl{display:grid;grid-template-columns:max-content minmax(0, 1fr);background:#fff;border-radius:var(--commonRadius);overflow:hidden}.l-contents__dl-dt{background:var(--colorMain);color:#fff;align-content:center;padding:clamp(15px,1em,20px) min(2.196193265vw, 30px);font-weight:bold}.l-contents__dl-dd{padding:clamp(15px,1em,20px) min(1.4641288433vw, 20px)}
 
 .l-contents__evaluation {
   font-size: 2rem;
@@ -2539,5 +2518,17 @@ input:checked+.c-input__checkbox-switch::before {
   background: linear-gradient(135deg, rgba(245, 247, 250, 0.95) 0%, rgba(195, 207, 226, 0.95) 100%);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+}
+
+.c-btn:focus-visible,
+.l-header__nav-link:focus-visible {
+  outline: 2px solid var(--colorMain);
+  outline-offset: 2px;
+}
+
+.l-contents__main > * {
+  border-radius: var(--commonRadius);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--glass-border);
 }
 
