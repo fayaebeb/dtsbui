@@ -66,21 +66,20 @@
 			cursor: grabbing;
 		}
 
-		.c-input__range-wrap input[type=range] {
+		.fare-slider .c-input__range-wrap input[type=range]::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			width: 0;
+			height: 0;
+			border: none;
+		}
+
+		.fare-slider .c-input__range-wrap input[type=range] {
 			-webkit-appearance: none;
 			width: 100%;
 			height: 36px;
 			background: none;
 			position: relative;
 			z-index: 3;
-		}
-
-		/* Hide the range thumb */
-		.c-input__range-wrap input[type=range]::-webkit-slider-thumb {
-			-webkit-appearance: none;
-			width: 0;
-			height: 0;
-			border: none;
 		}
 
 		.c-input__range-wrap input[type=range]::-moz-range-thumb {
@@ -288,7 +287,7 @@
 												リセット
 											</span>
 										</dt>
-										<dd class="c-input__range" id="current_a_fare">
+										<dd class="c-input__range fare-slider" id="current_a_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
 											<div class="c-input__range-container js-range">
 												<div class="c-input__range-display u-en js-range-change"
@@ -519,7 +518,7 @@
 											<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="current_b_fare">リセット</span>
 										</dt>
-										<dd class="c-input__range" id="current_b_fare">
+										<dd class="c-input__range fare-slider" id="current_b_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
 											<div class="c-input__range-container js-range">
 												<div class="c-input__range-display u-en js-range-change"
@@ -760,7 +759,7 @@
 											<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="scenario01_a_fare">リセット</span>
 										</dt>
-										<dd class="c-input__range" id="scenario01_a_fare">
+										<dd class="c-input__range fare-slider" id="scenario01_a_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
 											<div class="c-input__range-container js-range">
 												<div class="c-input__range-display u-en js-range-change"
@@ -998,7 +997,7 @@
 											<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="scenario01_b_fare">リセット</span>
 										</dt>
-										<dd class="c-input__range" id="scenario01_b_fare">
+										<dd class="c-input__range fare-slider" id="scenario01_b_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
 											<div class="c-input__range-container js-range">
 												<div class="c-input__range-display u-en js-range-change"
@@ -1239,7 +1238,7 @@
 											<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="scenario02_a_fare">リセット</span>
 										</dt>
-										<dd class="c-input__range" id="scenario02_a_fare">
+										<dd class="c-input__range fare-slider" id="scenario02_a_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
 											<div class="c-input__range-container js-range">
 												<div class="c-input__range-display u-en js-range-change"
@@ -1477,7 +1476,7 @@
 											<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="scenario02_b_fare">リセット</span>
 										</dt>
-										<dd class="c-input__range" id="scenario02_b_fare">
+										<dd class="c-input__range fare-slider" id="scenario02_b_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
 											<div class="c-input__range-container js-range">
 												<div class="c-input__range-display u-en js-range-change"
