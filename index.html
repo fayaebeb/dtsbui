@@ -289,14 +289,14 @@
 										</dt>
 										<dd class="c-input__range fare-slider" id="current_a_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-range">
-												<div class="c-input__range-display u-en js-range-change"
+											<div class="c-input__range-container js-fare-range">
+												<div class="c-input__range-display u-en js-fare-range-display"
 													aria-label="Fare range">
-													<strong class="js-range-min-value">120</strong>
+													<strong class="js-fare-min-value">120</strong>
 													<span class="c-input__range-separator">〜</span>
-													<strong class="js-range-max-value">390</strong>
+													<strong class="js-fare-max-value">390</strong>
 													<span class="c-input__range-unit">円</span>
-													<small class="js-range-diff c-input__range-diff">(±0)</small>
+													<small class="js-fare-diff c-input__range-diff">(±0)</small>
 												</div>
 
 												<div class="c-input__range-minmax u-en">
@@ -305,15 +305,16 @@
 
 												<div class="c-input__range-wrap">
 													<div class="range-track"></div>
-													<div class="range-highlight js-range-mark"></div>
-													<input type="range" id="rangeSlider" min="0" max="730" step="10"
-														value="0" />
+													<div class="range-highlight js-fare-mark"></div>
+													<input type="range" id="fareSlider_current_a_fare" min="0" max="730"
+														step="10" value="0" />
 												</div>
 
 												<div class="fare-inputs u-en">
-													<label for="fareShiftInput" class="fare-label-text">調整:</label>
-													<input type="number" id="fareShiftInput" value="0" step="10" min="0"
-														max="610" /> 円 ～
+													<label for="fareShiftInput_current_a_fare"
+														class="fare-label-text">調整:</label>
+													<input type="number" id="fareShiftInput_current_a_fare" value="0"
+														step="10" min="0" max="610" /> 円 ～
 												</div>
 											</div>
 										</dd>
@@ -520,14 +521,14 @@
 										</dt>
 										<dd class="c-input__range fare-slider" id="current_b_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-range">
-												<div class="c-input__range-display u-en js-range-change"
+											<div class="c-input__range-container js-fare-range">
+												<div class="c-input__range-display u-en js-fare-range-display"
 													aria-label="Fare range">
-													<strong class="js-range-min-value">120</strong>
+													<strong class="js-fare-min-value">120</strong>
 													<span class="c-input__range-separator">〜</span>
-													<strong class="js-range-max-value">390</strong>
+													<strong class="js-fare-max-value">390</strong>
 													<span class="c-input__range-unit">円</span>
-													<small class="js-range-diff c-input__range-diff">(±0)</small>
+													<small class="js-fare-diff c-input__range-diff">(±0)</small>
 												</div>
 
 												<div class="c-input__range-minmax u-en">
@@ -536,13 +537,13 @@
 
 												<div class="c-input__range-wrap">
 													<div class="range-track"></div>
-													<div class="range-highlight js-range-mark"></div>
-													<input type="range" id="rangeSlider_current_b_fare" step="10" />
+													<div class="range-highlight js-fare-mark"></div>
+													<input type="range" id="fareSlider_current_b_fare" step="10" />
 												</div>
 
 												<div class="fare-inputs u-en">
-													<input type="number" id="fareShiftInput_current_b_fare" step="10"> 円
-													～
+													<input type="number" id="fareShiftInput_current_b_fare" step="10" />
+													円 ～
 												</div>
 
 												<input type="hidden" name="current_b_fare_min"
@@ -761,14 +762,14 @@
 										</dt>
 										<dd class="c-input__range fare-slider" id="scenario01_a_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-range">
-												<div class="c-input__range-display u-en js-range-change"
+											<div class="c-input__range-container js-fare-range">
+												<div class="c-input__range-display u-en js-fare-range-display"
 													aria-label="Fare range">
-													<strong class="js-range-min-value">140</strong>
+													<strong class="js-fare-min-value">140</strong>
 													<span class="c-input__range-separator">〜</span>
-													<strong class="js-range-max-value">410</strong>
+													<strong class="js-fare-max-value">410</strong>
 													<span class="c-input__range-unit">円</span>
-													<small class="js-range-diff c-input__range-diff">(±0)</small>
+													<small class="js-fare-diff c-input__range-diff">(±0)</small>
 												</div>
 
 												<div class="c-input__range-minmax u-en">
@@ -777,13 +778,13 @@
 
 												<div class="c-input__range-wrap">
 													<div class="range-track"></div>
-													<div class="range-highlight js-range-mark"></div>
-													<input type="range" id="rangeSlider_scenario01_a_fare" step="10" />
+													<div class="range-highlight js-fare-mark"></div>
+													<input type="range" id="fareSlider_scenario01_a_fare" step="10" />
 												</div>
 
 												<div class="fare-inputs u-en">
 													<input type="number" id="fareShiftInput_scenario01_a_fare"
-														step="10"> 円 ～
+														step="10" /> 円 ～
 												</div>
 
 												<input type="hidden" name="scenario01_a_fare_min"
@@ -999,14 +1000,14 @@
 										</dt>
 										<dd class="c-input__range fare-slider" id="scenario01_b_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-range">
-												<div class="c-input__range-display u-en js-range-change"
+											<div class="c-input__range-container js-fare-range">
+												<div class="c-input__range-display u-en js-fare-range-display"
 													aria-label="Fare range">
-													<strong class="js-range-min-value">120</strong>
+													<strong class="js-fare-min-value">120</strong>
 													<span class="c-input__range-separator">〜</span>
-													<strong class="js-range-max-value">390</strong>
+													<strong class="js-fare-max-value">390</strong>
 													<span class="c-input__range-unit">円</span>
-													<small class="js-range-diff c-input__range-diff">(±0)</small>
+													<small class="js-fare-diff c-input__range-diff">(±0)</small>
 												</div>
 
 												<div class="c-input__range-minmax u-en">
@@ -1015,13 +1016,13 @@
 
 												<div class="c-input__range-wrap">
 													<div class="range-track"></div>
-													<div class="range-highlight js-range-mark"></div>
-													<input type="range" id="rangeSlider_scenario01_b_fare" step="10" />
+													<div class="range-highlight js-fare-mark"></div>
+													<input type="range" id="fareSlider_scenario01_b_fare" step="10" />
 												</div>
 
 												<div class="fare-inputs u-en">
 													<input type="number" id="fareShiftInput_scenario01_b_fare"
-														step="10"> 円 ～
+														step="10" /> 円 ～
 												</div>
 
 												<input type="hidden" name="scenario01_b_fare_min"
@@ -1240,14 +1241,14 @@
 										</dt>
 										<dd class="c-input__range fare-slider" id="scenario02_a_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-range">
-												<div class="c-input__range-display u-en js-range-change"
+											<div class="c-input__range-container js-fare-range">
+												<div class="c-input__range-display u-en js-fare-range-display"
 													aria-label="Fare range">
-													<strong class="js-range-min-value">160</strong>
+													<strong class="js-fare-min-value">160</strong>
 													<span class="c-input__range-separator">〜</span>
-													<strong class="js-range-max-value">430</strong>
+													<strong class="js-fare-max-value">430</strong>
 													<span class="c-input__range-unit">円</span>
-													<small class="js-range-diff c-input__range-diff">(±0)</small>
+													<small class="js-fare-diff c-input__range-diff">(±0)</small>
 												</div>
 
 												<div class="c-input__range-minmax u-en">
@@ -1256,13 +1257,13 @@
 
 												<div class="c-input__range-wrap">
 													<div class="range-track"></div>
-													<div class="range-highlight js-range-mark"></div>
-													<input type="range" id="rangeSlider_scenario02_a_fare" step="10" />
+													<div class="range-highlight js-fare-mark"></div>
+													<input type="range" id="fareSlider_scenario02_a_fare" step="10" />
 												</div>
 
 												<div class="fare-inputs u-en">
 													<input type="number" id="fareShiftInput_scenario02_a_fare"
-														step="10"> 円 ～
+														step="10" /> 円 ～
 												</div>
 
 												<input type="hidden" name="scenario02_a_fare_min"
@@ -1478,14 +1479,14 @@
 										</dt>
 										<dd class="c-input__range fare-slider" id="scenario02_b_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-range">
-												<div class="c-input__range-display u-en js-range-change"
+											<div class="c-input__range-container js-fare-range">
+												<div class="c-input__range-display u-en js-fare-range-display"
 													aria-label="Fare range">
-													<strong class="js-range-min-value">120</strong>
+													<strong class="js-fare-min-value">120</strong>
 													<span class="c-input__range-separator">〜</span>
-													<strong class="js-range-max-value">390</strong>
+													<strong class="js-fare-max-value">390</strong>
 													<span class="c-input__range-unit">円</span>
-													<small class="js-range-diff c-input__range-diff">(±0)</small>
+													<small class="js-fare-diff c-input__range-diff">(±0)</small>
 												</div>
 
 												<div class="c-input__range-minmax u-en">
@@ -1494,13 +1495,13 @@
 
 												<div class="c-input__range-wrap">
 													<div class="range-track"></div>
-													<div class="range-highlight js-range-mark"></div>
-													<input type="range" id="rangeSlider_scenario02_b_fare" step="10" />
+													<div class="range-highlight js-fare-mark"></div>
+													<input type="range" id="fareSlider_scenario02_b_fare" step="10" />
 												</div>
 
 												<div class="fare-inputs u-en">
 													<input type="number" id="fareShiftInput_scenario02_b_fare"
-														step="10"> 円 ～
+														step="10" /> 円 ～
 												</div>
 
 												<input type="hidden" name="scenario02_b_fare_min"
@@ -1740,127 +1741,21 @@
 	<script src="assets/js/simulation.js"></script>
 
 	<script>
-		const slider = document.getElementById('rangeSlider');
-		const highlight = document.querySelector('.js-range-mark');
-		const inputShift = document.getElementById('fareShiftInput');
-
-		const baseStart = 120;
-		const baseEnd = 390;
-		const fixedWidth = baseEnd - baseStart;
-
-		const minShift = -baseStart; // allow shift below 120
-		const maxShift = 1000 - baseEnd;
-
-		function updateVisual(shiftVal) {
-			const shift = parseInt(shiftVal);
-			const start = baseStart + shift;
-			const end = start + fixedWidth;
-
-			const pctLeft = (start / 1000) * 100;
-			const pctWidth = (fixedWidth / 1000) * 100;
-
-			highlight.style.left = pctLeft + '%';
-			highlight.style.width = pctWidth + '%';
-
-			// Update display values
-			document.querySelector('.js-range-min-value').textContent = start;
-			document.querySelector('.js-range-max-value').textContent = end;
-
-			inputShift.value = shift;
-			slider.value = shift;
-
-			// Simplified diff
-			let diffText = '(±0)';
-			if (shift > 0) {
-				diffText = `(+${shift})`;
-			} else if (shift < 0) {
-				diffText = `(${shift})`;
-			}
-			document.querySelector('.js-range-diff').textContent = diffText;
-		}
-
-		// Input field listener
-		inputShift.addEventListener('input', () => {
-			let val = parseInt(inputShift.value);
-			if (isNaN(val)) val = 0;
-			val = Math.max(minShift, Math.min(val, maxShift));
-			val = Math.round(val / 10) * 10;
-			updateVisual(val);
-		});
-
-		// Slider listener
-		slider.addEventListener('input', () => {
-			let val = parseInt(slider.value);
-			if (isNaN(val)) val = 0;
-			val = Math.max(minShift, Math.min(val, maxShift));
-			val = Math.round(val / 10) * 10;
-			updateVisual(val);
-		});
-
-		// Reset button
-		document.querySelector('[data-reset="current_a_fare"]').addEventListener('click', () => {
-			updateVisual(0);
-		});
-
-		// Dragging bar directly
-		let isDragging = false;
-		let startX = 0;
-		let startShift = 0;
-
-		highlight.addEventListener('pointerdown', (e) => {
-			isDragging = true;
-			startX = e.clientX;
-			startShift = parseInt(slider.value);
-			highlight.setPointerCapture(e.pointerId);
-		});
-
-		highlight.addEventListener('pointermove', (e) => {
-			if (!isDragging) return;
-			const dx = e.clientX - startX;
-			const trackWidth = slider.offsetWidth;
-			const ratio = dx / trackWidth;
-			const valueDelta = Math.round((ratio * 1000) / 10) * 10;
-
-			let newShift = startShift + valueDelta;
-			newShift = Math.max(minShift, Math.min(newShift, maxShift));
-			updateVisual(newShift);
-		});
-
-		highlight.addEventListener('pointerup', () => {
-			isDragging = false;
-		});
-
-		// Initialize
-		slider.setAttribute('min', minShift);
-		slider.setAttribute('max', maxShift);
-		slider.setAttribute('step', 10);
-		slider.value = 0;
-
-		inputShift.setAttribute('min', minShift);
-		inputShift.setAttribute('max', maxShift);
-		inputShift.setAttribute('step', 10);
-
-		updateVisual(0);
-	</script>
-
-
-	<script>
-		(function () {
-			const id = "current_b_fare";
+		document.addEventListener("DOMContentLoaded", function () {
+			const id = "current_a_fare";
 			const startBase = 120;
 			const endBase = 390;
 			const range = endBase - startBase;
 			const minShift = -startBase;
 			const maxShift = 1000 - endBase;
 
+			const container = document.getElementById(id);
 			const input = document.getElementById(`fareShiftInput_${id}`);
-			const slider = document.getElementById(`rangeSlider_${id}`);
-			const mark = document.querySelector(`#${id} .js-range-mark`);
-			const displayMin = document.querySelector(`#${id} .js-range-min-value`);
-			const displayMax = document.querySelector(`#${id} .js-range-max-value`);
-			const diff = document.querySelector(`#${id} .js-range-diff`);
-			const hiddenMin = document.getElementById(`${id}_min_hidden`);
-			const hiddenMax = document.getElementById(`${id}_max_hidden`);
+			const slider = document.getElementById(`fareSlider_${id}`);
+			const mark = container.querySelector(".js-fare-mark");
+			const displayMin = container.querySelector(".js-fare-min-value");
+			const displayMax = container.querySelector(".js-fare-max-value");
+			const diff = container.querySelector(".js-fare-diff");
 
 			function update(val) {
 				const shift = parseInt(val);
@@ -1876,8 +1771,6 @@
 				displayMax.textContent = e;
 				input.value = shift;
 				slider.value = shift;
-				hiddenMin.value = s;
-				hiddenMax.value = e;
 
 				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
 			}
@@ -1900,7 +1793,10 @@
 				update(v);
 			});
 
-			document.querySelector(`[data-reset="${id}"]`).addEventListener("click", () => update(0));
+			const resetBtn = document.querySelector(`[data-reset="${id}"]`);
+			if (resetBtn) {
+				resetBtn.addEventListener("click", () => update(0));
+			}
 
 			// drag bar
 			let isDragging = false;
@@ -1926,6 +1822,98 @@
 				isDragging = false;
 			});
 
+			// Initial update
+			update(0);
+		});
+	</script>
+
+	<script>
+		(function () {
+			const id = "current_b_fare";
+			const startBase = 120;
+			const endBase = 390;
+			const range = endBase - startBase;
+			const minShift = -startBase;
+			const maxShift = 1000 - endBase;
+
+			const container = document.getElementById(id);
+			const input = document.getElementById(`fareShiftInput_${id}`);
+			const slider = document.getElementById(`fareSlider_${id}`);
+			const mark = container.querySelector(".js-fare-mark");
+			const displayMin = container.querySelector(".js-fare-min-value");
+			const displayMax = container.querySelector(".js-fare-max-value");
+			const diff = container.querySelector(".js-fare-diff");
+			const hiddenMin = document.getElementById(`${id}_min_hidden`);
+			const hiddenMax = document.getElementById(`${id}_max_hidden`);
+
+			function update(val) {
+				const shift = parseInt(val);
+				const s = startBase + shift;
+				const e = s + range;
+				const pctLeft = (s / 1000) * 100;
+				const pctWidth = (range / 1000) * 100;
+
+				mark.style.left = pctLeft + "%";
+				mark.style.width = pctWidth + "%";
+
+				displayMin.textContent = s;
+				displayMax.textContent = e;
+				input.value = shift;
+				slider.value = shift;
+				hiddenMin.value = s;
+				hiddenMax.value = e;
+
+				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
+			}
+
+			// Set attributes and initialize
+			input.setAttribute("min", minShift);
+			input.setAttribute("max", maxShift);
+			input.setAttribute("step", 10);
+			input.value = 0;
+
+			slider.setAttribute("min", minShift);
+			slider.setAttribute("max", maxShift);
+			slider.setAttribute("step", 10);
+			slider.value = 0;
+
+			input.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
+				update(v);
+			});
+
+			slider.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
+				update(v);
+			});
+
+			document.querySelector(`[data-reset="${id}"]`).addEventListener("click", () => update(0));
+
+			// Drag behavior
+			let isDragging = false;
+			let startX = 0;
+			let startVal = 0;
+
+			mark.addEventListener("pointerdown", (e) => {
+				isDragging = true;
+				startX = e.clientX;
+				startVal = parseInt(slider.value);
+				mark.setPointerCapture(e.pointerId);
+			});
+
+			mark.addEventListener("pointermove", (e) => {
+				if (!isDragging) return;
+				const dx = e.clientX - startX;
+				const ratio = dx / slider.offsetWidth;
+				const delta = Math.round((ratio * 1000) / 10) * 10;
+				update(Math.max(minShift, Math.min(startVal + delta, maxShift)));
+			});
+
+			mark.addEventListener("pointerup", () => {
+				isDragging = false;
+			});
+
+			// Initialize display
 			update(0);
 		})();
 	</script>
@@ -1939,12 +1927,13 @@
 			const minShift = -startBase;
 			const maxShift = 1000 - endBase;
 
+			const container = document.getElementById(id);
 			const input = document.getElementById(`fareShiftInput_${id}`);
-			const slider = document.getElementById(`rangeSlider_${id}`);
-			const mark = document.querySelector(`#${id} .js-range-mark`);
-			const displayMin = document.querySelector(`#${id} .js-range-min-value`);
-			const displayMax = document.querySelector(`#${id} .js-range-max-value`);
-			const diff = document.querySelector(`#${id} .js-range-diff`);
+			const slider = document.getElementById(`fareSlider_${id}`);
+			const mark = container.querySelector(".js-fare-mark");
+			const displayMin = container.querySelector(".js-fare-min-value");
+			const displayMax = container.querySelector(".js-fare-max-value");
+			const diff = container.querySelector(".js-fare-diff");
 			const hiddenMin = document.getElementById(`${id}_min_hidden`);
 			const hiddenMax = document.getElementById(`${id}_max_hidden`);
 
@@ -1972,15 +1961,17 @@
 			input.setAttribute("max", maxShift);
 			input.setAttribute("step", 10);
 			input.value = 0;
-			input.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
-				update(v);
-			});
 
 			slider.setAttribute("min", minShift);
 			slider.setAttribute("max", maxShift);
 			slider.setAttribute("step", 10);
 			slider.value = 0;
+
+			input.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
+				update(v);
+			});
+
 			slider.addEventListener("input", () => {
 				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
 				update(v);
@@ -1988,7 +1979,7 @@
 
 			document.querySelector(`[data-reset="${id}"]`).addEventListener("click", () => update(0));
 
-			// drag bar
+			// Drag behavior
 			let isDragging = false;
 			let startX = 0;
 			let startVal = 0;
@@ -2025,12 +2016,13 @@
 			const minShift = -startBase;
 			const maxShift = 1000 - endBase;
 
+			const container = document.getElementById(id);
 			const input = document.getElementById(`fareShiftInput_${id}`);
-			const slider = document.getElementById(`rangeSlider_${id}`);
-			const mark = document.querySelector(`#${id} .js-range-mark`);
-			const displayMin = document.querySelector(`#${id} .js-range-min-value`);
-			const displayMax = document.querySelector(`#${id} .js-range-max-value`);
-			const diff = document.querySelector(`#${id} .js-range-diff`);
+			const slider = document.getElementById(`fareSlider_${id}`);
+			const mark = container.querySelector(".js-fare-mark");
+			const displayMin = container.querySelector(".js-fare-min-value");
+			const displayMax = container.querySelector(".js-fare-max-value");
+			const diff = container.querySelector(".js-fare-diff");
 			const hiddenMin = document.getElementById(`${id}_min_hidden`);
 			const hiddenMax = document.getElementById(`${id}_max_hidden`);
 
@@ -2058,15 +2050,17 @@
 			input.setAttribute("max", maxShift);
 			input.setAttribute("step", 10);
 			input.value = 0;
-			input.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
-				update(v);
-			});
 
 			slider.setAttribute("min", minShift);
 			slider.setAttribute("max", maxShift);
 			slider.setAttribute("step", 10);
 			slider.value = 0;
+
+			input.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
+				update(v);
+			});
+
 			slider.addEventListener("input", () => {
 				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
 				update(v);
@@ -2110,12 +2104,13 @@
 			const minShift = -startBase;
 			const maxShift = 1000 - endBase;
 
+			const container = document.getElementById(id);
 			const input = document.getElementById(`fareShiftInput_${id}`);
-			const slider = document.getElementById(`rangeSlider_${id}`);
-			const mark = document.querySelector(`#${id} .js-range-mark`);
-			const displayMin = document.querySelector(`#${id} .js-range-min-value`);
-			const displayMax = document.querySelector(`#${id} .js-range-max-value`);
-			const diff = document.querySelector(`#${id} .js-range-diff`);
+			const slider = document.getElementById(`fareSlider_${id}`);
+			const mark = container.querySelector(".js-fare-mark");
+			const displayMin = container.querySelector(".js-fare-min-value");
+			const displayMax = container.querySelector(".js-fare-max-value");
+			const diff = container.querySelector(".js-fare-diff");
 			const hiddenMin = document.getElementById(`${id}_min_hidden`);
 			const hiddenMax = document.getElementById(`${id}_max_hidden`);
 
@@ -2139,19 +2134,22 @@
 				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
 			}
 
+			// Init attributes
 			input.setAttribute("min", minShift);
 			input.setAttribute("max", maxShift);
 			input.setAttribute("step", 10);
 			input.value = 0;
-			input.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
-				update(v);
-			});
 
 			slider.setAttribute("min", minShift);
 			slider.setAttribute("max", maxShift);
 			slider.setAttribute("step", 10);
 			slider.value = 0;
+
+			input.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
+				update(v);
+			});
+
 			slider.addEventListener("input", () => {
 				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
 				update(v);
@@ -2159,7 +2157,7 @@
 
 			document.querySelector(`[data-reset="${id}"]`).addEventListener("click", () => update(0));
 
-			// drag bar
+			// Drag logic
 			let isDragging = false;
 			let startX = 0;
 			let startVal = 0;
@@ -2183,6 +2181,7 @@
 				isDragging = false;
 			});
 
+			// Initial draw
 			update(0);
 		})();
 	</script>
@@ -2196,12 +2195,13 @@
 			const minShift = -startBase;
 			const maxShift = 1000 - endBase;
 
+			const container = document.getElementById(id);
 			const input = document.getElementById(`fareShiftInput_${id}`);
-			const slider = document.getElementById(`rangeSlider_${id}`);
-			const mark = document.querySelector(`#${id} .js-range-mark`);
-			const displayMin = document.querySelector(`#${id} .js-range-min-value`);
-			const displayMax = document.querySelector(`#${id} .js-range-max-value`);
-			const diff = document.querySelector(`#${id} .js-range-diff`);
+			const slider = document.getElementById(`fareSlider_${id}`);
+			const mark = container.querySelector(".js-fare-mark");
+			const displayMin = container.querySelector(".js-fare-min-value");
+			const displayMax = container.querySelector(".js-fare-max-value");
+			const diff = container.querySelector(".js-fare-diff");
 			const hiddenMin = document.getElementById(`${id}_min_hidden`);
 			const hiddenMax = document.getElementById(`${id}_max_hidden`);
 
@@ -2229,15 +2229,17 @@
 			input.setAttribute("max", maxShift);
 			input.setAttribute("step", 10);
 			input.value = 0;
-			input.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
-				update(v);
-			});
 
 			slider.setAttribute("min", minShift);
 			slider.setAttribute("max", maxShift);
 			slider.setAttribute("step", 10);
 			slider.value = 0;
+
+			input.addEventListener("input", () => {
+				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
+				update(v);
+			});
+
 			slider.addEventListener("input", () => {
 				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
 				update(v);
@@ -2245,6 +2247,7 @@
 
 			document.querySelector(`[data-reset="${id}"]`).addEventListener("click", () => update(0));
 
+			// Drag logic
 			let isDragging = false;
 			let startX = 0;
 			let startVal = 0;
