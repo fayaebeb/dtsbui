@@ -83,26 +83,30 @@ document.addEventListener('DOMContentLoaded', function () {
         function laneCheck() {
                 const rosenPane = document.querySelector('.leaflet-selectRosen-pane');
                 const stopPane = document.querySelector('.leaflet-selectStop-pane');
-                if (document.querySelector('.js-parameter-content.current .js-route[open] .js-route-lanes:checked')?.value === '1') {
+                const selectedValue = document.querySelector('.js-parameter-content.current .js-route[open] .js-route-lanes:checked')?.value;
+
+                if (selectedValue === '1') {
                         document.querySelector('.js-route-mode').style.display = 'block';
                         const markerImages = document.querySelectorAll('.leaflet-marker-pane img, .leaflet-shadow-pane img');
                         markerImages.forEach(img => img.remove());
                         document.querySelector('.leaflet-line-pane').style.opacity = '0.2';
-                        if (rosenPane) {
-                                rosenPane.style.display = 'block';
+                        if (rosenPane) rosenPane.style.display = 'block';
+                        if (stopPane) stopPane.style.display = 'block';
+
+                        // Show popup
+                        const popup = document.getElementById('lane-popup');
+                        if (popup) {
+                                popup.style.display = 'block';
+                                setTimeout(() => {
+                                        popup.style.display = 'none';
+                                }, 3000); // hide after 3 seconds
                         }
-                        if (stopPane) {
-                                stopPane.style.display = 'block';
-                        }
+
                 } else {
                         document.querySelector('.js-route-mode').style.display = 'none';
                         document.querySelector('.leaflet-line-pane').style.opacity = '1';
-                        if (rosenPane) {
-                                rosenPane.style.display = 'none';
-                        }
-                        if (stopPane) {
-                                stopPane.style.display = 'none';
-                        }
+                        if (rosenPane) rosenPane.style.display = 'none';
+                        if (stopPane) stopPane.style.display = 'none';
                 }
         }
         laneCheck();
