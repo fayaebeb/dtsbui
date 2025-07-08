@@ -226,38 +226,81 @@ html {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-rows: max-content 1fr
-}
+  grid-template-rows: max-content 1fr;
+  }
 
 .l-header__tit {
   text-align: center;
-  padding: 0 min(1.4641288433vw, 20px);
-  margin-bottom: min(2.6041666667vh, 20px)
+  padding: clamp(10px, 0px, 30px);
+  margin-bottom: clamp(20px, 4vh, 50px);
+  background: linear-gradient(135deg, #eba454, #ff7b00);
+  border-radius: 20px;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+  transition: all 0.4s ease-in-out;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
 }
 
 .l-header__tit.close {
   width: 0;
   overflow: hidden;
   white-space: nowrap;
-  transition: var(--transition-smooth);
-  border-radius: var(--commonRadius);
+  transition: all 0.4s ease-in-out;
+  border-radius: 12px;
   margin: 2px 8px;
-  position: relative;
-  padding: 0
+  padding: 0;
+  opacity: 0;
 }
 
 .l-header__tit-en {
-  font-family: var(--fontEn);
-  color: var(--colorMain);
-  font-weight: bold;
-  font-size: 50px;
-  display: block;
-  line-height: 1.1
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: clamp(40px, 6vw, 70px);
+  letter-spacing: 1px;
+  line-height: 1.2;
+  background: linear-gradient(270deg, #ff6ec4, #e8ff1c, #00fff0, #ff6ec4);
+  background-size: 600% 600%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientGlow 8s ease infinite, fadeInSlideUp 1s ease-out both;
+  filter: drop-shadow(0 0 4px #ff6ec4) drop-shadow(0 0 8px #00fff0) drop-shadow(0 0 12px #ffffff);
 }
 
 .l-header__tit-jp {
-  font-size: 10px
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  animation: fadeInSlideUp 1s 0.2s ease-out both;
 }
+
+@keyframes fadeInSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradientGlow {
+  0% {
+    background-position: 0% 50%;
+    filter: drop-shadow(0 0 4px #ff6ec4) drop-shadow(0 0 8px #ff6ec4);
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: drop-shadow(0 0 6px #00fff0) drop-shadow(0 0 12px #00fff0);
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: drop-shadow(0 0 4px #7873f5) drop-shadow(0 0 8px #7873f5);
+  }
+}
+
+
 
 .l-header__nav {
   border-top: 1px solid var(--commonGray);
