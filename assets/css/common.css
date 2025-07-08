@@ -2711,30 +2711,3 @@ input:checked+.c-input__checkbox-switch::before {
   box-shadow: var(--shadow-md);
   border: 1px solid var(--glass-border);
 }
-
-.details.c-route {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.details.c-route>summary {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: #fff;
-  padding: 12px 16px;
-  border-bottom: 1px solid #ddd;
-}
-
-.details.c-route>.c-route__setting {
-  padding-top: 40px;
-}
-
-.c-area__btns {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.c-btn.c-btn__contents {
-  min-width: 400px;
-}
