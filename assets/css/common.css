@@ -1708,16 +1708,16 @@ input:checked+.c-input__checkbox-switch::before {
   letter-spacing: 0.02em;
   -webkit-appearance: none;
   width: 100%;
-  height: 4px;
+  height: 16px;
   background: var(--commonGray);
-  cursor: pointer
+  cursor: pointer;
 }
 
 .c-input__range-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   background: var(--colorMain);
   border-radius: 50%;
   cursor: pointer;
@@ -1727,8 +1727,8 @@ input:checked+.c-input__checkbox-switch::before {
 }
 
 .c-input__range-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   background: var(--colorMain);
   border-radius: 50%;
   border: none;
@@ -1737,8 +1737,8 @@ input:checked+.c-input__checkbox-switch::before {
 }
 
 .c-input__range-slider::-ms-thumb {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   background: var(--colorMain);
   border-radius: 50%;
   border: none;
