@@ -927,11 +927,13 @@ html {
   bottom: calc(100% + 15px);
   padding: clamp(5px, 1.3020833333vh, 10px) clamp(5px, 0.7320644217vw, 10px);
   display: grid;
-}
 
-.l-contents__map-legends,
-.l-contents__map-legends::after {
-  background: rgba(255, 255, 255, .9)
+  /* Glass effect */
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
 .l-contents__map-legends::after {
@@ -942,13 +944,19 @@ html {
   position: absolute;
   top: 100%;
   left: clamp(20px, 2.9282576867vw, 40px);
-  clip-path: polygon(0 0, 100% 0, 50% 100%)
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .l-contents__map-legends dt {
   font-weight: bold;
   text-align: left;
-  margin: .5em
+  margin: .5em;
+  color: #000;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
 }
 
 .l-contents__map-legends .close {
@@ -962,7 +970,7 @@ html {
   right: 0;
   transform: translate(50%, -50%);
   cursor: pointer;
-  border: 2px solid #fff
+  border: 2px solid #fff;
 }
 
 .l-contents__map-legends .close::before,
@@ -974,22 +982,22 @@ html {
   background: #fff;
   position: absolute;
   top: 50%;
-  left: 50%
+  left: 50%;
 }
 
 .l-contents__map-legends .close::before {
-  transform: translate(-50%, -50%) rotate(45deg)
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .l-contents__map-legends .close::after {
-  transform: translate(-50%, -50%) rotate(-45deg)
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .l-contents__map-legends .population {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1em 1px;
-  text-align: center
+  text-align: center;
 }
 
 .l-contents__map-legends .population li {
@@ -999,7 +1007,7 @@ html {
   margin: 2px 8px;
   position: relative;
   overflow: hidden;
-  font-size: 1.1rem
+  font-size: 1.1rem;
 }
 
 .l-contents__map-legends .population li::before {
@@ -1007,57 +1015,28 @@ html {
   display: block;
   width: 100%;
   height: 1.5em;
-  margin-bottom: .5em
+  margin-bottom: .5em;
 }
 
-.l-contents__map-legends .population li:first-child::before {
-  background: #fff3be
-}
-
-.l-contents__map-legends .population li:nth-child(2)::before {
-  background: #fee086
-}
-
-.l-contents__map-legends .population li:nth-child(3)::before {
-  background: #fed976
-}
-
-.l-contents__map-legends .population li:nth-child(4)::before {
-  background: #fec560
-}
-
-.l-contents__map-legends .population li:nth-child(5)::before {
-  background: #feb24b
-}
-
-.l-contents__map-legends .population li:nth-child(6)::before {
-  background: #fe9e44
-}
-
-.l-contents__map-legends .population li:nth-child(7)::before {
-  background: #fd8d3d
-}
-
-.l-contents__map-legends .population li:nth-child(8)::before {
-  background: #fc4e2a
-}
-
-.l-contents__map-legends .population li:nth-child(9)::before {
-  background: #e31a1c
-}
-
-.l-contents__map-legends .population li:nth-child(10)::before {
-  background: #bd0426
-}
-
-.l-contents__map-legends .population li:nth-child(11)::before {
-  background: #800126
-}
+.l-contents__map-legends .population li:nth-child(1)::before { background: #fff3be; }
+.l-contents__map-legends .population li:nth-child(2)::before { background: #fee086; }
+.l-contents__map-legends .population li:nth-child(3)::before { background: #fed976; }
+.l-contents__map-legends .population li:nth-child(4)::before { background: #fec560; }
+.l-contents__map-legends .population li:nth-child(5)::before { background: #feb24b; }
+.l-contents__map-legends .population li:nth-child(6)::before { background: #fe9e44; }
+.l-contents__map-legends .population li:nth-child(7)::before { background: #fd8d3d; }
+.l-contents__map-legends .population li:nth-child(8)::before { background: #fc4e2a; }
+.l-contents__map-legends .population li:nth-child(9)::before { background: #e31a1c; }
+.l-contents__map-legends .population li:nth-child(10)::before { background: #bd0426; }
+.l-contents__map-legends .population li:nth-child(11)::before { background: #800126; }
 
 .l-contents__map-legends .population li span {
   display: block;
-  padding: 0 .5em
+  padding: 0 .5em;
+  color: #000;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
 }
+
 
 .l-contents__data {
   grid-template-rows: var(--dataRow, minmax(0, 1fr) max-content)
@@ -2684,14 +2663,6 @@ input:checked+.c-input__checkbox-switch::before {
 .c-input__radio-label:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
-}
-
-.l-contents__map-legends {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-backdrop);
-  -webkit-backdrop-filter: var(--glass-backdrop);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-xl);
 }
 
 .l-loading {

@@ -398,11 +398,11 @@
 					return starB - starA; // descending
 				});
 			} else {
-				// Sort by cell content (descending order)
+				// Sort by cell content (ascending order A → D)
 				sortedRows = rows.sort((a, b) => {
 					const valueA = a.cells[columnIndex]?.textContent.trim() || '';
 					const valueB = b.cells[columnIndex]?.textContent.trim() || '';
-					return valueB.localeCompare(valueA); // descending
+					return valueA.localeCompare(valueB); // ascending
 				});
 			}
 
