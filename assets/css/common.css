@@ -1497,6 +1497,115 @@ input:checked+.c-btn__sort-inner {
   background: radial-gradient(circle, var(--colorMain) 50%, #FFF 50%)
 }
 
+/* ------------------------------------------------------------
+   1) Tidy up the overall <dl> layout & spacing
+   ------------------------------------------------------------ */
+.c-route__setting {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  align-items: center;
+  gap: clamp(0.75rem, 2.6vh, 1.25rem) clamp(1rem, 1.5vw, 1.5rem);
+  background: var(--bgLight, #fafafa);
+  border-radius: var(--commonRadius);
+  overflow: hidden;
+}
+
+.c-route__setting > dt,
+.c-route__setting > dd {
+  margin: 0;
+  padding: clamp(0.75rem, 2.6vh, 1.25rem)
+           clamp(1rem, 1.5vw,    1.5rem);
+  border-bottom: 1px solid var(--commonGray);
+}
+.c-route__setting > dt:last-child,
+.c-route__setting > dd:last-child {
+  border-bottom: none;
+}
+
+.c-route__setting > dt {
+  font-weight: bold;
+  /* align the “parameter” label to the top, since the radios can wrap */
+  align-self: start;
+}
+
+
+/* ------------------------------------------------------------
+   2) Radio-group container: horizontal with nice gap
+   ------------------------------------------------------------ */
+.c-input__radio {
+  display: flex;
+  flex-wrap: wrap;     /* will wrap on small screens */
+  gap: 1rem;
+}
+
+
+/* ------------------------------------------------------------
+   3) Each label: make it a pill, highlight on hover/focus
+   ------------------------------------------------------------ */
+.c-input__radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.5em 1em;
+  border-radius: var(--commonRadius);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.c-input__radio-label:hover {
+  background: var(--hoverBg, #f0f0f0);
+}
+
+
+/* ------------------------------------------------------------
+   4) Hide native circle & draw our own
+   ------------------------------------------------------------ */
+.c-input__radio-label input {
+  /* remove the browser default */
+  -webkit-appearance: none;
+  appearance: none;
+  /* size & positioning */
+  width: 1.2em;
+  height: 1.2em;
+  margin: 0;
+  position: relative;
+  /* border = outer ring */
+  border: 2px solid var(--commonGray);
+  border-radius: 50%;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+/* the “dot” when checked */
+.c-input__radio-label input::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.6em;
+  height: 0.6em;
+  background: var(--colorMain);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.2s ease-in-out;
+}
+.c-input__radio-label input:checked {
+  border-color: var(--colorMain);
+}
+.c-input__radio-label input:checked::before {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* focus outline for keyboard users */
+.c-input__radio-label input:focus-visible {
+  outline: 2px solid var(--focusColor, #5b9dd9);
+  outline-offset: 2px;
+}
+
+/* ensure the text sits nicely */
+.c-input__radio-text {
+  line-height: 1;
+}
+
+
 .c-input__checkbox {
   display: flex;
   align-items: center;
