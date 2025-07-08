@@ -197,28 +197,28 @@
 									<th>
 										<span class="u-ib">交通事故</span><span class="u-ib">発生率</span>
 										<label class="c-btn__sort">
-											<input type="checkbox" name="sort" value="4">
+											<input type="checkbox" name="sort" value="5">
 											<span class="c-btn__sort-inner">高い順</span>
 										</label>
 									</th>
 									<th>
 										<span class="u-ib">平均</span><span class="u-ib">乗客数</span>
 										<label class="c-btn__sort">
-											<input type="checkbox" name="sort" value="4">
+											<input type="checkbox" name="sort" value="6">
 											<span class="c-btn__sort-inner">高い順</span>
 										</label>
 									</th>
 									<th>
 										<span class="u-ib">交流発生</span><span class="u-ib">効果</span>
 										<label class="c-btn__sort">
-											<input type="checkbox" name="sort" value="4">
+											<input type="checkbox" name="sort" value="7">
 											<span class="c-btn__sort-inner">高い順</span>
 										</label>
 									</th>
 									<th>
 										<span class="u-ib">渋滞発生</span><span class="u-ib">頻度</span>
 										<label class="c-btn__sort">
-											<input type="checkbox" name="sort" value="4">
+											<input type="checkbox" name="sort" value="8">
 											<span class="c-btn__sort-inner">高い順</span>
 										</label>
 									</th>
@@ -387,26 +387,25 @@
 			});
 		});
 		function sortTable(sortValue) {
+			const columnIndex = parseInt(sortValue, 10);
 			let sortedRows;
-			if (sortValue === '2') {
+
+			if (columnIndex === 2) {
+				// Sort by star rating
 				sortedRows = rows.sort((a, b) => {
-					const starAElement = a.querySelector('[data-star]');
-					const starBElement = b.querySelector('[data-star]');
-					if (starAElement && starBElement) {
-						const starA = parseInt(starAElement.dataset.star);
-						const starB = parseInt(starBElement.dataset.star);
-						return starB - starA;
-					} else {
-						return 0;
-					}
+					const starA = parseInt(a.querySelector('[data-star]')?.dataset.star || 0);
+					const starB = parseInt(b.querySelector('[data-star]')?.dataset.star || 0);
+					return starB - starA; // descending
 				});
 			} else {
+				// Sort by cell content (descending order)
 				sortedRows = rows.sort((a, b) => {
-					const valueA = a.cells[sortValue].textContent;
-					const valueB = b.cells[sortValue].textContent;
-					return valueA.localeCompare(valueB);
+					const valueA = a.cells[columnIndex]?.textContent.trim() || '';
+					const valueB = b.cells[columnIndex]?.textContent.trim() || '';
+					return valueB.localeCompare(valueA); // descending
 				});
 			}
+
 			tbody.innerHTML = '';
 			sortedRows.forEach(row => tbody.appendChild(row));
 		}
