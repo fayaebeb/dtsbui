@@ -312,13 +312,6 @@
 													<input type="range" id="fareSlider_current_a_fare" min="0" max="730"
 														step="10" value="0" />
 												</div>
-
-												<div class="fare-inputs u-en">
-													<label for="fareShiftInput_current_a_fare"
-														class="fare-label-text">調整:</label>
-													<input type="number" id="fareShiftInput_current_a_fare" value="0"
-														step="10" min="0" max="610" /> 円 ～
-												</div>
 											</div>
 										</dd>
 
@@ -542,11 +535,6 @@
 													<div class="range-track"></div>
 													<div class="range-highlight js-fare-mark"></div>
 													<input type="range" id="fareSlider_current_b_fare" step="10" />
-												</div>
-
-												<div class="fare-inputs u-en">
-													<input type="number" id="fareShiftInput_current_b_fare" step="10" />
-													円 ～
 												</div>
 
 												<input type="hidden" name="current_b_fare_min"
@@ -785,11 +773,6 @@
 													<input type="range" id="fareSlider_scenario01_a_fare" step="10" />
 												</div>
 
-												<div class="fare-inputs u-en">
-													<input type="number" id="fareShiftInput_scenario01_a_fare"
-														step="10" /> 円 ～
-												</div>
-
 												<input type="hidden" name="scenario01_a_fare_min"
 													id="scenario01_a_fare_min_hidden">
 												<input type="hidden" name="scenario01_a_fare_max"
@@ -1022,12 +1005,6 @@
 													<div class="range-highlight js-fare-mark"></div>
 													<input type="range" id="fareSlider_scenario01_b_fare" step="10" />
 												</div>
-
-												<div class="fare-inputs u-en">
-													<input type="number" id="fareShiftInput_scenario01_b_fare"
-														step="10" /> 円 ～
-												</div>
-
 												<input type="hidden" name="scenario01_b_fare_min"
 													id="scenario01_b_fare_min_hidden">
 												<input type="hidden" name="scenario01_b_fare_max"
@@ -1263,12 +1240,6 @@
 													<div class="range-highlight js-fare-mark"></div>
 													<input type="range" id="fareSlider_scenario02_a_fare" step="10" />
 												</div>
-
-												<div class="fare-inputs u-en">
-													<input type="number" id="fareShiftInput_scenario02_a_fare"
-														step="10" /> 円 ～
-												</div>
-
 												<input type="hidden" name="scenario02_a_fare_min"
 													id="scenario02_a_fare_min_hidden">
 												<input type="hidden" name="scenario02_a_fare_max"
@@ -1501,12 +1472,6 @@
 													<div class="range-highlight js-fare-mark"></div>
 													<input type="range" id="fareSlider_scenario02_b_fare" step="10" />
 												</div>
-
-												<div class="fare-inputs u-en">
-													<input type="number" id="fareShiftInput_scenario02_b_fare"
-														step="10" /> 円 ～
-												</div>
-
 												<input type="hidden" name="scenario02_b_fare_min"
 													id="scenario02_b_fare_min_hidden">
 												<input type="hidden" name="scenario02_b_fare_max"
@@ -1753,7 +1718,6 @@
 			const maxShift = 1000 - endBase;
 
 			const container = document.getElementById(id);
-			const input = document.getElementById(`fareShiftInput_${id}`);
 			const slider = document.getElementById(`fareSlider_${id}`);
 			const mark = container.querySelector(".js-fare-mark");
 			const displayMin = container.querySelector(".js-fare-min-value");
@@ -1772,20 +1736,10 @@
 
 				displayMin.textContent = s;
 				displayMax.textContent = e;
-				input.value = shift;
 				slider.value = shift;
 
 				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
 			}
-
-			input.setAttribute("min", minShift);
-			input.setAttribute("max", maxShift);
-			input.setAttribute("step", 10);
-			input.value = 0;
-			input.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
-				update(v);
-			});
 
 			slider.setAttribute("min", minShift);
 			slider.setAttribute("max", maxShift);
@@ -1840,7 +1794,6 @@
 			const maxShift = 1000 - endBase;
 
 			const container = document.getElementById(id);
-			const input = document.getElementById(`fareShiftInput_${id}`);
 			const slider = document.getElementById(`fareSlider_${id}`);
 			const mark = container.querySelector(".js-fare-mark");
 			const displayMin = container.querySelector(".js-fare-min-value");
@@ -1861,7 +1814,6 @@
 
 				displayMin.textContent = s;
 				displayMax.textContent = e;
-				input.value = shift;
 				slider.value = shift;
 				hiddenMin.value = s;
 				hiddenMax.value = e;
@@ -1869,21 +1821,10 @@
 				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
 			}
 
-			// Set attributes and initialize
-			input.setAttribute("min", minShift);
-			input.setAttribute("max", maxShift);
-			input.setAttribute("step", 10);
-			input.value = 0;
-
 			slider.setAttribute("min", minShift);
 			slider.setAttribute("max", maxShift);
 			slider.setAttribute("step", 10);
 			slider.value = 0;
-
-			input.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
-				update(v);
-			});
 
 			slider.addEventListener("input", () => {
 				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
@@ -1931,7 +1872,6 @@
 			const maxShift = 1000 - endBase;
 
 			const container = document.getElementById(id);
-			const input = document.getElementById(`fareShiftInput_${id}`);
 			const slider = document.getElementById(`fareSlider_${id}`);
 			const mark = container.querySelector(".js-fare-mark");
 			const displayMin = container.querySelector(".js-fare-min-value");
@@ -1952,7 +1892,6 @@
 
 				displayMin.textContent = s;
 				displayMax.textContent = e;
-				input.value = shift;
 				slider.value = shift;
 				hiddenMin.value = s;
 				hiddenMax.value = e;
@@ -1960,20 +1899,10 @@
 				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
 			}
 
-			input.setAttribute("min", minShift);
-			input.setAttribute("max", maxShift);
-			input.setAttribute("step", 10);
-			input.value = 0;
-
 			slider.setAttribute("min", minShift);
 			slider.setAttribute("max", maxShift);
 			slider.setAttribute("step", 10);
 			slider.value = 0;
-
-			input.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
-				update(v);
-			});
 
 			slider.addEventListener("input", () => {
 				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
@@ -2020,7 +1949,6 @@
 			const maxShift = 1000 - endBase;
 
 			const container = document.getElementById(id);
-			const input = document.getElementById(`fareShiftInput_${id}`);
 			const slider = document.getElementById(`fareSlider_${id}`);
 			const mark = container.querySelector(".js-fare-mark");
 			const displayMin = container.querySelector(".js-fare-min-value");
@@ -2041,7 +1969,6 @@
 
 				displayMin.textContent = s;
 				displayMax.textContent = e;
-				input.value = shift;
 				slider.value = shift;
 				hiddenMin.value = s;
 				hiddenMax.value = e;
@@ -2049,20 +1976,10 @@
 				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
 			}
 
-			input.setAttribute("min", minShift);
-			input.setAttribute("max", maxShift);
-			input.setAttribute("step", 10);
-			input.value = 0;
-
 			slider.setAttribute("min", minShift);
 			slider.setAttribute("max", maxShift);
 			slider.setAttribute("step", 10);
 			slider.value = 0;
-
-			input.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
-				update(v);
-			});
 
 			slider.addEventListener("input", () => {
 				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
@@ -2108,7 +2025,6 @@
 			const maxShift = 1000 - endBase;
 
 			const container = document.getElementById(id);
-			const input = document.getElementById(`fareShiftInput_${id}`);
 			const slider = document.getElementById(`fareSlider_${id}`);
 			const mark = container.querySelector(".js-fare-mark");
 			const displayMin = container.querySelector(".js-fare-min-value");
@@ -2129,7 +2045,6 @@
 
 				displayMin.textContent = s;
 				displayMax.textContent = e;
-				input.value = shift;
 				slider.value = shift;
 				hiddenMin.value = s;
 				hiddenMax.value = e;
@@ -2137,21 +2052,10 @@
 				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
 			}
 
-			// Init attributes
-			input.setAttribute("min", minShift);
-			input.setAttribute("max", maxShift);
-			input.setAttribute("step", 10);
-			input.value = 0;
-
 			slider.setAttribute("min", minShift);
 			slider.setAttribute("max", maxShift);
 			slider.setAttribute("step", 10);
 			slider.value = 0;
-
-			input.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
-				update(v);
-			});
 
 			slider.addEventListener("input", () => {
 				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
@@ -2199,7 +2103,6 @@
 			const maxShift = 1000 - endBase;
 
 			const container = document.getElementById(id);
-			const input = document.getElementById(`fareShiftInput_${id}`);
 			const slider = document.getElementById(`fareSlider_${id}`);
 			const mark = container.querySelector(".js-fare-mark");
 			const displayMin = container.querySelector(".js-fare-min-value");
@@ -2220,7 +2123,6 @@
 
 				displayMin.textContent = s;
 				displayMax.textContent = e;
-				input.value = shift;
 				slider.value = shift;
 				hiddenMin.value = s;
 				hiddenMax.value = e;
@@ -2228,20 +2130,10 @@
 				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
 			}
 
-			input.setAttribute("min", minShift);
-			input.setAttribute("max", maxShift);
-			input.setAttribute("step", 10);
-			input.value = 0;
-
 			slider.setAttribute("min", minShift);
 			slider.setAttribute("max", maxShift);
 			slider.setAttribute("step", 10);
 			slider.value = 0;
-
-			input.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(input.value), maxShift)) / 10) * 10;
-				update(v);
-			});
 
 			slider.addEventListener("input", () => {
 				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
