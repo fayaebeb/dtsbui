@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 popup.style.display = 'block';
                                 setTimeout(() => {
                                         popup.style.display = 'none';
-                                }, 3000); // hide after 3 seconds
+                                }, 4000); // hide after 4 seconds
                         }
 
                 } else {
