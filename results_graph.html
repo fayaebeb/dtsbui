@@ -7,6 +7,24 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="assets/js/leaflet/leaflet.css" />
 	<link rel="stylesheet" href="assets/css/common.css" />
+
+	<style>
+		#map {
+			border-radius: 12px;
+			overflow: hidden;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		}
+
+		.l-contents__map-data {
+			border-radius: 12px;
+		}
+
+		.l-contents__map-legends {
+			border-radius: 12px;
+
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		}
+	</style>
 </head>
 
 <body>
@@ -230,7 +248,6 @@
 					</div>
 					<div class="c-area__btns column03 js-btns">
 						<a class="c-btn c-btn__contents black" href="./">入力に戻る</a>
-						<a class="c-btn c-btn__contents blue" href="#">CSVで出力</a>
 						<button class="c-btn c-btn__contents blue" type="submit">結果一覧に保存する</button>
 					</div>
 				</form>

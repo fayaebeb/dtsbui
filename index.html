@@ -7,6 +7,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="assets/js/leaflet/leaflet.css" />
 	<link rel="stylesheet" href="assets/css/common.css" />
+	<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&display=swap" rel="stylesheet">
+
 	<link
 		href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@600;700&display=swap"
 		rel="stylesheet">
@@ -30,13 +32,29 @@
 			padding-top: 40px;
 		}
 
-		c-area__btns {
+		.c-area__btns {
 			display: flex;
 			justify-content: flex-end;
 		}
 
-		c-btn.c-btn__contents {
+		.c-btn.c-btn__contents {
 			min-width: 400px;
+		}
+
+		#map {
+			border-radius: 12px;
+			overflow: hidden;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		}
+
+		.l-contents__map-data {
+			border-radius: 12px;
+		}
+
+		.l-contents__map-legends {
+			border-radius: 12px;
+
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 		}
 	</style>
 
@@ -1776,7 +1794,7 @@
 							<!--//シナリオ2-->
 						</div>
 					</div>
-					<div class="c-area__btns column02 js-btns">
+					<div class="c-area__btns column02 js-btns" style="text-align: right;">
 						<button class="c-btn c-btn__contents blue" type="submit">結果を出力する</button>
 						<!-- <a class="c-btn c-btn__contents blue" href="list.html">結果一覧</a> -->
 					</div>

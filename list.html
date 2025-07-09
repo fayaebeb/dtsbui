@@ -8,6 +8,35 @@
 	<link rel="stylesheet" href="assets/css/common.css" />
 
 	<style>
+		#selectAllCheckbox {
+			appearance: none;
+			-webkit-appearance: none;
+			-moz-appearance: none;
+			width: 16px;
+			height: 16px;
+			border: 2px solid #ff9100;
+			border-radius: 3px;
+			background-color: #ffffff;
+			cursor: pointer;
+			position: relative;
+			display: inline-block;
+			vertical-align: middle;
+		}
+
+		#selectAllCheckbox:checked::after {
+			content: '';
+			position: absolute;
+			top: 0px;
+			left: 3px;
+			width: 5px;
+			height: 9px;
+			border: solid #e65100;
+			border-width: 0 2px 2px 0;
+			transform: rotate(45deg);
+		}
+	</style>
+
+	<style>
 		/* SCROLLABLE TABLE */
 		.c-area__scroll {
 			max-height: 800px;
@@ -91,7 +120,7 @@
 		.bubble-checkbox-tip {
 			position: absolute;
 			top: 145px;
-			left: 240px;
+			left: 250px;
 			transform: translateX(-50%);
 			z-index: 1000;
 			display: inline-block;
@@ -171,7 +200,10 @@
 						<table class="c-table p-list__table">
 							<thead>
 								<tr>
-									<th></th> <!-- Empty title for checkbox column -->
+									<th class="checkbox-header">
+										<input type="checkbox" id="selectAllCheckbox" />
+									</th>
+
 									<th rowspan="2" class="u-ta-left">名称</th>
 									<th>
 										評価
@@ -456,6 +488,30 @@
 			});
 		});
 	</script>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+			const itemCheckboxes = document.querySelectorAll('input[name="comparison[]"]');
+
+			selectAllCheckbox.addEventListener('change', () => {
+				const checked = selectAllCheckbox.checked;
+				itemCheckboxes.forEach(cb => cb.checked = checked);
+
+				// Manually trigger change event to update the "compare" button state
+				itemCheckboxes.forEach(cb => cb.dispatchEvent(new Event('change')));
+			});
+
+			// If user manually unchecks one of the item checkboxes, update "Select All"
+			itemCheckboxes.forEach(cb => {
+				cb.addEventListener('change', () => {
+					const allChecked = [...itemCheckboxes].every(cb => cb.checked);
+					selectAllCheckbox.checked = allChecked;
+				});
+			});
+		});
+	</script>
+
 
 
 

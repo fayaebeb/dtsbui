@@ -357,12 +357,15 @@ html {
 
 .l-header__nav-link.current {
   --txtColor: #FFF;
-  --bgColor: linear-gradient(135deg, var(--colorMain), var(--colorSub));
-  box-shadow: var(--shadow-lg);
+  --bgColor: linear-gradient(135deg, #a084e8, #6c4ab6);
+  /* Light to deep purple */
+  background: var(--bgColor);
+  box-shadow: 0 4px 12px rgba(108, 74, 182, 0.4);
+  /* Matching purple shadow */
   transform: translateX(4px);
-  background: linear-gradient(135deg, #ffa726, #e65100);
-
+  color: var(--txtColor);
 }
+
 
 .l-header__nav-link.login {
   --icoPath: url(../image/ico_login_01.svg)
@@ -446,12 +449,50 @@ html {
   grid-template-columns: var(--headerColumns, minmax(0, 1fr))
 }
 
-.l-contents__tit {
-  font-size: 2.4rem;
-  border-left: 10px solid var(--colorMain);
-  padding-left: 20px;
-  align-content: center
+:root {
+  --colorMain: #8d3dae;
+  /* deep orchid */
+  --colorAccent: #b67ff2;
+  /* soft lavender */
+  --colorText: #333333;
+  /* dark charcoal */
 }
+
+.l-contents__tit {
+  position: relative;
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700;
+  font-size: 2.8rem;
+  color: var(--colorText);
+  letter-spacing: 0.05em;
+  padding-left: 1rem;
+  /* space for the left stripe */
+  margin-bottom: 2rem;
+}
+
+.l-contents__tit::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 80%;
+  background: var(--colorMain);
+  border-radius: 4px;
+}
+
+.l-contents__tit::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--colorAccent), var(--colorMain));
+  border-radius: 2px;
+}
+
 
 .l-contents__parameter {
   display: flex;
@@ -2418,18 +2459,22 @@ input:checked+.c-input__checkbox-switch::before {
   transition: background 0.3s ease, transform 0.2s ease;
 }
 
-/* Highlight current page: same shape, just different color */
 .breadcrumb-arrow li.step a[aria-current="page"] {
-  background: linear-gradient(135deg, #fb8c00, #ef6c00);
-  /* orange */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #A084E8, #6C4AB6);
+  /* Light to deep purple */
+  box-shadow: 0 4px 12px rgba(108, 74, 182, 0.3);
+  /* Subtle purple glow */
+  color: #ffffff;
+  /* Ensure text contrast */
+  transition: all 0.3s ease;
 }
 
-/* Hover effect only for non-current pages */
-.breadcrumb-arrow li.step a:not([aria-current="page"]):hover {
-  background: linear-gradient(135deg, #cccccc, #aaaaaa);
-  transform: translateY(-2px) scale(1.02);
+.breadcrumb-arrow li.step a[aria-current="page"]:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
 }
+
 
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
