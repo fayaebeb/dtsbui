@@ -7,6 +7,7 @@
 *::before,
 *::after {
   box-sizing: border-box'
+
 }
 
 ul,
@@ -233,7 +234,7 @@ html {
   text-align: center;
   padding: clamp(10px, 0px, 30px);
   margin-bottom: clamp(20px, 4vh, 50px);
-  background: linear-gradient(135deg, #eba454, #ff7b00);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
   transition: all 0.4s ease-in-out;
@@ -270,7 +271,12 @@ html {
 .l-header__tit-jp {
   font-family: 'Noto Sans JP', sans-serif;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.85);
+  color: #ffffff;
+  text-shadow:
+    0 0 2px #ffffff,
+    0 0 4px #ffaa55,
+    0 0 6px #ff6600,
+    0 0 8px #ff4400;
   animation: fadeInSlideUp 1s 0.2s ease-out both;
 }
 
@@ -1018,17 +1024,49 @@ html {
   margin-bottom: .5em;
 }
 
-.l-contents__map-legends .population li:nth-child(1)::before { background: #fff3be; }
-.l-contents__map-legends .population li:nth-child(2)::before { background: #fee086; }
-.l-contents__map-legends .population li:nth-child(3)::before { background: #fed976; }
-.l-contents__map-legends .population li:nth-child(4)::before { background: #fec560; }
-.l-contents__map-legends .population li:nth-child(5)::before { background: #feb24b; }
-.l-contents__map-legends .population li:nth-child(6)::before { background: #fe9e44; }
-.l-contents__map-legends .population li:nth-child(7)::before { background: #fd8d3d; }
-.l-contents__map-legends .population li:nth-child(8)::before { background: #fc4e2a; }
-.l-contents__map-legends .population li:nth-child(9)::before { background: #e31a1c; }
-.l-contents__map-legends .population li:nth-child(10)::before { background: #bd0426; }
-.l-contents__map-legends .population li:nth-child(11)::before { background: #800126; }
+.l-contents__map-legends .population li:nth-child(1)::before {
+  background: #fff3be;
+}
+
+.l-contents__map-legends .population li:nth-child(2)::before {
+  background: #fee086;
+}
+
+.l-contents__map-legends .population li:nth-child(3)::before {
+  background: #fed976;
+}
+
+.l-contents__map-legends .population li:nth-child(4)::before {
+  background: #fec560;
+}
+
+.l-contents__map-legends .population li:nth-child(5)::before {
+  background: #feb24b;
+}
+
+.l-contents__map-legends .population li:nth-child(6)::before {
+  background: #fe9e44;
+}
+
+.l-contents__map-legends .population li:nth-child(7)::before {
+  background: #fd8d3d;
+}
+
+.l-contents__map-legends .population li:nth-child(8)::before {
+  background: #fc4e2a;
+}
+
+.l-contents__map-legends .population li:nth-child(9)::before {
+  background: #e31a1c;
+}
+
+.l-contents__map-legends .population li:nth-child(10)::before {
+  background: #bd0426;
+}
+
+.l-contents__map-legends .population li:nth-child(11)::before {
+  background: #800126;
+}
 
 .l-contents__map-legends .population li span {
   display: block;
