@@ -254,29 +254,25 @@
     opacity: 0;
   }
 
+  @import url('https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@700&display=swap');
+
   .l-header__tit-en {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Lexend Deca', sans-serif;
     font-weight: 700;
     font-size: clamp(40px, 6vw, 70px);
     letter-spacing: 1px;
     line-height: 1.2;
-    background: linear-gradient(270deg, #ff6ec4, #e8ff1c, #00fff0, #ff6ec4);
-    background-size: 600% 600%;
+    background: linear-gradient(90deg, #984de4, #b185db, #d5bfff);
+    background-size: 200% 100%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    animation: gradientGlow 8s ease infinite, fadeInSlideUp 1s ease-out both;
-    filter: drop-shadow(0 0 4px #ff6ec4) drop-shadow(0 0 8px #00fff0) drop-shadow(0 0 12px #ffffff);
+    animation: gradientScroll 10s linear infinite, fadeInSlideUp 1s ease-out both;
   }
 
   .l-header__tit-jp {
     font-family: 'Noto Sans JP', sans-serif;
     font-size: 12px;
-    color: #ffffff;
-    text-shadow:
-      0 0 2px #ffffff,
-      0 0 4px #cc99ff,
-      0 0 6px #9933ff,
-      0 0 8px #6600cc;
+    color: #954dd3;
     animation: fadeInSlideUp 1s 0.2s ease-out both;
   }
 
@@ -292,22 +288,16 @@
     }
   }
 
-  @keyframes gradientGlow {
+  @keyframes gradientScroll {
     0% {
       background-position: 0% 50%;
-      filter: drop-shadow(0 0 4px #ff6ec4) drop-shadow(0 0 8px #ff6ec4);
-    }
-
-    50% {
-      background-position: 100% 50%;
-      filter: drop-shadow(0 0 6px #00fff0) drop-shadow(0 0 12px #00fff0);
     }
 
     100% {
-      background-position: 0% 50%;
-      filter: drop-shadow(0 0 4px #7873f5) drop-shadow(0 0 8px #7873f5);
+      background-position: 100% 50%;
     }
   }
+
 
   .l-header__nav {
     border-top: 1px solid var(--commonGray);
@@ -460,7 +450,6 @@
 
   .l-contents__tit {
     position: relative;
-    font-family: 'Cormorant Garamond', serif;
     font-weight: 700;
     font-size: 2.8rem;
     color: var(--colorText);
