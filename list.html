@@ -14,7 +14,8 @@
 			-moz-appearance: none;
 			width: 16px;
 			height: 16px;
-			border: 2px solid #ff9100;
+			border: 2px solid #b266ff;
+			/* Light purple border */
 			border-radius: 3px;
 			background-color: #ffffff;
 			cursor: pointer;
@@ -30,7 +31,8 @@
 			left: 3px;
 			width: 5px;
 			height: 9px;
-			border: solid #e65100;
+			border: solid #6a00cc;
+			/* Deep purple checkmark */
 			border-width: 0 2px 2px 0;
 			transform: rotate(45deg);
 		}
@@ -70,10 +72,7 @@
 			position: sticky;
 			top: 0;
 			z-index: 100;
-			/* increase */
-			/* REMOVE box-shadow here if needed */
 			overflow: visible !important;
-			/* <-- fix */
 		}
 	</style>
 
@@ -81,11 +80,9 @@
 		.checkbox-header {
 			position: relative;
 			width: 40px;
-			/* adjust as needed */
 			padding: 0;
 		}
 
-		/* Tooltip bubble */
 		.checkbox-header .bubble {
 			position: absolute;
 			top: -60px;
@@ -105,7 +102,6 @@
 			white-space: nowrap;
 		}
 
-		/* Tooltip arrow */
 		.checkbox-header .bubble::after {
 			content: '';
 			position: absolute;
