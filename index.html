@@ -59,55 +59,84 @@
 	</style>
 
 	<style>
-		.c-input__range-wrap {
+		.c-input__range-wrap.dual {
 			position: relative;
-			-static-pointer-left: 25.5%;
+			height: 60px;
+			margin-top: 10px;
 		}
 
-		.c-input__range-wrap::before {
-			content: "";
+		.c-input__range-wrap.dual input[type=range] {
 			position: absolute;
-			top: 100%;
-			left: var(--pointer-left);
-			transform: translateX(-50%);
-			width: 0;
-			height: 0;
-			border-width: 0 6px 6px 6px;
-			border-style: solid;
-			border-color: transparent transparent #ccc transparent;
+			width: 100%;
+			height: 6px;
+			margin: 0;
+			-webkit-appearance: none;
+			background: transparent;
+			pointer-events: none;
+			z-index: 1;
+		}
+
+		.c-input__range-wrap.dual input[type=range]#fareRangeMin {
+			z-index: 1;
+		}
+
+		.c-input__range-wrap.dual input[type=range]#fareRangeMax {
 			z-index: 2;
 		}
 
-		.c-input__range-wrap .c-input__range-display {
-			position: absolute;
-			bottom: calc(100% + 6px);
-			left: var(--pointer-left);
-			transform: translateX(-50%);
-			background: var(--colorMain);
-			color: white;
-			padding: 4px 8px;
-			border-radius: 4px;
-			white-space: nowrap;
-			z-index: 3;
+		.c-input__range-wrap.dual input[type=range]::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			pointer-events: all;
+			width: 16px;
+			height: 16px;
+			background: #7e3ff2;
+			border: 2px solid #fff;
+			border-radius: 50%;
+			box-shadow: 0 0 1px rgba(0, 0, 0, 0.4);
+			cursor: pointer;
+			margin-top: -5px;
 		}
 
-		.c-input__range-wrap .c-input__range-display::after {
-			content: "";
-			position: absolute;
-			top: 100%;
-			left: 50%;
-			transform: translateX(-50%);
-			width: 0;
-			height: 0;
-			border-width: 6px 6px 0 6px;
-			border-style: solid;
-			border-color: var(--colorMain) transparent transparent transparent;
+		.c-input__range-wrap.dual input[type=range]::-moz-range-thumb {
+			pointer-events: all;
+			width: 16px;
+			height: 16px;
+			background: #933df5;
+			border: 2px solid #fff;
+			border-radius: 50%;
+			cursor: pointer;
 		}
 
-		.c-input__range-wrap input[type=range]::-moz-range-thumb {
-			width: 0;
-			height: 0;
-			border: none;
+		.c-input__range-wrap.dual input[type=range]::-webkit-slider-runnable-track {
+			height: 6px;
+			background: #ccc;
+			border-radius: 3px;
+		}
+
+		.c-input__range-wrap.dual .c-input__range-markforslider {
+			position: absolute;
+			top: 50%;
+			left: 0;
+			right: 0;
+			height: 20px;
+			background: #933df5;
+			border-radius: 3px;
+			transform: translateY(-50%);
+			z-index: 0;
+		}
+
+
+		.c-input__range-mark {
+			position: absolute;
+			top: 50%;
+			width: 2px;
+			height: 4px;
+			transform: translateY(-50%);
+			background: #666666;
+		}
+
+		.c-input__range-mark.equal {
+			background: #fff;
 		}
 
 		.c-input__range-display {
@@ -115,11 +144,12 @@
 			align-items: baseline;
 			gap: 4px;
 			font-size: 1.1em;
+			margin-bottom: 4px;
 		}
 
 		.c-input__range-display strong {
 			font-weight: bold;
-			font-size: 0.9em;
+			font-size: 1.2em;
 		}
 
 		.c-input__range-separator {
@@ -136,93 +166,100 @@
 			margin-left: 8px;
 			font-size: 0.85em;
 		}
-	</style>
 
-	<style>
-		.range-track {
+		.range-bubble {
 			position: absolute;
+			top: -30px;
+			width: 60px;
+			text-align: center;
+			font-size: 12px;
+			padding: 2px 5px;
+			background-color: #7e3ff2;
+			color: #fff;
+			border-radius: 4px;
+			transform: translateX(-50%);
+			pointer-events: none;
+			line-height: 1.2;
+		}
+
+		.range-bubble::after {
+			content: "";
+			position: absolute;
+			bottom: -6px;
+			left: 50%;
+			transform: translateX(-50%);
+			border-width: 6px 6px 0 6px;
+			border-style: solid;
+			border-color: #7e3ff2 transparent transparent transparent;
+		}
+
+		.c-input__range-wrap input[type=range]::-webkit-slider-runnable-track {
+			height: 12px;
+			background: #ccc;
+			border-radius: 6px;
+		}
+
+		.c-input__range-wrap input[type=range]::-moz-range-track {
+			height: 12px;
+			background: #ccc;
+			border-radius: 6px;
+		}
+
+		.c-input__range-wrap input[type=range]::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			pointer-events: all;
+			width: 22px;
+			height: 15px;
+			background: #7e3ff2;
+			border: none;
+			border-radius: 2px;
+			cursor: pointer;
+			margin-top: -3px;
+		}
+
+		.c-input__range-wrap input[type=range]::-moz-range-thumb {
+			pointer-events: all;
+			width: 4px;
+			height: 24px;
+			background: #7e3ff2;
+			border: none;
+			border-radius: 2px;
+			cursor: pointer;
+		}
+
+		.c-input__range-mark.js-range-mark {
+			height: 12px;
+			background: rgba(126, 63, 242, 0.4);
+			border-radius: 6px;
 			top: 50%;
 			transform: translateY(-50%);
-			height: 6px;
-			background: #ccc;
-			width: 100%;
-			border-radius: 3px;
-			z-index: 1;
 		}
 
-		.range-highlight {
+		.range-fixed-bubble {
 			position: absolute;
-			top: 50%;
-			height: 16px;
-			margin-top: -8px;
-			background: var(--colorMain);
+			bottom: -20px;
+			left: 25%;
+			width: 100px;
+			text-align: center;
+			background-color: #aaa;
+			color: #fff;
+			font-size: 12px;
+			padding: 4px 6px;
 			border-radius: 4px;
-			z-index: 2;
-			cursor: grab;
-			transition: background 0.2s;
-		}
-
-		.range-highlight:hover {
-			background: var(--colorMain);
-		}
-
-		.range-highlight:active {
-			cursor: grabbing;
-		}
-
-		.fare-inputs {
-			margin-top: 10px;
-			display: flex;
-			align-items: center;
-			gap: 10px;
-		}
-
-		.fare-slider .c-input__range-wrap input[type=range]::-webkit-slider-thumb {
-			-webkit-appearance: none;
-			width: 0;
-			height: 0;
-			border: none;
-		}
-
-		.fare-slider .c-input__range-wrap input[type=range] {
-			-webkit-appearance: none;
-			width: 100%;
-			height: 36px;
-			background: none;
-			position: relative;
-			z-index: 3;
-		}
-
-		.range-pointer {
-			position: absolute;
-			top: 100%;
-			left: var(--static-pointer-left);
 			transform: translateX(-50%);
-			background: #ccc;
-			color: #333;
-			padding: 4px 8px;
-			font-size: 0.9em;
-			border-radius: 4px;
+			pointer-events: none;
 			white-space: nowrap;
-			margin-top: 12px;
-			z-index: 2;
 		}
 
-
-		.range-pointer::before {
+		.range-fixed-bubble::after {
 			content: "";
 			position: absolute;
 			top: -6px;
 			left: 50%;
 			transform: translateX(-50%);
-			border-width: 6px 6px 0 6px;
+			border-width: 0 6px 6px 6px;
 			border-style: solid;
-			border-color: #ccc transparent transparent transparent;
-		}
-
-		.c-input__range-display .c-input__range-unit,
-		.c-input__range-display .c-input__range-diff {
-			color: #fff;
+			border-color: transparent transparent #aaa transparent;
 		}
 	</style>
 
@@ -381,32 +418,32 @@
 												リセット
 											</span>
 										</dt>
-										<dd class="c-input__range fare-slider" id="current_a_fare">
+										<dd class="c-input__range" id="current_a_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-fare-range">
+											<div class="c-input__range-container js-rangeforslider">
+
 												<div class="c-input__range-minmax u-en">
-													<span>0</span><span style="float:right;">1000</span>
+													<span class="js-range-min">0</span>
+													<span class="js-range-max">1000</span>
 												</div>
 
-												<div class="c-input__range-wrap">
-													<div class="range-track"></div>
-													<div class="range-highlight js-fare-mark"></div>
+												<div class="c-input__range-wrap dual">
+													<input type="range" id="fareRangeMin" min="0" max="1000" value="120"
+														step="10" />
+													<input type="range" id="fareRangeMax" min="0" max="1000" value="390"
+														step="10" />
+													<div class="range-bubble range-bubble-min" id="bubbleMin">
+														120円<br>(±0)</div>
+													<div class="range-bubble range-bubble-max" id="bubbleMax">
+														390円<br>(±0)</div>
+													<div class="range-fixed-bubble">120～390円</div>
 
-													<div class="c-input__range-display u-en js-fare-range-display"
-														aria-label="Fare range">
-														<strong class="js-fare-min-value">120</strong>
-														<span class="c-input__range-separator">〜</span>
-														<strong class="js-fare-max-value">390</strong>
-														<span class="c-input__range-unit">円</span>
-														<small class="js-fare-diff c-input__range-diff">(±0)</small>
-													</div>
-
-													<input type="range" id="fareSlider_current_a_fare" />
-													<div class="range-pointer u-en js-range-pointer">120〜390 円</div>
+													<i class="c-input__range-markforslider js-range-mark equal"></i>
+													<span
+														class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
 												</div>
 											</div>
 										</dd>
-
 										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="current_a_frequency">まとめてリセット</span></dt>
 										<dd id="current_a_frequency">
@@ -610,40 +647,29 @@
 												リセット
 											</span>
 										</dt>
-										<dd class="c-input__range fare-slider" id="current_b_fare">
+										<dd class="c-input__range" id="current_b_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-fare-range">
+											<div class="c-input__range-container js-rangeforslider">
 												<div class="c-input__range-minmax u-en">
-													<span>0</span><span style="float:right;">1000</span>
+													<span class="js-range-min">0</span>
+													<span class="js-range-max">1000</span>
 												</div>
-
-												<div class="c-input__range-wrap">
-													<div class="range-track"></div>
-													<div class="range-highlight js-fare-mark"></div>
-
-													<div class="c-input__range-display u-en js-fare-range-display"
-														aria-label="Fare range">
-														<strong class="js-fare-min-value">120</strong>
-														<span class="c-input__range-separator">〜</span>
-														<strong class="js-fare-max-value">390</strong>
-														<span class="c-input__range-unit">円</span>
-														<small class="js-fare-diff c-input__range-diff">(±0)</small>
-													</div>
-
-													<input type="range" id="fareSlider_current_b_fare" step="10" />
-													<div class="range-pointer u-en js-range-pointer">120〜390 円</div>
+												<div class="c-input__range-wrap dual">
+													<input type="range" id="fareRangeMinB" min="0" max="1000"
+														value="120" step="10" />
+													<input type="range" id="fareRangeMaxB" min="0" max="1000"
+														value="390" step="10" />
+													<div class="range-bubble range-bubble-min" id="bubbleMinB">
+														120円<br>(±0)</div>
+													<div class="range-bubble range-bubble-max" id="bubbleMaxB">
+														390円<br>(±0)</div>
+													<div class="range-fixed-bubble">120～390円</div>
+													<i class="c-input__range-markforslider js-range-mark equal"></i>
+													<span
+														class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
 												</div>
-
-												<input type="hidden" name="current_b_fare_min"
-													id="current_b_fare_min_hidden">
-												<input type="hidden" name="current_b_fare_max"
-													id="current_b_fare_max_hidden">
-
-												<span
-													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
 											</div>
 										</dd>
-
 										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="current_b_frequency">まとめてリセット</span></dt>
 										<dd id="current_b_frequency">
@@ -851,40 +877,33 @@
 												リセット
 											</span>
 										</dt>
-										<dd class="c-input__range fare-slider" id="scenario01_a_fare">
+										<dd class="c-input__range" id="scenario01_a_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-fare-range">
+											<div class="c-input__range-container js-rangeforslider">
 												<div class="c-input__range-minmax u-en">
-													<span>0</span><span style="float:right;">1000</span>
+													<span class="js-range-min">0</span>
+													<span class="js-range-max">1000</span>
 												</div>
 
-												<div class="c-input__range-wrap">
-													<div class="range-track"></div>
-													<div class="range-highlight js-fare-mark"></div>
+												<div class="c-input__range-wrap dual">
+													<input type="range" id="fareRangeMin_scenario01a" min="0" max="1000"
+														value="140" step="10" />
+													<input type="range" id="fareRangeMax_scenario01a" min="0" max="1000"
+														value="410" step="10" />
 
-													<div class="c-input__range-display u-en js-fare-range-display"
-														aria-label="Fare range">
-														<strong class="js-fare-min-value">140</strong>
-														<span class="c-input__range-separator">〜</span>
-														<strong class="js-fare-max-value">410</strong>
-														<span class="c-input__range-unit">円</span>
-														<small class="js-fare-diff c-input__range-diff">(±0)</small>
-													</div>
+													<div class="range-bubble range-bubble-min"
+														id="bubbleMin_scenario01a">140円<br>(±0)</div>
+													<div class="range-bubble range-bubble-max"
+														id="bubbleMax_scenario01a">410円<br>(±0)</div>
+													<div class="range-fixed-bubble">140～410円</div>
 
-													<input type="range" id="fareSlider_scenario01_a_fare" step="10" />
-													<div class="range-pointer u-en js-range-pointer">140〜410 円</div>
+													<i class="c-input__range-markforslider js-range-mark equal"></i>
+
+													<span
+														class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
 												</div>
-
-												<input type="hidden" name="scenario01_a_fare_min"
-													id="scenario01_a_fare_min_hidden">
-												<input type="hidden" name="scenario01_a_fare_max"
-													id="scenario01_a_fare_max_hidden">
-
-												<span
-													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
 											</div>
 										</dd>
-
 										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="scenario01_a_frequency">まとめてリセット</span></dt>
 										<dd id="scenario01_a_frequency">
@@ -1089,37 +1108,31 @@
 												リセット
 											</span>
 										</dt>
-										<dd class="c-input__range fare-slider" id="scenario01_b_fare">
+										<dd class="c-input__range" id="scenario01_b_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-fare-range">
+											<div class="c-input__range-container js-rangeforslider">
 												<div class="c-input__range-minmax u-en">
-													<span>0</span><span style="float:right;">1000</span>
+													<span class="js-range-min">0</span>
+													<span class="js-range-max">1000</span>
 												</div>
 
-												<div class="c-input__range-wrap">
-													<div class="range-track"></div>
-													<div class="range-highlight js-fare-mark"></div>
+												<div class="c-input__range-wrap dual">
+													<input type="range" id="fareRangeMin_scenario01b" min="0" max="1000"
+														value="120" step="10" />
+													<input type="range" id="fareRangeMax_scenario01b" min="0" max="1000"
+														value="390" step="10" />
 
-													<div class="c-input__range-display u-en js-fare-range-display"
-														aria-label="Fare range">
-														<strong class="js-fare-min-value">120</strong>
-														<span class="c-input__range-separator">〜</span>
-														<strong class="js-fare-max-value">390</strong>
-														<span class="c-input__range-unit">円</span>
-														<small class="js-fare-diff c-input__range-diff">(±0)</small>
-													</div>
+													<div class="range-bubble range-bubble-min"
+														id="bubbleMin_scenario01b">120円<br>(±0)</div>
+													<div class="range-bubble range-bubble-max"
+														id="bubbleMax_scenario01b">390円<br>(±0)</div>
+													<div class="range-fixed-bubble">120～390円</div>
 
-													<input type="range" id="fareSlider_scenario01_b_fare" step="10" />
-													<div class="range-pointer u-en js-range-pointer">120〜390 円</div>
+													<i class="c-input__range-markforslider js-range-mark equal"></i>
+
+													<span
+														class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
 												</div>
-
-												<input type="hidden" name="scenario01_b_fare_min"
-													id="scenario01_b_fare_min_hidden">
-												<input type="hidden" name="scenario01_b_fare_max"
-													id="scenario01_b_fare_max_hidden">
-
-												<span
-													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
 											</div>
 										</dd>
 										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
@@ -1330,41 +1343,33 @@
 												リセット
 											</span>
 										</dt>
-										<dd class="c-input__range fare-slider" id="scenario02_a_fare">
+										<dd class="c-input__range" id="scenario02_a_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-fare-range">
+											<div class="c-input__range-container js-rangeforslider">
 												<div class="c-input__range-minmax u-en">
-													<span>0</span><span style="float:right;">1000</span>
+													<span class="js-range-min">0</span>
+													<span class="js-range-max">1000</span>
 												</div>
 
-												<div class="c-input__range-wrap">
-													<div class="range-track"></div>
-													<div class="range-highlight js-fare-mark"></div>
+												<div class="c-input__range-wrap dual">
+													<input type="range" id="fareRangeMin_scenario02a" min="0" max="1000"
+														value="160" step="10" />
+													<input type="range" id="fareRangeMax_scenario02a" min="0" max="1000"
+														value="430" step="10" />
 
-													<div class="c-input__range-display u-en js-fare-range-display"
-														aria-label="Fare range">
-														<strong class="js-fare-min-value">160</strong>
-														<span class="c-input__range-separator">〜</span>
-														<strong class="js-fare-max-value">430</strong>
-														<span class="c-input__range-unit">円</span>
-														<small class="js-fare-diff c-input__range-diff">(±0)</small>
-													</div>
+													<div class="range-bubble range-bubble-min"
+														id="bubbleMin_scenario02a">160円<br>(±0)</div>
+													<div class="range-bubble range-bubble-max"
+														id="bubbleMax_scenario02a">430円<br>(±0)</div>
+													<div class="range-fixed-bubble">160～430円</div>
 
-													<input type="range" id="fareSlider_scenario02_a_fare" step="10" />
-													<div class="range-pointer u-en js-range-pointer">160〜430 円</div>
+													<i class="c-input__range-markforslider js-range-mark equal"></i>
+
+													<span
+														class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
 												</div>
-
-												<input type="hidden" name="scenario02_a_fare_min"
-													id="scenario02_a_fare_min_hidden">
-												<input type="hidden" name="scenario02_a_fare_max"
-													id="scenario02_a_fare_max_hidden">
-
-												<span
-													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
 											</div>
 										</dd>
-
-
 										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="scenario02_a_frequency">まとめてリセット</span></dt>
 										<dd id="scenario02_a_frequency">
@@ -1569,41 +1574,33 @@
 												リセット
 											</span>
 										</dt>
-										<dd class="c-input__range fare-slider" id="scenario02_b_fare">
+										<dd class="c-input__range" id="scenario02_b_fare">
 											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-fare-range">
+											<div class="c-input__range-container js-rangeforslider">
 												<div class="c-input__range-minmax u-en">
-													<span>0</span><span style="float:right;">1000</span>
+													<span class="js-range-min">0</span>
+													<span class="js-range-max">1000</span>
 												</div>
 
-												<div class="c-input__range-wrap">
-													<div class="range-track"></div>
-													<div class="range-highlight js-fare-mark"></div>
+												<div class="c-input__range-wrap dual">
+													<input type="range" id="fareRangeMin_scenario02b" min="0" max="1000"
+														value="120" step="10" />
+													<input type="range" id="fareRangeMax_scenario02b" min="0" max="1000"
+														value="390" step="10" />
 
-													<div class="c-input__range-display u-en js-fare-range-display"
-														aria-label="Fare range">
-														<strong class="js-fare-min-value">120</strong>
-														<span class="c-input__range-separator">〜</span>
-														<strong class="js-fare-max-value">390</strong>
-														<span class="c-input__range-unit">円</span>
-														<small class="js-fare-diff c-input__range-diff">(±0)</small>
-													</div>
+													<div class="range-bubble range-bubble-min"
+														id="bubbleMin_scenario02b">120円<br>(±0)</div>
+													<div class="range-bubble range-bubble-max"
+														id="bubbleMax_scenario02b">390円<br>(±0)</div>
+													<div class="range-fixed-bubble">120～390円</div>
 
-													<input type="range" id="fareSlider_scenario02_b_fare" step="10" />
-													<div class="range-pointer u-en js-range-pointer">120〜390 円</div>
+													<i class="c-input__range-markforslider js-range-mark equal"></i>
+
+													<span
+														class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
 												</div>
-
-												<input type="hidden" name="scenario02_b_fare_min"
-													id="scenario02_b_fare_min_hidden">
-												<input type="hidden" name="scenario02_b_fare_max"
-													id="scenario02_b_fare_max_hidden">
-
-												<span
-													class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
 											</div>
 										</dd>
-
-
 										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
 												data-reset="scenario02_b_frequency">まとめてリセット</span></dt>
 										<dd id="scenario02_b_frequency">
@@ -1832,528 +1829,473 @@
 	<script src="assets/js/simulation.js"></script>
 
 	<script>
-		document.addEventListener("DOMContentLoaded", function () {
-			const id = "current_a_fare";
-			const startBase = 120;
-			const endBase = 390;
-			const range = endBase - startBase;
-			const minShift = -startBase;
-			const maxShift = 1000 - endBase;
+		const fareMinA = document.getElementById('fareRangeMin');
+		const fareMaxA = document.getElementById('fareRangeMax');
+		const rangeMarkA = document.querySelector('#current_a_fare .js-range-mark');
 
-			const container = document.getElementById(id);
-			const slider = document.getElementById(`fareSlider_${id}`);
-			const mark = container.querySelector(".js-fare-mark");
-			const displayMin = container.querySelector(".js-fare-min-value");
-			const displayMax = container.querySelector(".js-fare-max-value");
-			const diff = container.querySelector(".js-fare-diff");
-			const wrap = container.querySelector(".c-input__range-wrap");
+		const bubbleMin = document.getElementById('bubbleMin');
+		const bubbleMax = document.getElementById('bubbleMax');
+		const defaultMin = 120;
+		const defaultMax = 390;
 
-			const initialCenterPct = ((startBase + range / 2) / 1000) * 100;
-			wrap.style.setProperty('--static-pointer-left', `${initialCenterPct}%`);
+		function setBubblePosition(input, bubble) {
+			const min = +input.min;
+			const max = +input.max;
+			const val = +input.value;
+			const percent = ((val - min) / (max - min)) * 100;
+			bubble.style.left = `${percent}%`;
+		}
 
-			function update(val) {
-				const shift = parseInt(val);
-				const s = startBase + shift;
-				const e = s + range;
-				const pctLeft = (s / 1000) * 100;
-				const pctWidth = (range / 1000) * 100;
+		function formatDiff(current, base) {
+			const diff = current - base;
+			return diff === 0 ? '(±0)' : (diff > 0 ? `(+${diff})` : `(${diff})`);
+		}
 
-				mark.style.left = pctLeft + "%";
-				mark.style.width = pctWidth + "%";
+		function updateBubbles(minVal, maxVal) {
+			bubbleMin.innerHTML = `${minVal}円<br>${formatDiff(minVal, defaultMin)}`;
+			bubbleMax.innerHTML = `${maxVal}円<br>${formatDiff(maxVal, defaultMax)}`;
 
-				const pointerLeftPct = pctLeft + pctWidth / 2;
-				wrap.style.setProperty("--pointer-left", pointerLeftPct + "%");
+			setBubblePosition(fareMinA, bubbleMin);
+			setBubblePosition(fareMaxA, bubbleMax);
+		}
 
-				displayMin.textContent = s;
-				displayMax.textContent = e;
-				slider.value = shift;
-				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
+		function updateVisualA(minVal, maxVal) {
+			const total = +fareMinA.max - +fareMinA.min;
+			const pctMin = ((minVal - +fareMinA.min) / total) * 100;
+			const pctMax = ((maxVal - +fareMinA.min) / total) * 100;
+
+			rangeMarkA.style.left = pctMin + '%';
+			rangeMarkA.style.width = (pctMax - pctMin) + '%';
+		}
+
+		function syncSlidersA() {
+			let minV = +fareMinA.value, maxV = +fareMaxA.value;
+
+			if (minV > maxV) {
+				minV = maxV;
+				fareMinA.value = minV;
+			}
+			if (maxV < minV) {
+				maxV = minV;
+				fareMaxA.value = maxV;
 			}
 
-			slider.setAttribute("min", minShift);
-			slider.setAttribute("max", maxShift);
-			slider.setAttribute("step", 10);
-			slider.value = 0;
-			slider.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
-				update(v);
-			});
+			updateVisualA(minV, maxV);
+			updateBubbles(minV, maxV);
+		}
 
-			const resetBtn = document.querySelector(`[data-reset="${id}"]`);
-			if (resetBtn) {
-				resetBtn.addEventListener("click", () => update(0));
+		fareMinA.addEventListener('input', syncSlidersA);
+		fareMaxA.addEventListener('input', syncSlidersA);
+
+		fareMinA.addEventListener('pointerdown', () => {
+			fareMinA.style.zIndex = 3;
+			fareMaxA.style.zIndex = 2;
+		});
+		fareMaxA.addEventListener('pointerdown', () => {
+			fareMaxA.style.zIndex = 3;
+			fareMinA.style.zIndex = 2;
+		});
+
+		fareMinA.value = 120;
+		fareMaxA.value = 390;
+		syncSlidersA();
+
+		document.querySelector('[data-reset="current_a_fare"]').addEventListener('click', () => {
+			fareMinA.value = defaultMin;
+			fareMaxA.value = defaultMax;
+			syncSlidersA();
+		});
+
+	</script>
+
+	<script>
+		const fareMinB = document.getElementById('fareRangeMinB');
+		const fareMaxB = document.getElementById('fareRangeMaxB');
+		const rangeMarkB = document.querySelector('#current_b_fare .js-range-mark');
+
+		const bubbleMinB = document.getElementById('bubbleMinB');
+		const bubbleMaxB = document.getElementById('bubbleMaxB');
+		const defaultMinB = 120;
+		const defaultMaxB = 390;
+
+		function setBubblePositionB(input, bubble) {
+			const min = +input.min;
+			const max = +input.max;
+			const val = +input.value;
+			const percent = ((val - min) / (max - min)) * 100;
+			bubble.style.left = `${percent}%`;
+		}
+
+		function formatDiffB(current, base) {
+			const diff = current - base;
+			return diff === 0 ? '(±0)' : (diff > 0 ? `(+${diff})` : `(${diff})`);
+		}
+
+		function updateBubblesB(minVal, maxVal) {
+			bubbleMinB.innerHTML = `${minVal}円<br>${formatDiffB(minVal, defaultMinB)}`;
+			bubbleMaxB.innerHTML = `${maxVal}円<br>${formatDiffB(maxVal, defaultMaxB)}`;
+			setBubblePositionB(fareMinB, bubbleMinB);
+			setBubblePositionB(fareMaxB, bubbleMaxB);
+		}
+
+		function updateVisualB(minVal, maxVal) {
+			const total = +fareMinB.max - +fareMinB.min;
+			const pctMin = ((minVal - +fareMinB.min) / total) * 100;
+			const pctMax = ((maxVal - +fareMinB.min) / total) * 100;
+
+			rangeMarkB.style.left = pctMin + '%';
+			rangeMarkB.style.width = (pctMax - pctMin) + '%';
+		}
+
+		function syncSlidersB() {
+			let minV = +fareMinB.value, maxV = +fareMaxB.value;
+			if (minV > maxV) {
+				minV = maxV;
+				fareMinB.value = minV;
 			}
+			if (maxV < minV) {
+				maxV = minV;
+				fareMaxB.value = maxV;
+			}
+			updateVisualB(minV, maxV);
+			updateBubblesB(minV, maxV);
+		}
 
-			let isDragging = false;
-			let startX = 0;
-			let startVal = 0;
+		fareMinB.addEventListener('input', syncSlidersB);
+		fareMaxB.addEventListener('input', syncSlidersB);
 
-			mark.addEventListener("pointerdown", (e) => {
-				isDragging = true;
-				startX = e.clientX;
-				startVal = parseInt(slider.value);
-				mark.setPointerCapture(e.pointerId);
-			});
+		fareMinB.addEventListener('pointerdown', () => {
+			fareMinB.style.zIndex = 3;
+			fareMaxB.style.zIndex = 2;
+		});
+		fareMaxB.addEventListener('pointerdown', () => {
+			fareMaxB.style.zIndex = 3;
+			fareMinB.style.zIndex = 2;
+		});
 
-			mark.addEventListener("pointermove", (e) => {
-				if (!isDragging) return;
-				const dx = e.clientX - startX;
-				const ratio = dx / slider.offsetWidth;
-				const delta = Math.round((ratio * 1000) / 10) * 10;
-				update(Math.max(minShift, Math.min(startVal + delta, maxShift)));
-			});
+		fareMinB.value = defaultMinB;
+		fareMaxB.value = defaultMaxB;
+		syncSlidersB();
 
-			mark.addEventListener("pointerup", () => {
-				isDragging = false;
-			});
-
-			update(0);
+		document.querySelector('[data-reset="current_b_fare"]').addEventListener('click', () => {
+			fareMinB.value = defaultMinB;
+			fareMaxB.value = defaultMaxB;
+			syncSlidersB();
 		});
 	</script>
 
 	<script>
-		document.addEventListener("DOMContentLoaded", function () {
-			const id = "current_b_fare";
-			const startBase = 120;
-			const endBase = 390;
-			const range = endBase - startBase;
-			const minShift = -startBase;
-			const maxShift = 1000 - endBase;
+		const fareMin_s01a = document.getElementById('fareRangeMin_scenario01a');
+		const fareMax_s01a = document.getElementById('fareRangeMax_scenario01a');
+		const rangeMark_s01a = document.querySelector('#scenario01_a_fare .js-range-mark');
 
-			const container = document.getElementById(id);
-			const slider = document.getElementById(`fareSlider_${id}`);
-			const mark = container.querySelector(".js-fare-mark");
-			const displayMin = container.querySelector(".js-fare-min-value");
-			const displayMax = container.querySelector(".js-fare-max-value");
-			const diff = container.querySelector(".js-fare-diff");
-			const wrap = container.querySelector(".c-input__range-wrap");
-			const pointer = container.querySelector(".js-range-pointer");
-			const hiddenMin = document.getElementById(`${id}_min_hidden`);
-			const hiddenMax = document.getElementById(`${id}_max_hidden`);
+		const bubbleMin_s01a = document.getElementById('bubbleMin_scenario01a');
+		const bubbleMax_s01a = document.getElementById('bubbleMax_scenario01a');
 
-			const initialCenterPct = ((startBase + range / 2) / 1000) * 100;
-			wrap.style.setProperty('--static-pointer-left', `${initialCenterPct}%`);
+		const defaultMin_s01a = 140;
+		const defaultMax_s01a = 410;
 
-			function update(val) {
-				const shift = parseInt(val);
-				const s = startBase + shift;
-				const e = s + range;
-				const pctLeft = (s / 1000) * 100;
-				const pctWidth = (range / 1000) * 100;
+		function setBubblePos_s01a(input, bubble) {
+			const min = +input.min;
+			const max = +input.max;
+			const val = +input.value;
+			const percent = ((val - min) / (max - min)) * 100;
+			bubble.style.left = `${percent}%`;
+		}
 
-				mark.style.left = pctLeft + "%";
-				mark.style.width = pctWidth + "%";
+		function formatDiff_s01a(current, base) {
+			const diff = current - base;
+			return diff === 0 ? '(±0)' : (diff > 0 ? `(+${diff})` : `(${diff})`);
+		}
 
-				const pointerLeftPct = pctLeft + pctWidth / 2;
-				wrap.style.setProperty("--pointer-left", pointerLeftPct + "%");
+		function updateBubbles_s01a(minVal, maxVal) {
+			bubbleMin_s01a.innerHTML = `${minVal}円<br>${formatDiff_s01a(minVal, defaultMin_s01a)}`;
+			bubbleMax_s01a.innerHTML = `${maxVal}円<br>${formatDiff_s01a(maxVal, defaultMax_s01a)}`;
+			setBubblePos_s01a(fareMin_s01a, bubbleMin_s01a);
+			setBubblePos_s01a(fareMax_s01a, bubbleMax_s01a);
+		}
 
-				displayMin.textContent = s;
-				displayMax.textContent = e;
-				//if (pointer) pointer.textContent = `${s}〜${e} 円`;
+		function updateVisual_s01a(minVal, maxVal) {
+			const total = +fareMin_s01a.max - +fareMin_s01a.min;
+			const pctMin = ((minVal - +fareMin_s01a.min) / total) * 100;
+			const pctMax = ((maxVal - +fareMin_s01a.min) / total) * 100;
 
-				slider.value = shift;
-				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
+			rangeMark_s01a.style.left = pctMin + '%';
+			rangeMark_s01a.style.width = (pctMax - pctMin) + '%';
+		}
 
-				if (hiddenMin) hiddenMin.value = s;
-				if (hiddenMax) hiddenMax.value = e;
+		function syncSliders_s01a() {
+			let minV = +fareMin_s01a.value, maxV = +fareMax_s01a.value;
+			if (minV > maxV) {
+				minV = maxV;
+				fareMin_s01a.value = minV;
 			}
-
-			slider.setAttribute("min", minShift);
-			slider.setAttribute("max", maxShift);
-			slider.setAttribute("step", 10);
-			slider.value = 0;
-
-			slider.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
-				update(v);
-			});
-
-			const resetBtn = document.querySelector(`[data-reset="${id}"]`);
-			if (resetBtn) {
-				resetBtn.addEventListener("click", () => update(0));
+			if (maxV < minV) {
+				maxV = minV;
+				fareMax_s01a.value = maxV;
 			}
+			updateVisual_s01a(minV, maxV);
+			updateBubbles_s01a(minV, maxV);
+		}
 
-			let isDragging = false;
-			let startX = 0;
-			let startVal = 0;
+		fareMin_s01a.addEventListener('input', syncSliders_s01a);
+		fareMax_s01a.addEventListener('input', syncSliders_s01a);
 
-			mark.addEventListener("pointerdown", (e) => {
-				isDragging = true;
-				startX = e.clientX;
-				startVal = parseInt(slider.value);
-				mark.setPointerCapture(e.pointerId);
-			});
+		fareMin_s01a.addEventListener('pointerdown', () => {
+			fareMin_s01a.style.zIndex = 3;
+			fareMax_s01a.style.zIndex = 2;
+		});
+		fareMax_s01a.addEventListener('pointerdown', () => {
+			fareMax_s01a.style.zIndex = 3;
+			fareMin_s01a.style.zIndex = 2;
+		});
 
-			mark.addEventListener("pointermove", (e) => {
-				if (!isDragging) return;
-				const dx = e.clientX - startX;
-				const ratio = dx / slider.offsetWidth;
-				const delta = Math.round((ratio * 1000) / 10) * 10;
-				update(Math.max(minShift, Math.min(startVal + delta, maxShift)));
-			});
+		fareMin_s01a.value = defaultMin_s01a;
+		fareMax_s01a.value = defaultMax_s01a;
+		syncSliders_s01a();
 
-			mark.addEventListener("pointerup", () => {
-				isDragging = false;
-			});
-
-			update(0);
+		document.querySelector('[data-reset="scenario01_a_fare"]').addEventListener('click', () => {
+			fareMin_s01a.value = defaultMin_s01a;
+			fareMax_s01a.value = defaultMax_s01a;
+			syncSliders_s01a();
 		});
 	</script>
 
 	<script>
-		document.addEventListener("DOMContentLoaded", function () {
-			const id = "scenario01_a_fare";
-			const startBase = 140;
-			const endBase = 410;
-			const range = endBase - startBase;
-			const minShift = -startBase;
-			const maxShift = 1000 - endBase;
+		const fareMin_s01b = document.getElementById('fareRangeMin_scenario01b');
+		const fareMax_s01b = document.getElementById('fareRangeMax_scenario01b');
+		const rangeMark_s01b = document.querySelector('#scenario01_b_fare .js-range-mark');
 
-			const container = document.getElementById(id);
-			const slider = document.getElementById(`fareSlider_${id}`);
-			const mark = container.querySelector(".js-fare-mark");
-			const displayMin = container.querySelector(".js-fare-min-value");
-			const displayMax = container.querySelector(".js-fare-max-value");
-			const diff = container.querySelector(".js-fare-diff");
-			const wrap = container.querySelector(".c-input__range-wrap");
-			const pointer = container.querySelector(".js-range-pointer");
-			const hiddenMin = document.getElementById(`${id}_min_hidden`);
-			const hiddenMax = document.getElementById(`${id}_max_hidden`);
+		const bubbleMin_s01b = document.getElementById('bubbleMin_scenario01b');
+		const bubbleMax_s01b = document.getElementById('bubbleMax_scenario01b');
 
-			const initialCenterPct = ((startBase + range / 2) / 1000) * 100;
-			wrap.style.setProperty('--static-pointer-left', `${initialCenterPct}%`);
+		const defaultMin_s01b = 120;
+		const defaultMax_s01b = 390;
 
-			function update(val) {
-				const shift = parseInt(val);
-				const s = startBase + shift;
-				const e = s + range;
-				const pctLeft = (s / 1000) * 100;
-				const pctWidth = (range / 1000) * 100;
+		function setBubblePos_s01b(input, bubble) {
+			const min = +input.min;
+			const max = +input.max;
+			const val = +input.value;
+			const percent = ((val - min) / (max - min)) * 100;
+			bubble.style.left = `${percent}%`;
+		}
 
-				mark.style.left = pctLeft + "%";
-				mark.style.width = pctWidth + "%";
+		function formatDiff_s01b(current, base) {
+			const diff = current - base;
+			return diff === 0 ? '(±0)' : (diff > 0 ? `(+${diff})` : `(${diff})`);
+		}
 
-				const pointerLeftPct = pctLeft + pctWidth / 2;
-				wrap.style.setProperty("--pointer-left", pointerLeftPct + "%");
+		function updateBubbles_s01b(minVal, maxVal) {
+			bubbleMin_s01b.innerHTML = `${minVal}円<br>${formatDiff_s01b(minVal, defaultMin_s01b)}`;
+			bubbleMax_s01b.innerHTML = `${maxVal}円<br>${formatDiff_s01b(maxVal, defaultMax_s01b)}`;
+			setBubblePos_s01b(fareMin_s01b, bubbleMin_s01b);
+			setBubblePos_s01b(fareMax_s01b, bubbleMax_s01b);
+		}
 
-				displayMin.textContent = s;
-				displayMax.textContent = e;
-				//if (pointer) pointer.textContent = `${s}〜${e} 円`;
+		function updateVisual_s01b(minVal, maxVal) {
+			const total = +fareMin_s01b.max - +fareMin_s01b.min;
+			const pctMin = ((minVal - +fareMin_s01b.min) / total) * 100;
+			const pctMax = ((maxVal - +fareMin_s01b.min) / total) * 100;
 
-				slider.value = shift;
-				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
+			rangeMark_s01b.style.left = pctMin + '%';
+			rangeMark_s01b.style.width = (pctMax - pctMin) + '%';
+		}
 
-				if (hiddenMin) hiddenMin.value = s;
-				if (hiddenMax) hiddenMax.value = e;
+		function syncSliders_s01b() {
+			let minV = +fareMin_s01b.value, maxV = +fareMax_s01b.value;
+
+			if (minV > maxV) {
+				minV = maxV;
+				fareMin_s01b.value = minV;
+			}
+			if (maxV < minV) {
+				maxV = minV;
+				fareMax_s01b.value = maxV;
 			}
 
-			slider.setAttribute("min", minShift);
-			slider.setAttribute("max", maxShift);
-			slider.setAttribute("step", 10);
-			slider.value = 0;
+			updateVisual_s01b(minV, maxV);
+			updateBubbles_s01b(minV, maxV);
+		}
 
-			slider.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
-				update(v);
-			});
+		fareMin_s01b.addEventListener('input', syncSliders_s01b);
+		fareMax_s01b.addEventListener('input', syncSliders_s01b);
 
-			const resetBtn = document.querySelector(`[data-reset="${id}"]`);
-			if (resetBtn) {
-				resetBtn.addEventListener("click", () => update(0));
-			}
-
-			let isDragging = false;
-			let startX = 0;
-			let startVal = 0;
-
-			mark.addEventListener("pointerdown", (e) => {
-				isDragging = true;
-				startX = e.clientX;
-				startVal = parseInt(slider.value);
-				mark.setPointerCapture(e.pointerId);
-			});
-
-			mark.addEventListener("pointermove", (e) => {
-				if (!isDragging) return;
-				const dx = e.clientX - startX;
-				const ratio = dx / slider.offsetWidth;
-				const delta = Math.round((ratio * 1000) / 10) * 10;
-				update(Math.max(minShift, Math.min(startVal + delta, maxShift)));
-			});
-
-			mark.addEventListener("pointerup", () => {
-				isDragging = false;
-			});
-
-			update(0);
+		fareMin_s01b.addEventListener('pointerdown', () => {
+			fareMin_s01b.style.zIndex = 3;
+			fareMax_s01b.style.zIndex = 2;
 		});
-	</script>
+		fareMax_s01b.addEventListener('pointerdown', () => {
+			fareMax_s01b.style.zIndex = 3;
+			fareMin_s01b.style.zIndex = 2;
+		});
 
-	<script>
-		document.addEventListener("DOMContentLoaded", function () {
-			const id = "scenario01_b_fare";
-			const startBase = 120;
-			const endBase = 390;
-			const range = endBase - startBase;
-			const minShift = -startBase;
-			const maxShift = 1000 - endBase;
+		fareMin_s01b.value = defaultMin_s01b;
+		fareMax_s01b.value = defaultMax_s01b;
+		syncSliders_s01b();
 
-			const container = document.getElementById(id);
-			const slider = document.getElementById(`fareSlider_${id}`);
-			const mark = container.querySelector(".js-fare-mark");
-			const displayMin = container.querySelector(".js-fare-min-value");
-			const displayMax = container.querySelector(".js-fare-max-value");
-			const diff = container.querySelector(".js-fare-diff");
-			const wrap = container.querySelector(".c-input__range-wrap");
-			const pointer = container.querySelector(".js-range-pointer");
-			const hiddenMin = document.getElementById(`${id}_min_hidden`);
-			const hiddenMax = document.getElementById(`${id}_max_hidden`);
-
-			const initialCenterPct = ((startBase + range / 2) / 1000) * 100;
-			wrap.style.setProperty('--static-pointer-left', `${initialCenterPct}%`);
-
-			function update(val) {
-				const shift = parseInt(val);
-				const s = startBase + shift;
-				const e = s + range;
-				const pctLeft = (s / 1000) * 100;
-				const pctWidth = (range / 1000) * 100;
-
-				mark.style.left = pctLeft + "%";
-				mark.style.width = pctWidth + "%";
-
-				const pointerLeftPct = pctLeft + pctWidth / 2;
-				wrap.style.setProperty("--pointer-left", pointerLeftPct + "%");
-
-				displayMin.textContent = s;
-				displayMax.textContent = e;
-				//if (pointer) pointer.textContent = `${s}〜${e} 円`;
-
-				slider.value = shift;
-				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
-
-				if (hiddenMin) hiddenMin.value = s;
-				if (hiddenMax) hiddenMax.value = e;
-			}
-
-			slider.setAttribute("min", minShift);
-			slider.setAttribute("max", maxShift);
-			slider.setAttribute("step", 10);
-			slider.value = 0;
-
-			slider.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
-				update(v);
-			});
-
-			const resetBtn = document.querySelector(`[data-reset="${id}"]`);
-			if (resetBtn) {
-				resetBtn.addEventListener("click", () => update(0));
-			}
-
-			let isDragging = false;
-			let startX = 0;
-			let startVal = 0;
-
-			mark.addEventListener("pointerdown", (e) => {
-				isDragging = true;
-				startX = e.clientX;
-				startVal = parseInt(slider.value);
-				mark.setPointerCapture(e.pointerId);
-			});
-
-			mark.addEventListener("pointermove", (e) => {
-				if (!isDragging) return;
-				const dx = e.clientX - startX;
-				const ratio = dx / slider.offsetWidth;
-				const delta = Math.round((ratio * 1000) / 10) * 10;
-				update(Math.max(minShift, Math.min(startVal + delta, maxShift)));
-			});
-
-			mark.addEventListener("pointerup", () => {
-				isDragging = false;
-			});
-
-			update(0);
+		document.querySelector('[data-reset="scenario01_b_fare"]').addEventListener('click', () => {
+			fareMin_s01b.value = defaultMin_s01b;
+			fareMax_s01b.value = defaultMax_s01b;
+			syncSliders_s01b();
 		});
 	</script>
 
 
 	<script>
-		document.addEventListener("DOMContentLoaded", function () {
-			const id = "scenario02_a_fare";
-			const startBase = 160;
-			const endBase = 430;
-			const range = endBase - startBase;
-			const minShift = -startBase;
-			const maxShift = 1000 - endBase;
+		const fareMin_s02a = document.getElementById('fareRangeMin_scenario02a');
+		const fareMax_s02a = document.getElementById('fareRangeMax_scenario02a');
+		const rangeMark_s02a = document.querySelector('#scenario02_a_fare .js-range-mark');
 
-			const container = document.getElementById(id);
-			const slider = document.getElementById(`fareSlider_${id}`);
-			const mark = container.querySelector(".js-fare-mark");
-			const displayMin = container.querySelector(".js-fare-min-value");
-			const displayMax = container.querySelector(".js-fare-max-value");
-			const diff = container.querySelector(".js-fare-diff");
-			const wrap = container.querySelector(".c-input__range-wrap");
-			const pointer = container.querySelector(".js-range-pointer");
-			const hiddenMin = document.getElementById(`${id}_min_hidden`);
-			const hiddenMax = document.getElementById(`${id}_max_hidden`);
+		const bubbleMin_s02a = document.getElementById('bubbleMin_scenario02a');
+		const bubbleMax_s02a = document.getElementById('bubbleMax_scenario02a');
 
-			const initialCenterPct = ((startBase + range / 2) / 1000) * 100;
-			wrap.style.setProperty('--static-pointer-left', `${initialCenterPct}%`);
+		const defaultMin_s02a = 160;
+		const defaultMax_s02a = 430;
 
-			function update(val) {
-				const shift = parseInt(val);
-				const s = startBase + shift;
-				const e = s + range;
-				const pctLeft = (s / 1000) * 100;
-				const pctWidth = (range / 1000) * 100;
+		function setBubblePos_s02a(input, bubble) {
+			const min = +input.min;
+			const max = +input.max;
+			const val = +input.value;
+			const percent = ((val - min) / (max - min)) * 100;
+			bubble.style.left = `${percent}%`;
+		}
 
-				mark.style.left = pctLeft + "%";
-				mark.style.width = pctWidth + "%";
+		function formatDiff_s02a(current, base) {
+			const diff = current - base;
+			return diff === 0 ? '(±0)' : (diff > 0 ? `(+${diff})` : `(${diff})`);
+		}
 
-				const pointerLeftPct = pctLeft + pctWidth / 2;
-				wrap.style.setProperty("--pointer-left", pointerLeftPct + "%");
+		function updateBubbles_s02a(minVal, maxVal) {
+			bubbleMin_s02a.innerHTML = `${minVal}円<br>${formatDiff_s02a(minVal, defaultMin_s02a)}`;
+			bubbleMax_s02a.innerHTML = `${maxVal}円<br>${formatDiff_s02a(maxVal, defaultMax_s02a)}`;
+			setBubblePos_s02a(fareMin_s02a, bubbleMin_s02a);
+			setBubblePos_s02a(fareMax_s02a, bubbleMax_s02a);
+		}
 
-				displayMin.textContent = s;
-				displayMax.textContent = e;
-				//if (pointer) pointer.textContent = `${s}〜${e} 円`;
+		function updateVisual_s02a(minVal, maxVal) {
+			const total = +fareMin_s02a.max - +fareMin_s02a.min;
+			const pctMin = ((minVal - +fareMin_s02a.min) / total) * 100;
+			const pctMax = ((maxVal - +fareMin_s02a.min) / total) * 100;
 
-				slider.value = shift;
-				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
+			rangeMark_s02a.style.left = pctMin + '%';
+			rangeMark_s02a.style.width = (pctMax - pctMin) + '%';
+		}
 
-				if (hiddenMin) hiddenMin.value = s;
-				if (hiddenMax) hiddenMax.value = e;
+		function syncSliders_s02a() {
+			let minV = +fareMin_s02a.value, maxV = +fareMax_s02a.value;
+
+			if (minV > maxV) {
+				minV = maxV;
+				fareMin_s02a.value = minV;
+			}
+			if (maxV < minV) {
+				maxV = minV;
+				fareMax_s02a.value = maxV;
 			}
 
-			slider.setAttribute("min", minShift);
-			slider.setAttribute("max", maxShift);
-			slider.setAttribute("step", 10);
-			slider.value = 0;
+			updateVisual_s02a(minV, maxV);
+			updateBubbles_s02a(minV, maxV);
+		}
 
-			slider.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
-				update(v);
-			});
+		fareMin_s02a.addEventListener('input', syncSliders_s02a);
+		fareMax_s02a.addEventListener('input', syncSliders_s02a);
 
-			const resetBtn = document.querySelector(`[data-reset="${id}"]`);
-			if (resetBtn) {
-				resetBtn.addEventListener("click", () => update(0));
-			}
+		fareMin_s02a.addEventListener('pointerdown', () => {
+			fareMin_s02a.style.zIndex = 3;
+			fareMax_s02a.style.zIndex = 2;
+		});
+		fareMax_s02a.addEventListener('pointerdown', () => {
+			fareMax_s02a.style.zIndex = 3;
+			fareMin_s02a.style.zIndex = 2;
+		});
 
-			let isDragging = false;
-			let startX = 0;
-			let startVal = 0;
+		fareMin_s02a.value = defaultMin_s02a;
+		fareMax_s02a.value = defaultMax_s02a;
+		syncSliders_s02a();
 
-			mark.addEventListener("pointerdown", (e) => {
-				isDragging = true;
-				startX = e.clientX;
-				startVal = parseInt(slider.value);
-				mark.setPointerCapture(e.pointerId);
-			});
-
-			mark.addEventListener("pointermove", (e) => {
-				if (!isDragging) return;
-				const dx = e.clientX - startX;
-				const ratio = dx / slider.offsetWidth;
-				const delta = Math.round((ratio * 1000) / 10) * 10;
-				update(Math.max(minShift, Math.min(startVal + delta, maxShift)));
-			});
-
-			mark.addEventListener("pointerup", () => {
-				isDragging = false;
-			});
-
-			update(0);
+		document.querySelector('[data-reset="scenario02_a_fare"]').addEventListener('click', () => {
+			fareMin_s02a.value = defaultMin_s02a;
+			fareMax_s02a.value = defaultMax_s02a;
+			syncSliders_s02a();
 		});
 	</script>
 
 	<script>
-		document.addEventListener("DOMContentLoaded", function () {
-			const id = "scenario02_b_fare";
-			const startBase = 120;
-			const endBase = 390;
-			const range = endBase - startBase;
-			const minShift = -startBase;
-			const maxShift = 1000 - endBase;
+		const fareMin_s02b = document.getElementById('fareRangeMin_scenario02b');
+		const fareMax_s02b = document.getElementById('fareRangeMax_scenario02b');
+		const rangeMark_s02b = document.querySelector('#scenario02_b_fare .js-range-mark');
 
-			const container = document.getElementById(id);
-			const slider = document.getElementById(`fareSlider_${id}`);
-			const mark = container.querySelector(".js-fare-mark");
-			const displayMin = container.querySelector(".js-fare-min-value");
-			const displayMax = container.querySelector(".js-fare-max-value");
-			const diff = container.querySelector(".js-fare-diff");
-			const wrap = container.querySelector(".c-input__range-wrap");
-			const pointer = container.querySelector(".js-range-pointer");
-			const hiddenMin = document.getElementById(`${id}_min_hidden`);
-			const hiddenMax = document.getElementById(`${id}_max_hidden`);
+		const bubbleMin_s02b = document.getElementById('bubbleMin_scenario02b');
+		const bubbleMax_s02b = document.getElementById('bubbleMax_scenario02b');
 
-			const initialCenterPct = ((startBase + range / 2) / 1000) * 100;
-			wrap.style.setProperty('--static-pointer-left', `${initialCenterPct}%`);
+		const defaultMin_s02b = 120;
+		const defaultMax_s02b = 390;
 
-			function update(val) {
-				const shift = parseInt(val);
-				const s = startBase + shift;
-				const e = s + range;
-				const pctLeft = (s / 1000) * 100;
-				const pctWidth = (range / 1000) * 100;
+		function setBubblePos_s02b(input, bubble) {
+			const min = +input.min;
+			const max = +input.max;
+			const val = +input.value;
+			const percent = ((val - min) / (max - min)) * 100;
+			bubble.style.left = `${percent}%`;
+		}
 
-				mark.style.left = pctLeft + "%";
-				mark.style.width = pctWidth + "%";
+		function formatDiff_s02b(current, base) {
+			const diff = current - base;
+			return diff === 0 ? '(±0)' : (diff > 0 ? `(+${diff})` : `(${diff})`);
+		}
 
-				const pointerLeftPct = pctLeft + pctWidth / 2;
-				wrap.style.setProperty("--pointer-left", pointerLeftPct + "%");
+		function updateBubbles_s02b(minVal, maxVal) {
+			bubbleMin_s02b.innerHTML = `${minVal}円<br>${formatDiff_s02b(minVal, defaultMin_s02b)}`;
+			bubbleMax_s02b.innerHTML = `${maxVal}円<br>${formatDiff_s02b(maxVal, defaultMax_s02b)}`;
+			setBubblePos_s02b(fareMin_s02b, bubbleMin_s02b);
+			setBubblePos_s02b(fareMax_s02b, bubbleMax_s02b);
+		}
 
-				displayMin.textContent = s;
-				displayMax.textContent = e;
-				//if (pointer) pointer.textContent = `${s}〜${e} 円`;
+		function updateVisual_s02b(minVal, maxVal) {
+			const total = +fareMin_s02b.max - +fareMin_s02b.min;
+			const pctMin = ((minVal - +fareMin_s02b.min) / total) * 100;
+			const pctMax = ((maxVal - +fareMin_s02b.min) / total) * 100;
 
-				slider.value = shift;
-				diff.textContent = shift === 0 ? "(±0)" : `(${shift > 0 ? "+" : ""}${shift})`;
+			rangeMark_s02b.style.left = pctMin + '%';
+			rangeMark_s02b.style.width = (pctMax - pctMin) + '%';
+		}
 
-				if (hiddenMin) hiddenMin.value = s;
-				if (hiddenMax) hiddenMax.value = e;
+		function syncSliders_s02b() {
+			let minV = +fareMin_s02b.value, maxV = +fareMax_s02b.value;
+
+			if (minV > maxV) {
+				minV = maxV;
+				fareMin_s02b.value = minV;
+			}
+			if (maxV < minV) {
+				maxV = minV;
+				fareMax_s02b.value = maxV;
 			}
 
-			slider.setAttribute("min", minShift);
-			slider.setAttribute("max", maxShift);
-			slider.setAttribute("step", 10);
-			slider.value = 0;
+			updateVisual_s02b(minV, maxV);
+			updateBubbles_s02b(minV, maxV);
+		}
 
-			slider.addEventListener("input", () => {
-				let v = Math.round(Math.max(minShift, Math.min(parseInt(slider.value), maxShift)) / 10) * 10;
-				update(v);
-			});
+		fareMin_s02b.addEventListener('input', syncSliders_s02b);
+		fareMax_s02b.addEventListener('input', syncSliders_s02b);
 
-			const resetBtn = document.querySelector(`[data-reset="${id}"]`);
-			if (resetBtn) {
-				resetBtn.addEventListener("click", () => update(0));
-			}
+		fareMin_s02b.addEventListener('pointerdown', () => {
+			fareMin_s02b.style.zIndex = 3;
+			fareMax_s02b.style.zIndex = 2;
+		});
+		fareMax_s02b.addEventListener('pointerdown', () => {
+			fareMax_s02b.style.zIndex = 3;
+			fareMin_s02b.style.zIndex = 2;
+		});
 
-			let isDragging = false;
-			let startX = 0;
-			let startVal = 0;
+		fareMin_s02b.value = defaultMin_s02b;
+		fareMax_s02b.value = defaultMax_s02b;
+		syncSliders_s02b();
 
-			mark.addEventListener("pointerdown", (e) => {
-				isDragging = true;
-				startX = e.clientX;
-				startVal = parseInt(slider.value);
-				mark.setPointerCapture(e.pointerId);
-			});
-
-			mark.addEventListener("pointermove", (e) => {
-				if (!isDragging) return;
-				const dx = e.clientX - startX;
-				const ratio = dx / slider.offsetWidth;
-				const delta = Math.round((ratio * 1000) / 10) * 10;
-				update(Math.max(minShift, Math.min(startVal + delta, maxShift)));
-			});
-
-			mark.addEventListener("pointerup", () => {
-				isDragging = false;
-			});
-
-			update(0);
+		document.querySelector('[data-reset="scenario02_b_fare"]').addEventListener('click', () => {
+			fareMin_s02b.value = defaultMin_s02b;
+			fareMax_s02b.value = defaultMax_s02b;
+			syncSliders_s02b();
 		});
 	</script>
 
@@ -2386,9 +2328,9 @@
     top: 300px;
     left: 40%;
     transform: translateX(-50%);
-    background: linear-gradient(135deg, #fa7b00, #f86007);
-    color: #fffdfa;
-    border: 1px solid #ffd88a;
+    background: linear-gradient(135deg, #8a2be2, #6a0dad);
+    color: #f8f6ff;
+    border: 1px solid #c8a2ff;
     padding: 14px 28px;
     border-radius: 14px;
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
@@ -2403,6 +2345,7 @@
 ">
 		専用レーンを選択してください
 	</div>
+
 
 </body>
 
