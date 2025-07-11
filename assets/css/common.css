@@ -353,10 +353,8 @@
   .l-header__nav-link.current {
     --txtColor: #FFF;
     --bgColor: linear-gradient(135deg, #a084e8, #6c4ab6);
-    /* Light to deep purple */
     background: var(--bgColor);
     box-shadow: 0 4px 12px rgba(108, 74, 182, 0.4);
-    /* Matching purple shadow */
     transform: translateX(4px);
     color: var(--);
   }
@@ -446,11 +444,8 @@
 
   :root {
     --colorMain: #8d3dae;
-    /* deep orchid */
     --colorAccent: #b67ff2;
-    /* soft lavender */
     --colorText: #333333;
-    /* dark charcoal */
   }
 
   .l-contents__tit {
@@ -460,7 +455,6 @@
     color: var(--colorText);
     letter-spacing: 0.05em;
     padding-left: 1rem;
-    /* space for the left stripe */
     margin-bottom: 2rem;
   }
 

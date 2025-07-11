@@ -15,21 +15,30 @@
 		}
 
 		.table-scroll-area {
-			max-height: 90vh;
+			max-height: calc(100vh - 320px);
 			overflow-y: auto;
-			overflow-x: auto;
+			position: relative;
+			-ms-overflow-style: none;
+			/* IE, Edge */
+			scrollbar-width: none;
+			/* Firefox */
+		}
+
+		.table-scroll-area::-webkit-scrollbar {
+			display: none;
+			/* Chrome, Safari */
 		}
 
 		.c-table.p-list__table {
-			border-collapse: separate;
-			border-spacing: 0;
+			border-collapse: collapse;
 			width: 100%;
 		}
 
-		@media (max-height: 700px) {
-			.table-scroll-area {
-				max-height: 50vh;
-			}
+		.c-table.p-list__table thead th {
+			background-color: #6a1b9a;
+			position: sticky;
+			top: 0;
+			z-index: 2;
 		}
 	</style>
 
@@ -187,7 +196,7 @@
 											<input type="checkbox" id="selectAllCheckbox" />
 										</th>
 
-										<th rowspan="2" class="u-ta-left">名称</th>
+										<th class="u-ta-left">名称</th>
 										<th>
 											評価
 											<label class="c-btn__sort">

@@ -17,6 +17,15 @@
 		details.c-route {
 			max-height: 400px;
 			overflow-y: auto;
+			-ms-overflow-style: none;
+			/* IE and Edge */
+			scrollbar-width: none;
+			/* Firefox */
+		}
+
+		details.c-route::-webkit-scrollbar {
+			display: none;
+			/* Chrome, Safari */
 		}
 
 		details.c-route>summary {
@@ -55,6 +64,10 @@
 			border-radius: 12px;
 
 			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		}
+
+		.l-fixed__open.l-contents__useful.c-btn.js-fixed-open {
+			padding: 16px 16px;
 		}
 	</style>
 
