@@ -268,6 +268,7 @@
     background-size: 200% auto;
     background-clip: text;
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: gradientScroll 10s linear infinite, fadeInSlideUp 1s ease-out both;
     display: block;
@@ -1894,37 +1895,37 @@
   }
 
   .c-input__range {
-    display: grid;
-    grid-template-columns: max-content minmax(0, 1fr);
-    column-gap: min(1.4641288433vw, 20px)
-  }
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: min(1.4641288433vw, 20px)
+}
 
-  .c-input__range-unit {
-    color: #666;
-    font-size: 1.2rem;
-    align-content: center
-  }
+.c-input__range-unit {
+  color: #666;
+  font-size: 1.2rem;
+  align-content: center
+}
 
-  .c-input__range-minmax {
-    display: flex;
-    justify-content: space-between;
-    font-size: 1.3rem;
-    color: silver;
-    line-height: 1;
-    overflow: visible
-  }
+.c-input__range-minmax {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.3rem;
+  color: silver;
+  line-height: 1;
+  overflow: visible
+}
 
-  .c-input__range-minmax .hide {
-    visibility: hidden
-  }
+.c-input__range-minmax .hide {
+  visibility: hidden
+}
 
-  .c-input__range-wrap {
-    position: relative;
-    height: 14px;
-    display: flex;
-    align-items: center;
-    margin-bottom: 4px
-  }
+.c-input__range-wrap {
+  position: relative;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px
+}
 
   .c-input__range-slider {
     appearance: none;
@@ -1954,11 +1955,11 @@
     border: none
   }
 
-  .c-input__range-saved,
-  .c-input__range-change {
-    position: relative;
-    transform: translateX(-50%)
-  }
+.c-input__range-saved,
+.c-input__range-change {
+  position: relative;
+  transform: translateX(-50%)
+}
 
   .c-input__file {
     border: 1px solid var(--commonGray);
