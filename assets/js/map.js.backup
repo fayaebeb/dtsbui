@@ -1,30 +1,34 @@
-var map = L.map('map', { minZoom: 9 }).setView([31.5, 132.5], 8);
+// Initialize the map
+const map = L.map('map', { minZoom: 9 }).setView([31.5, 132.5], 8);
 
+// Base map layers
 const baseLayers = {
 	"標準地図": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
 	"ダークモード": L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png')
 };
 baseLayers["標準地図"].addTo(map);
 
+// Overlay layers object for layer control
 const overlayLayers = {};
 L.control.layers(baseLayers, overlayLayers, { collapsed: false }).addTo(map);
 
-const panes = [
+// Create and order custom panes
+[
 	'rectanglePane', 'populationPane', 'linePane', 'circles',
 	'commentaryPane', 'meshPane', 'selectRosen', 'selectStop'
-];
-panes.forEach((pane, index) => {
+].forEach((pane, i) => {
 	const p = map.createPane(pane);
-	p.style.zIndex = 430 + index * 10;
+	p.style.zIndex = 430 + i * 10;
 });
 
+// ===== Route Layer =====
 let routeA;
 const routeCheckbox = document.getElementById('data_root');
 
 fetch("matsim_data/network_bus_and_rail.geojson")
 	.then(res => res.json())
 	.then(data => {
-		console.log("MATSim network loaded:", data.features.length);
+		console.log("✅ MATSim network loaded:", data.features.length);
 		routeA = L.geoJSON(data, {
 			pane: "linePane",
 			style: {
@@ -33,30 +37,28 @@ fetch("matsim_data/network_bus_and_rail.geojson")
 				opacity: 0.8,
 			},
 			onEachFeature: (feature, layer) => {
-				const info = feature.properties?.id || "Unknown";
-				layer.bindTooltip(`Link ID: ${info}`, {
+				const id = feature.properties?.id || "Unknown";
+				layer.bindTooltip(`Link ID: ${id}`, {
 					permanent: false,
 					direction: "top",
 					className: "l-contents__map-route",
+					sticky: true
 				});
 				layer.on('mouseover', () => layer.setStyle({ weight: 4, color: "#1C3D6E" }));
 				layer.on('mouseout', () => layer.setStyle({ weight: 2, color: "#31599E" }));
 			}
 		});
-		map.fitBounds(routeA.getBounds());
+
 		if (routeCheckbox.checked) routeA.addTo(map);
+		overlayLayers["路線ネットワーク"] = routeA;
+		map.fitBounds(routeA.getBounds());
 	});
 
-function routeCheckboxChange() {
-	if (routeCheckbox.checked) {
-		routeA?.addTo(map);
-	} else {
-		routeA?.remove();
-	}
-}
-routeCheckboxChange();
-routeCheckbox.addEventListener('change', routeCheckboxChange);
+routeCheckbox.addEventListener('change', () => {
+	routeCheckbox.checked ? routeA?.addTo(map) : routeA?.remove();
+});
 
+// ===== Rectangle Overlay (Viewport Box) =====
 let rectangle;
 function updateRectangle() {
 	const bounds = map.getBounds();
@@ -77,35 +79,42 @@ updateRectangle();
 map.on('moveend zoomend', updateRectangle);
 window.addEventListener('resize', updateRectangle);
 
+// ===== Population Layer =====
 const populationCheckbox = document.querySelector('.js-population');
 let populationLayer = null;
 
-function getColor(d) {
-	return d > 7000 ? "#800026" :
-		d > 5000 ? "#BD0026" :
-		d > 2000 ? "#E31A1C" :
-		d > 1000 ? "#FC4E2A" :
-		d > 600 ? "#FD8D3C" :
-		d > 300 ? "#FE9E43" :
-		d > 200 ? "#FEB24C" :
-		d > 100 ? "#FEC560" :
-		d > 50 ? "#FED976" :
-		d > 10 ? "#FEE086" : "#FFF3BE";
+function getColor(value) {
+	return value > 7000 ? "#800026" :
+		value > 5000 ? "#BD0026" :
+		value > 2000 ? "#E31A1C" :
+		value > 1000 ? "#FC4E2A" :
+		value > 600 ? "#FD8D3C" :
+		value > 300 ? "#FE9E43" :
+		value > 200 ? "#FEB24C" :
+		value > 100 ? "#FEC560" :
+		value > 50 ? "#FED976" :
+		value > 10 ? "#FEE086" : "#FFF3BE";
 }
 
-function geoJsonStyle(feature) {
-	const selectYear = 'PTN_' + document.querySelector('.l-contents__map-year .range').value;
+function getPopulationStyle(feature) {
+	const year = document.querySelector('.l-contents__map-year .range').value;
+	const prop = 'PTN_' + year;
 	return {
-		fillColor: getColor(feature.properties[selectYear]),
+		fillColor: getColor(feature.properties[prop]),
 		weight: 0.5,
-		opacity: 0.5,
 		color: "white",
+		opacity: 0.5,
 		dashArray: "2",
 		fillOpacity: 0.4,
 	};
 }
 
 function showPopulationData() {
+	if (map.getZoom() < 10) {
+		console.warn("Zoom in to view population data.");
+		return;
+	}
+
 	fetch("assets/data/jinnkousuikei_v3.zip")
 		.then(res => res.arrayBuffer())
 		.then(buffer => JSZip.loadAsync(buffer))
@@ -113,10 +122,21 @@ function showPopulationData() {
 		.then(geojsonStr => {
 			const data = JSON.parse(geojsonStr);
 			if (populationLayer) map.removeLayer(populationLayer);
+
 			populationLayer = L.geoJSON(data, {
-				style: geoJsonStyle,
+				style: getPopulationStyle,
 				pane: 'populationPane',
+				onEachFeature: (feature, layer) => {
+					const year = document.querySelector('.l-contents__map-year .range').value;
+					const val = feature.properties['PTN_' + year];
+					layer.bindTooltip(`人口: ${val}`, { sticky: true });
+
+					layer.on('mouseover', () => layer.setStyle({ fillOpacity: 0.7 }));
+					layer.on('mouseout', () => layer.setStyle({ fillOpacity: 0.4 }));
+				}
 			}).addTo(map);
+
+			overlayLayers["人口推計"] = populationLayer;
 		});
 }
 
@@ -131,23 +151,33 @@ populationCheckbox.addEventListener('change', () => {
 	populationCheckbox.checked ? showPopulationData() : removePopulationData();
 });
 
+map.on('zoomend', () => {
+	if (populationCheckbox.checked) showPopulationData();
+});
+
+// ===== Year Slider Interaction =====
 const rangeYearInput = document.querySelector('.js-year');
 const currentYearValue = document.querySelector('.js-year-current');
-const minYearValue = parseInt(rangeYearInput.min);
-const maxYearValue = parseInt(rangeYearInput.max);
 const minYearTxt = document.querySelector('.js-year-min');
 const maxYearTxt = document.querySelector('.js-year-max');
 
-function yearRange(year) {
+const minYear = parseInt(rangeYearInput.min);
+const maxYear = parseInt(rangeYearInput.max);
+
+function updateYearSlider(year) {
 	currentYearValue.textContent = year;
-	const percent = (year - minYearValue) / (maxYearValue - minYearValue);
+
+	const percent = (year - minYear) / (maxYear - minYear);
 	currentYearValue.style.left = `${percent * rangeYearInput.offsetWidth}px`;
-	minYearTxt.classList.toggle('hide', year === minYearValue);
-	maxYearTxt.classList.toggle('hide', year === maxYearValue);
+
+	minYearTxt.classList.toggle('hide', year === minYear);
+	maxYearTxt.classList.toggle('hide', year === maxYear);
 }
+
 rangeYearInput.addEventListener('input', () => {
 	const year = parseInt(rangeYearInput.value);
-	yearRange(year);
+	updateYearSlider(year);
 	if (populationCheckbox.checked) showPopulationData();
 });
-yearRange(parseInt(rangeYearInput.value));
+
+updateYearSlider(parseInt(rangeYearInput.value));
