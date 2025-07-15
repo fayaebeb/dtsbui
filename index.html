@@ -182,16 +182,18 @@
 		.range-bubble {
 			position: absolute;
 			top: -30px;
-			width: 60px;
+			width: 65px;
 			text-align: center;
-			font-size: 12px;
+			font-size: 1.4rem;
 			padding: 2px 5px;
-			background-color: #7e3ff2;
+			background-color: #8d3dae;
 			color: #fff;
 			border-radius: 4px;
 			transform: translateX(-50%);
 			pointer-events: none;
 			line-height: 1.2;
+			display: block;
+			font-weight: 500;
 		}
 
 		.range-bubble::after {
@@ -202,7 +204,9 @@
 			transform: translateX(-50%);
 			border-width: 6px 6px 0 6px;
 			border-style: solid;
-			border-color: #7e3ff2 transparent transparent transparent;
+			border-color: #8d3dae transparent transparent transparent;
+			display: block;
+			font-weight: 500;
 		}
 
 		.c-input__range-wrap input[type=range]::-webkit-slider-runnable-track {
@@ -250,12 +254,14 @@
 		.range-fixed-bubble {
 			position: absolute;
 			bottom: -20px;
-			width: 100px;
+			width: auto;
+			max-width: 100%;
 			text-align: center;
-			background-color: #aaa;
-			color: #fff;
-			font-size: 12px;
-			padding: 4px 6px;
+			background-color: #e0e0e0;
+			color: #333;
+			font-size: 1.5rem;
+			font-weight: bold;
+			padding: 2px 6px;
 			border-radius: 4px;
 			transform: translateX(-50%);
 			pointer-events: none;
@@ -451,7 +457,7 @@
 
 
 													<i class="c-input__range-markforslider js-range-mark equal"></i>
-													
+
 												</div>
 											</div>
 										</dd>
@@ -677,7 +683,7 @@
 													<div class="range-fixed-bubble" style="left: 25.5%;">120～390円</div>
 
 													<i class="c-input__range-markforslider js-range-mark equal"></i>
-													
+
 												</div>
 											</div>
 										</dd>
@@ -910,7 +916,7 @@
 
 													<i class="c-input__range-markforslider js-range-mark equal"></i>
 
-													
+
 												</div>
 											</div>
 										</dd>
@@ -1141,7 +1147,7 @@
 
 													<i class="c-input__range-markforslider js-range-mark equal"></i>
 
-													
+
 												</div>
 											</div>
 										</dd>
@@ -1376,7 +1382,7 @@
 
 													<i class="c-input__range-markforslider js-range-mark equal"></i>
 
-													
+
 												</div>
 											</div>
 										</dd>
@@ -1606,7 +1612,7 @@
 
 													<i class="c-input__range-markforslider js-range-mark equal"></i>
 
-													
+
 												</div>
 											</div>
 										</dd>
