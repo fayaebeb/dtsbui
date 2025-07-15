@@ -252,21 +252,17 @@
 		}
 
 		.range-fixed-bubble {
+			background: #eee;
+			display: block;
+			padding: 0.2857142857em 0.7857142857em;
+			border-radius: var(--commonRadius);
+			width: fit-content;
+			font-size: 1.4rem;
+			transform: translateX(-50%);
 			position: absolute;
 			bottom: -20px;
-			width: auto;
-			max-width: 100%;
-			text-align: center;
-			background-color: #e0e0e0;
-			color: #333;
-			font-size: 1.5rem;
-			font-weight: bold;
-			padding: 2px 6px;
-			border-radius: 4px;
-			transform: translateX(-50%);
-			pointer-events: none;
-			white-space: nowrap;
 		}
+
 
 		.range-fixed-bubble::after {
 			content: "";
@@ -277,6 +273,7 @@
 			border-width: 0 6px 6px 6px;
 			border-style: solid;
 			border-color: transparent transparent #aaa transparent;
+			display: none;
 		}
 	</style>
 
