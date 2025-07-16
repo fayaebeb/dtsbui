@@ -334,6 +334,10 @@
 										<input type="checkbox" id="data_passengers" name="data_passengers">
 										<span class="btn">乗降客数</span>
 									</label>
+									<label class="l-contents__map-btn">
+										<input type="checkbox" id="toggleBusRoutes">
+										<span class="btn">バス路線表示</span>
+									</label>
 								</dd>
 							</dl>
 							<div class="l-contents__map-population">
@@ -1802,9 +1806,17 @@
 							<!--//シナリオ2-->
 						</div>
 					</div>
-					<div class="c-area__btns column02 js-btns" style="text-align: right;">
-						<button class="c-btn c-btn__contents blue" type="submit">結果を出力する</button>
-						<!-- <a class="c-btn c-btn__contents blue" href="list.html">結果一覧</a> -->
+					<div class="c-area__btns column02 js-btns" style="display: flex; flex-wrap: wrap; gap: 8px;">
+						<button class="c-btn c-btn__contents blue" type="submit"
+							style="flex: 1 1 auto; min-width: 150px;">
+							シミュレーション結果
+						</button>
+						<label class="c-btn c-btn__contents blue"
+							style="cursor: pointer; flex: 1 1 auto; min-width: 150px; position: relative;">
+							<input type="file" id="networkUpload" accept=".gz" style="display: none;">
+							<span id="uploadLabelText">🚌 ネットワーク読込</span>
+							<span id="uploadSpinner" style="display: none; margin-left: 8px;">⏳</span>
+						</label>
 					</div>
 				</div>
 			</form>
@@ -1838,6 +1850,8 @@
 	<script src="assets/js/common.js"></script>
 	<script src="assets/js/map.js"></script>
 	<script src="assets/js/simulation.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+	<script src="app.js" defer></script>
 
 	<script>
 		const fareMinA = document.getElementById('fareRangeMin');
