@@ -21,7 +21,7 @@ panes.forEach((pane, index) => {
 let routeA;
 const routeCheckbox = document.getElementById('data_root');
 
-fetch("matsim_data/network_bus_and_rail.geojson")
+fetch("matsim_data/network_bus_and_rail_up.geojson")
 	.then(res => res.json())
 	.then(data => {
 		console.log("MATSim network loaded:", data.features.length);
