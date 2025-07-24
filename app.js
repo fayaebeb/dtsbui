@@ -9,7 +9,12 @@ proj4.defs("EPSG:6671", "+proj=tmerc +lat_0=36 +lon_0=132.1666666666667 +k=0.999
 document.getElementById("folderUpload").addEventListener("change", async (event) => {
   const files = Array.from(event.target.files);
   const spinner = document.getElementById("folderUploadSpinner");
+  const labelText = document.getElementById("folderUploadLabel");
+
   spinner.style.display = "inline";
+  if (labelText) labelText.textContent = "読み込み中...";
+
+  await new Promise(r => setTimeout(r, 100)); 
 
   const fileMap = {};
   for (let file of files) {
@@ -42,6 +47,8 @@ document.getElementById("folderUpload").addEventListener("change", async (event)
   }
 
   spinner.style.display = "none";
+  if (labelText) labelText.textContent = "🚌 ネットワーク読込";
+
   console.log("Parsed MATSim scenario:", scenarioData);
 });
 
