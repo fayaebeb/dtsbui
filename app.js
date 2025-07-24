@@ -1,6 +1,8 @@
 // === 0. Global layer and data storage ===
 let busLayer = null;
 let busRouteFeatures = [];
+let facilityLayer = null;
+let importantFacilityLayer = null;
 console.log(typeof proj4); // Should log 'function' if proj4 is loaded correctly
 
 proj4.defs("EPSG:6671", "+proj=tmerc +lat_0=36 +lon_0=132.1666666666667 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs");
@@ -14,7 +16,7 @@ document.getElementById("folderUpload").addEventListener("change", async (event)
   spinner.style.display = "inline";
   if (labelText) labelText.textContent = "読み込み中...";
 
-  await new Promise(r => setTimeout(r, 100)); 
+  await new Promise(r => setTimeout(r, 100));
 
   const fileMap = {};
   for (let file of files) {
@@ -35,7 +37,7 @@ document.getElementById("folderUpload").addEventListener("change", async (event)
       console.warn(`Skipping output_plans.xml.gz (size: ${sizeMB.toFixed(1)} MB) to avoid browser freeze`);
     } else {
       const xml = await decompressGZToXML(plansFile);
-      scenarioData.plans = parsePlansXML(xml, 100); // Parse only first 100 persons
+      scenarioData.plans = parsePlansXML(xml, 100);
     }
   }
 
@@ -44,6 +46,13 @@ document.getElementById("folderUpload").addEventListener("change", async (event)
     scenarioData.network = parseNetworkXML(xml);
     busRouteFeatures = scenarioData.network;
     displayBusLinks(scenarioData.network);
+  }
+
+  if (fileMap["output_facilities.xml.gz"]) {
+    const xml = await decompressGZToXML(fileMap["output_facilities.xml.gz"]);
+    scenarioData.facilities = parseFacilitiesXML(xml);
+    displayFacilityHeatmap(scenarioData.facilities); // default heatmap
+    displayImportantFacilities(scenarioData.facilities); // default top 20
   }
 
   spinner.style.display = "none";
@@ -82,7 +91,7 @@ function atlantisToWGS84(x, y) {
     return [lon, lat];
   } catch (e) {
     console.error("Projection failed:", e, x, y);
-    return [0, 0]; // fallback to avoid map crashing
+    return [0, 0];
   }
 }
 
@@ -121,6 +130,110 @@ function parseNetworkXML(xml) {
   return features;
 }
 
+// === Parse Facilities XML ===
+function parseFacilitiesXML(xml) {
+  const facilities = [];
+  const facilityElems = xml.getElementsByTagName("facility");
+
+  for (let facility of facilityElems) {
+    const id = facility.getAttribute("id");
+    const x = parseFloat(facility.getAttribute("x"));
+    const y = parseFloat(facility.getAttribute("y"));
+    const [lon, lat] = atlantisToWGS84(x, y);
+
+    const attrMap = {};
+    const attributes = facility.getElementsByTagName("attribute");
+    for (let attr of attributes) {
+      const name = attr.getAttribute("name");
+      const value = attr.textContent;
+      attrMap[name] = value;
+    }
+
+    facilities.push({
+      id,
+      x, y, lon, lat,
+      bld_type: attrMap["bld_type"],
+      business_area: parseFloat(attrMap["business_area"] || 0),
+      residential_area: parseFloat(attrMap["residential_area"] || 0),
+    });
+  }
+
+  return facilities;
+}
+
+// === Display Facilities Heatmap ===
+function displayFacilityHeatmap(facilities, typeFilter = null) {
+  if (facilityLayer) map.removeLayer(facilityLayer);
+
+  const gridSizeDeg = 0.001;
+  const grid = {};
+
+  for (let f of facilities) {
+    if (typeFilter && f.bld_type !== typeFilter) continue;
+    const gx = Math.floor(f.lon / gridSizeDeg);
+    const gy = Math.floor(f.lat / gridSizeDeg);
+    const key = `${gx},${gy}`;
+    grid[key] = (grid[key] || 0) + 1;
+  }
+
+  const rectangles = [];
+
+  for (let [key, count] of Object.entries(grid)) {
+    const [gx, gy] = key.split(",").map(Number);
+    const bounds = [
+      [gy * gridSizeDeg, gx * gridSizeDeg],
+      [(gy + 1) * gridSizeDeg, (gx + 1) * gridSizeDeg]
+    ];
+    const color = `rgba(255, 0, 0, ${Math.min(0.7, count / 10)})`;
+
+    rectangles.push(L.rectangle(bounds, {
+      weight: 0.5,
+      color: "#800000",
+      fillColor: color,
+      fillOpacity: 0.5
+    }));
+  }
+
+  facilityLayer = L.layerGroup(rectangles);
+  const toggle = document.getElementById("toggleFacilityHeatmap");
+  if (!toggle || toggle.checked) {
+    facilityLayer.addTo(map);
+  }
+}
+
+// === Display Important Facilities ===
+function displayImportantFacilities(facilities, topN = 20) {
+  if (importantFacilityLayer) map.removeLayer(importantFacilityLayer);
+
+  const sorted = facilities
+    .slice()
+    .sort((a, b) => (b.business_area + b.residential_area) - (a.business_area + a.residential_area))
+    .slice(0, topN);
+
+  const icon = L.icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34]
+  });
+
+  const markers = sorted.map(f =>
+    L.marker([f.lat, f.lon], { icon }).bindPopup(`
+      <strong>施設 ID:</strong> ${f.id}<br>
+      <strong>タイプ:</strong> ${f.bld_type}<br>
+      <strong>業務面積:</strong> ${f.business_area}<br>
+      <strong>住宅面積:</strong> ${f.residential_area}
+    `)
+  );
+
+  importantFacilityLayer = L.layerGroup(markers);
+
+  const toggle = document.getElementById("toggleImportantFacilities");
+  if (toggle && toggle.checked) {
+    importantFacilityLayer.addTo(map);
+  }
+}
+
 // === Parse Trips CSV ===
 function parseTripsCSV(csvString) {
   const lines = csvString.trim().split('\n');
@@ -147,7 +260,7 @@ function parseTripsCSV(csvString) {
   return Object.entries(tripsByPerson).map(([personId, trips]) => ({ personId, trips }));
 }
 
-// === Parse Plans XML (limit number of persons) ===
+// === Parse Plans XML ===
 function parsePlansXML(xmlDoc, limit = Infinity) {
   const persons = xmlDoc.getElementsByTagName("person");
   const result = [];
@@ -191,7 +304,7 @@ function parsePlansXML(xmlDoc, limit = Infinity) {
   return result;
 }
 
-// === Display bus links on Leaflet map ===
+// === Display bus links ===
 function displayBusLinks(features) {
   if (busLayer) {
     map.removeLayer(busLayer);
@@ -217,12 +330,27 @@ function displayBusLinks(features) {
   }
 }
 
-// === Toggle checkbox to show/hide bus routes ===
+// === Toggle checkboxes ===
 document.getElementById("toggleBusRoutes").addEventListener("change", (e) => {
-  const checked = e.target.checked;
-  if (checked && busRouteFeatures.length > 0) {
+  if (e.target.checked && busRouteFeatures.length > 0) {
     displayBusLinks(busRouteFeatures);
   } else if (busLayer) {
     map.removeLayer(busLayer);
+  }
+});
+
+document.getElementById("toggleFacilityHeatmap").addEventListener("change", (e) => {
+  if (e.target.checked && facilityLayer) {
+    facilityLayer.addTo(map);
+  } else if (facilityLayer) {
+    map.removeLayer(facilityLayer);
+  }
+});
+
+document.getElementById("toggleImportantFacilities").addEventListener("change", (e) => {
+  if (e.target.checked && importantFacilityLayer) {
+    importantFacilityLayer.addTo(map);
+  } else if (importantFacilityLayer) {
+    map.removeLayer(importantFacilityLayer);
   }
 });
