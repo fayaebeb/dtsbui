@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const selectedAndNearby = new Set();
 
   // Load mesh GeoJSON and add to map
-  fetch("/assets/data/hh.geojson")
+  fetch("assets/data/hh.geojson")
     .then(res => {
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       return res.json();
