@@ -133,8 +133,7 @@ window.closeLandUseMenu = function () {
       const label = L.marker([coords[1], coords[0]], {
         icon: L.divIcon({
           className: 'mesh-label',
-          html: `<div style="font-size: 11px; font-weight: bold; color: #333;">${growthText}</div>`,
-          iconSize: [50, 20],
+          html: `<div>${growthText}</div>`,          iconSize: [50, 20],
           iconAnchor: [25, 10]
         }),
         interactive: false
