@@ -1,3 +1,119 @@
+for output plans:
+
+// === Folder Upload Listener ===
+document.getElementById("folderUpload").addEventListener("change", async (event) => {
+  const files = Array.from(event.target.files);
+  const spinner = document.getElementById("folderUploadSpinner");
+  const labelText = document.getElementById("folderUploadLabel");
+
+  spinner.style.display = "inline";
+  if (labelText) labelText.textContent = "読み込み中...";
+
+  await new Promise(r => setTimeout(r, 100));
+
+  const fileMap = {};
+  for (let file of files) {
+    fileMap[file.name] = file;
+  }
+
+  if (fileMap["output_plans.xml.gz"]) {
+    const xml = await decompressGZToXML(fileMap["output_plans.xml.gz"]);
+    const parsedPlans = parsePlansXML(xml, 100); // Limit to 100 persons
+    console.log("Parsed Plans:", parsedPlans);
+  } else {
+    alert("output_plans.xml.gz not found in the uploaded folder.");
+  }
+
+  spinner.style.display = "none";
+  if (labelText) labelText.textContent = "✅ Plans Loaded";
+});
+
+// === GZ Decompression ===
+function decompressGZ(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const compressed = new Uint8Array(e.target.result);
+        const decompressed = pako.ungzip(compressed, { to: "string" });
+        resolve(decompressed);
+      } catch (err) {
+        reject("Failed to decompress: " + err);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function decompressGZToXML(file) {
+  return decompressGZ(file).then(xmlStr =>
+    new DOMParser().parseFromString(xmlStr, "text/xml")
+  );
+}
+
+// === Parse output_plans.xml.gz ===
+function parsePlansXML(xmlDoc, limit = Infinity) {
+  const persons = xmlDoc.getElementsByTagName("person");
+  const result = [];
+
+  for (let i = 0; i < Math.min(persons.length, limit); i++) {
+    const person = persons[i];
+    const id = person.getAttribute("id");
+    const plan = Array.from(person.getElementsByTagName("plan")).find(p => p.getAttribute("selected") === "yes");
+    if (!plan) continue;
+
+    const chain = [];
+    let currentTime = "00:00:00";
+
+    for (let node of plan.children) {
+      if (node.tagName === "act" || node.tagName === "activity") {
+        const end = node.getAttribute("end_time");
+        const type = node.getAttribute("type");
+        chain.push({
+          personId: id,
+          type,
+          startTime: currentTime,
+          endTime: end || null
+        });
+        currentTime = end || currentTime;
+      } else if (node.tagName === "leg") {
+        const mode = node.getAttribute("mode");
+        const travTime = node.getAttribute("trav_time") || null;
+        chain.push({
+          personId: id,
+          legMode: mode,
+          departureTime: currentTime,
+          travelTime: travTime
+        });
+      }
+    }
+
+    result.push({ personId: id, plan: chain });
+  }
+
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // === 0. Global layer and data storage ===
 let busLayer = null;
 let busRouteFeatures = [];

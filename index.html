@@ -276,6 +276,13 @@
 		}
 	</style>
 
+	<style>
+		.mesh-label {
+			pointer-events: none;
+			text-align: center;
+		}
+	</style>
+
 </head>
 
 <body>
@@ -1862,6 +1869,8 @@
 	<script src="https://cdn.jsdelivr.net/npm/proj4@2.19.7/dist/proj4.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 	<script src="app.js" defer></script>
+	<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js"></script>
+	<script src="landuse.js" defer></script>
 
 	<script>
 		const fareMinA = document.getElementById('fareRangeMin');
@@ -2381,6 +2390,18 @@
 		専用レーンを選択してください
 	</div>
 
+	<div id="landUseMenu"
+		style="display: none; position: absolute; top: 100px; left: 10px; background: white; padding: 10px; border: 1px solid #ccc; z-index: 999;">
+		<strong>Land Use Selection</strong><br />
+		<select id="landUseSelect">
+			<option value="">-- Select Type --</option>
+			<option value="park">Park</option>
+			<option value="school">School</option>
+			<option value="shopping">Shopping Centre</option>
+			<option value="hospital">Hospital</option>
+		</select>
+		<button onclick="closeLandUseMenu()">Close</button>
+	</div>
 
 </body>
 
