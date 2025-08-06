@@ -277,81 +277,80 @@
 	</style>
 
 	<style>
-  .mesh-label {
-    pointer-events: none;
-    text-align: center;
-  }
+		.mesh-label {
+			pointer-events: none;
+			text-align: center;
+		}
 
-  .mesh-label div {
-    background: rgba(255, 255, 255, 0.85);
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-    padding: 2px 5px;
-    font-size: 12px;
-    font-weight: bold;
-    color: #333;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    white-space: nowrap;
-  }
-</style>
+		.mesh-label div {
+			background: rgba(255, 255, 255, 0.85);
+			border: 1px solid rgba(0, 0, 0, 0.2);
+			border-radius: 4px;
+			padding: 0px 1px;
+			font-size: 12px;
+			font-weight: bold;
+			color: #333;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+			white-space: nowrap;
+		}
+	</style>
 
-<style>
-	/* Menu panel */
-.landuse-panel {
-  display: none;
-  position: absolute;
-  top: 100px;
-  left: 10px;
-  min-width: 220px;
-  background: #fff;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
-  padding: 16px;
-  z-index: 9999;
-  font-family: 'Segoe UI', sans-serif;
-  transition: opacity 0.2s ease;
-}
+	<style>
+		/* Menu panel */
+		.landuse-panel {
+			display: none;
+			position: absolute;
+			top: 100px;
+			left: 10px;
+			min-width: 220px;
+			background: #fff;
+			border-radius: 8px;
+			border: 1px solid #ccc;
+			box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+			padding: 16px;
+			z-index: 9999;
+			font-family: 'Segoe UI', sans-serif;
+			transition: opacity 0.2s ease;
+		}
 
-/* Header */
-.landuse-header {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 10px;
-  color: #333;
-}
+		/* Header */
+		.landuse-header {
+			font-size: 16px;
+			font-weight: 600;
+			margin-bottom: 10px;
+			color: #333;
+		}
 
-/* Select dropdown */
-.landuse-select {
-  width: 100%;
-  padding: 8px 10px;
-  font-size: 14px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  appearance: none;
-  margin-bottom: 12px;
-  background: #f9f9f9;
-}
+		/* Select dropdown */
+		.landuse-select {
+			width: 100%;
+			padding: 8px 10px;
+			font-size: 14px;
+			border-radius: 4px;
+			border: 1px solid #ccc;
+			appearance: none;
+			margin-bottom: 12px;
+			background: #f9f9f9;
+		}
 
-/* Button */
-.landuse-close {
-  display: inline-block;
-  padding: 8px 14px;
-  font-size: 14px;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  width: 100%;
-  transition: background 0.2s ease;
-}
+		/* Button */
+		.landuse-close {
+			display: inline-block;
+			padding: 8px 14px;
+			font-size: 14px;
+			background: #007bff;
+			color: white;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			width: 100%;
+			transition: background 0.2s ease;
+		}
 
-.landuse-close:hover {
-  background: #0056b3;
-}
-
-</style>
+		.landuse-close:hover {
+			background: #0056b3;
+		}
+	</style>
 
 </head>
 
@@ -381,14 +380,11 @@
 						</ul>
 					</nav>
 				</div>
-
-
 				<h1 class="l-contents__tit">入力</h1>
 
 				<button type="button" class="l-fixed__open l-contents__useful c-btn js-fixed-open" data-fixed="useful">
 					便利機能
 				</button>
-
 			</header>
 			<form class="l-contents__main column02" action="results.html">
 				<input type="hidden" name="loading" value="true">
@@ -407,6 +403,11 @@
 										<input type="checkbox" id="data_root" name="data_root" checked>
 										<span class="btn">路線</span>
 									</label>
+									<label class="l-contents__map-btn">
+										<input type="checkbox" id="loadMeshToggle">
+										<span class="btn">メッシュ表示</span>
+									</label>
+
 									<label class="l-contents__map-btn">
 										<input type="checkbox" id="data_passengers" name="data_passengers">
 										<span class="btn">乗降客数</span>
@@ -2460,17 +2461,17 @@
 		専用レーンを選択してください
 	</div>
 
-<div id="landUseMenu" class="landuse-panel">
-  <div class="landuse-header">Land Use Selection</div>
-  <select id="landUseSelect" class="landuse-select">
-    <option value="">-- Select Type --</option>
-    <option value="park">🏞️ Park</option>
-    <option value="school">🏫 School</option>
-    <option value="shopping">🛍️ Shopping Centre</option>
-    <option value="hospital">🏥 Hospital</option>
-  </select>
-  <button onclick="closeLandUseMenu()" class="landuse-close">Close</button>
-</div>
+	<div id="landUseMenu" class="landuse-panel">
+		<div class="landuse-header">Land Use Selection</div>
+		<select id="landUseSelect" class="landuse-select">
+			<option value="">-- Select Type --</option>
+			<option value="park">🏞️ Park</option>
+			<option value="school">🏫 School</option>
+			<option value="shopping">🛍️ Shopping Centre</option>
+			<option value="hospital">🏥 Hospital</option>
+		</select>
+		<button onclick="closeLandUseMenu()" class="landuse-close">Close</button>
+	</div>
 
 
 </body>
