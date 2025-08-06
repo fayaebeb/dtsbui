@@ -350,6 +350,11 @@
 		.landuse-close:hover {
 			background: #0056b3;
 		}
+
+		.landuse-header {
+			cursor: move;
+			user-select: none;
+		}
 	</style>
 
 </head>
@@ -2462,7 +2467,7 @@
 	</div>
 
 	<div id="landUseMenu" class="landuse-panel">
-		<div class="landuse-header">Land Use Selection</div>
+		<div class="landuse-header" id="landUseMenuHeader">Land Use Selection</div>
 		<select id="landUseSelect" class="landuse-select">
 			<option value="">-- Select Type --</option>
 			<option value="park">🏞️ Park</option>
@@ -2472,6 +2477,54 @@
 		</select>
 		<button onclick="closeLandUseMenu()" class="landuse-close">Close</button>
 	</div>
+
+	<script>
+		function makeDraggable(dragTarget, handle) {
+			let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+			handle.onmousedown = dragMouseDown;
+
+			function dragMouseDown(e) {
+				e.preventDefault();
+				pos3 = e.clientX;
+				pos4 = e.clientY;
+
+				document.onmouseup = closeDragElement;
+				document.onmousemove = elementDrag;
+			}
+
+			function elementDrag(e) {
+				e.preventDefault();
+
+				pos1 = pos3 - e.clientX;
+				pos2 = pos4 - e.clientY;
+
+				pos3 = e.clientX;
+				pos4 = e.clientY;
+
+				const top = dragTarget.offsetTop - pos2;
+				const left = dragTarget.offsetLeft - pos1;
+
+				dragTarget.style.top = `${top}px`;
+				dragTarget.style.left = `${left}px`;
+			}
+
+			function closeDragElement() {
+				document.onmouseup = null;
+				document.onmousemove = null;
+			}
+		}
+
+		document.addEventListener("DOMContentLoaded", () => {
+			const panel = document.getElementById("landUseMenu");
+			const header = document.getElementById("landUseMenuHeader");
+
+			if (panel && header) {
+				makeDraggable(panel, header);
+			}
+		});
+
+	</script>
 
 
 </body>
