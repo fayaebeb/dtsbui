@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   let meshLayer;
   let selectedFeature = null;
-  let labelLayer = L.layerGroup().addTo(map); // 成長率ラベル用レイヤー
+  let labelLayer = L.layerGroup().addTo(map); 
 
   const growthRates = {
     park: 0.5,
