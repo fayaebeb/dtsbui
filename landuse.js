@@ -13,11 +13,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const baseYear = 2025;
   const selectedAndNearby = new Set();
 
-  // メッシュ表示トグルで読み込みを制御
   document.getElementById("loadMeshToggle").addEventListener("change", function () {
-    // すでに読み込まれているなら再読み込みしない
     if (this.checked && !meshLayer) {
-      fetch("/assets/data/hh.geojson")
+      fetch("assets/data/hh.geojson")
         .then(res => {
           if (!res.ok) throw new Error(`HTTP error ${res.status}`);
           return res.json();
@@ -29,7 +27,6 @@ document.addEventListener("DOMContentLoaded", () => {
             pane: 'meshPane',
             style: feature => getFeatureStyle(feature),
             onEachFeature: (feature, layer) => {
-              // 各メッシュをクリックしたときの処理
               layer.on('click', (e) => {
                 selectedFeature = feature;
 
@@ -38,19 +35,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 select.value = feature.properties.landUse || '';
 
-                // クリック位置にメニューを表示
                 const clickX = e.originalEvent.clientX;
                 const clickY = e.originalEvent.clientY;
                 menu.style.left = (clickX + 10) + 'px';
                 menu.style.top = (clickY + 10) + 'px';
                 menu.style.display = 'block';
 
-                updateVisuals(); // ラベルとスタイル更新
+                updateVisuals(); 
               });
             }
           }).addTo(map);
 
-          // 表示位置をズーム・移動
           if (meshLayer && meshLayer.getBounds().isValid()) {
             map.fitBounds(meshLayer.getBounds());
           }
@@ -59,13 +54,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // メニューを閉じる関数（グローバル）
   window.closeLandUseMenu = function () {
     document.getElementById("landUseMenu").style.display = 'none';
     document.getElementById("populationInfo").style.display = 'none';
   };
 
-  // 土地利用種別変更時の処理
   document.getElementById("landUseSelect").addEventListener("change", function () {
     if (selectedFeature) {
       selectedFeature.properties.landUse = this.value;
@@ -73,7 +66,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 年代スライダー変更時の処理
   const rangeYearInput = document.querySelector('.js-year');
   if (rangeYearInput) {
     rangeYearInput.addEventListener('input', () => {
@@ -81,7 +73,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 各メッシュのスタイルを決定
   function getFeatureStyle(feature) {
     const year = parseInt(document.querySelector('.js-year').value);
     const selected = selectedFeature && feature === selectedFeature;
@@ -106,12 +97,11 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // ラベルとスタイルを更新
   function updateVisuals() {
     if (!meshLayer || !selectedFeature) return;
 
     selectedAndNearby.clear();
-    labelLayer.clearLayers(); // 既存ラベルをクリア
+    labelLayer.clearLayers(); 
 
     const selectedCenter = turf.center(selectedFeature);
     const year = parseInt(document.querySelector('.js-year').value);
@@ -154,11 +144,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // スタイル更新
     meshLayer.setStyle(f => getFeatureStyle(f));
   }
 
-  // 成長率に応じて色を決定
   function getColorByGrowth(growth) {
     return growth > 30 ? '#800026' :
       growth > 20 ? '#BD0026' :
