@@ -23,7 +23,7 @@ document.getElementById("folderUpload").addEventListener("change", async (event)
       const parsedPlans = await res.json();
       console.log("Parsed on server:", parsedPlans);
 
-      displayPlansOnMap(parsedPlans); // ✅ Added this
+      displayPlansOnMap(parsedPlans); 
 
       labelText.textContent = "✅ Plans Loaded";
     } catch (err) {

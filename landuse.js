@@ -53,9 +53,9 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .catch(err => console.error("Error loading mesh layer:", err));
     } else if (!this.checked && meshLayer) {
-      // Remove the mesh layer when unchecked
       map.removeLayer(meshLayer);
       meshLayer = null;
+      labelLayer.clearLayers();
     }
   });
 
@@ -95,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     return {
-      color: selected ? '#000' : '#555', 
+      color: selected ? '#000' : '#555',
       weight: selected ? 3 : 1,
       fillColor: baseColor,
       fillOpacity: fillOpacity
