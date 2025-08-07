@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   let meshLayer;
   let selectedFeature = null;
-  let labelLayer = L.layerGroup().addTo(map); 
+  let labelLayer = L.layerGroup().addTo(map);
 
   const growthRates = {
     park: 0.5,
@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 menu.style.top = (clickY + 10) + 'px';
                 menu.style.display = 'block';
 
-                updateVisuals(); 
+                updateVisuals();
               });
             }
           }).addTo(map);
@@ -84,24 +84,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const landUse = feature.properties.landUse;
     const growth = feature.properties._growth;
 
-    if (landUse && (selected || nearby) && growth !== null && growth !== undefined) {
+    if (growth !== null && growth !== undefined) {
       baseColor = getColorByGrowth(growth);
-      fillOpacity = 0.6;
+      fillOpacity = selected ? 0.8 : 0.6;
     }
 
     return {
-      color: selected ? '#000' : baseColor,
+      color: selected ? '#000' : '#555', 
       weight: selected ? 3 : 1,
       fillColor: baseColor,
       fillOpacity: fillOpacity
     };
+
   }
 
   function updateVisuals() {
     if (!meshLayer || !selectedFeature) return;
 
     selectedAndNearby.clear();
-    labelLayer.clearLayers(); 
+    labelLayer.clearLayers();
 
     const selectedCenter = turf.center(selectedFeature);
     const year = parseInt(document.querySelector('.js-year').value);
