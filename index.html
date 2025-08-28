@@ -8,165 +8,10 @@
 	<link rel="stylesheet" href="assets/js/leaflet/leaflet.css" />
 	<link rel="stylesheet" href="assets/css/common.css" />
 	<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&display=swap" rel="stylesheet">
+
 	<link
 		href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@600;700&display=swap"
 		rel="stylesheet">
-
-	<style>
-		.dtsb-toolbar {
-			display: flex;
-			gap: 12px;
-			align-items: center;
-			flex-wrap: wrap;
-			padding: 8px 0;
-		}
-
-		.legend {
-			display: flex;
-			gap: 10px;
-			align-items: center;
-			font-size: 12px;
-		}
-
-		.legend .dot {
-			width: 10px;
-			height: 10px;
-			border-radius: 50%;
-			display: inline-block;
-		}
-
-		.status {
-			font-size: 13px;
-			color: #333;
-			margin-left: auto;
-		}
-
-		.panel {
-			display: flex;
-			gap: 16px;
-			padding: 10px;
-			border: 1px solid #eee;
-			border-radius: 10px;
-			background: #fafafa;
-			flex-wrap: wrap;
-			margin-top: 10px;
-		}
-
-		.card {
-			border: 1px solid #e5e5e5;
-			border-radius: 10px;
-			padding: 10px;
-			background: #fff;
-			min-width: 260px;
-		}
-
-		.card h3 {
-			margin: 0 0 8px;
-			font-size: 14px;
-		}
-
-		.weights-grid {
-			display: grid;
-			grid-template-columns: 1fr 90px;
-			gap: 6px 10px;
-			align-items: center;
-		}
-
-		.weights-grid label {
-			font-size: 12px;
-			color: #444;
-		}
-
-		.weights-grid input {
-			width: 90px;
-			padding: 4px;
-			font-size: 12px;
-		}
-
-		.btn {
-			cursor: pointer;
-			background: #31599E;
-			color: #fff;
-			border: none;
-			border-radius: 8px;
-			padding: 8px 12px;
-			font-weight: 600;
-		}
-
-		.btn.secondary {
-			background: #666;
-		}
-
-		.btn.ghost {
-			background: #f3f6ff;
-			color: #31599E;
-		}
-
-		.muted {
-			color: #666;
-			font-size: 12px;
-		}
-
-		.table-wrap {
-			max-height: 26vh;
-			overflow: auto;
-			border: 1px solid #eee;
-			border-radius: 10px;
-			background: #fff;
-		}
-
-		table {
-			border-collapse: collapse;
-			width: 100%;
-		}
-
-		th,
-		td {
-			border-bottom: 1px solid #eee;
-			padding: 6px 8px;
-			font-size: 12px;
-			text-align: left;
-		}
-
-		th {
-			background: #f7f7f7;
-			position: sticky;
-			top: 0;
-			z-index: 1;
-		}
-
-		.badge {
-			display: inline-block;
-			padding: 2px 6px;
-			border-radius: 999px;
-			font-size: 11px;
-			background: #e9efff;
-			color: #31599E;
-		}
-
-		#map {
-			width: 100%;
-			height: 65vh;
-		}
-
-		/* collapsible (unchanged) */
-		.collapsible {
-			overflow: hidden;
-			max-height: 0;
-			opacity: 0;
-			transition: max-height .35s ease, opacity .25s ease;
-			will-change: max-height, opacity;
-		}
-
-		.collapsible.open {
-			opacity: 1;
-		}
-
-		.collapsible.scroll {
-			overflow-y: auto;
-			-webkit-overflow-scrolling: touch;
-		}
-	</style>
 
 	<style>
 		details.c-route {
@@ -544,6 +389,7 @@
 					</nav>
 				</div>
 				<h1 class="l-contents__tit">入力</h1>
+
 				<button type="button" class="l-fixed__open l-contents__useful c-btn js-fixed-open" data-fixed="useful">
 					便利機能
 				</button>
@@ -2066,118 +1912,32 @@
 							<span id="folderUploadSpinner" style="display: none; margin-left: 8px;">⏳</span>
 						</label>
 
-						<button id="toggleAnalysisBtn" type="button" class="c-btn c-btn__contents"
-							style="flex: 0 0 auto; min-width: 150px;">
-							▼ 解析パネルを開く
-						</button>
-					</div>
-
-					<div id="analysisBlock" class="collapsible">
-						<!-- Legend + status toolbar -->
-						<div class="dtsb-toolbar">
-							<div class="legend">
-								<span>凡例:</span>
-								<span><span class="dot" style="background:blue"></span> Home</span>
-								<span><span class="dot" style="background:green"></span> Work</span>
-								<span><span class="dot" style="background:orange"></span> Business</span>
-								<span><span class="dot" style="background:purple"></span> Shopping</span>
-								<span><span class="dot" style="background:gray"></span> pt interaction</span>
-							</div>
-							<!-- 🔎 Person filter + Export buttons -->
-							<div style="display:flex; gap:8px; align-items:center; margin-left:auto;">
-								<input id="personSearch" type="text" placeholder="Filter by personId (partial ok)"
-									style="padding:6px 8px; font-size:12px; width:220px; border:1px solid #ccd5ff; border-radius:8px;">
-								<button id="clearSearchBtn" type="button" class="btn ghost">Clear</button>
-								<button id="exportSummaryBtn" type="button" class="btn">Export Summary CSV</button>
-								<button id="exportStepsBtn" type="button" class="btn secondary">Export Steps CSV</button>
-								<button id="genStoryBtn" type="button" class="btn">
-									<span class="label">AIストーリー生成</span>
-									<span class="spin" style="display:none; margin-left:6px;">⏳</span>
-								</button>
-							</div>
-
-							<span class="status" id="statusMsg"></span>
-						</div>
-
-						<!-- Scoring + table panel (unchanged content) -->
-						<div class="panel">
-							<div class="card" style="flex:1 1 320px;">
-								<h3>Scoring Weights（1秒あたりの重み）</h3>
-								<div class="weights-grid">
-									<label for="wHome">🏠 Home</label><input id="wHome" type="number" step="0.01"
-										value="1.0" />
-									<label for="wWork">💼 Work</label><input id="wWork" type="number" step="0.01"
-										value="0.5" />
-									<label for="wBusiness">🧾 Business</label><input id="wBusiness" type="number"
-										step="0.01" value="0.3" />
-									<label for="wShopping">🛍 Shopping</label><input id="wShopping" type="number"
-										step="0.01" value="0.2" />
-									<label for="wOtherAct">📍 Other Activity</label><input id="wOtherAct" type="number"
-										step="0.01" value="0.1" />
-									<label for="wCar">🚗 car</label><input id="wCar" type="number" step="0.01"
-										value="-2.0" />
-									<label for="wWalk">🚶 walk</label><input id="wWalk" type="number" step="0.01"
-										value="0.5" />
-									<label for="wPt">🚌 pt</label><input id="wPt" type="number" step="0.01"
-										value="0.1" />
-									<label for="wOtherLeg">🚦 other mode</label><input id="wOtherLeg" type="number"
-										step="0.01" value="0.0" />
-								</div>
-								<div style="margin-top:8px; display:flex; gap:8px;">
-									<button id="recomputeBtn" type="button" class="btn">Recompute Scores</button>
-									<button id="clearMapBtn" type="button" class="btn secondary">Clear Map</button>
-								</div>
-								<div class="muted" style="margin-top:6px;">※
-									サーバーは既定重みでもスコアを付与します。上記を変更するとフロント側で再計算して表示します。</div>
-							</div>
-
-							<div class="card" style="flex:2 1 520px;">
-								<h3>Persons & Plans（selected=yes がデフォルト表示）</h3>
-								<div class="table-wrap">
-									<table id="plansTable">
-										<thead>
-											<tr>
-												<th>Person</th>
-												<th>MATSim Score (Plan)</th>
-												<th>Our Score</th>
-												<th>Selected</th>
-												<th>Plans</th>
-												<th>Actions</th>
-											</tr>
-										</thead>
-										<tbody></tbody>
-									</table>
-								</div>
-							</div>
-						</div>
 					</div>
 				</div>
-	</div>
-	</div>
-	</form>
-	</main>
-	<form class="l-fixed js-fixed" id="useful" action="./">
-		<div class="l-fixed__box js-fixed-box">
-			<h2 class="l-contents__tit l-fixed__tit">便利機能</h2>
-			<dl class="l-fixed__setting">
-				<dt class="center">外部データ読み込み</dt>
-				<dd><input name="useful_file" class="c-input__file" type="file"></dd>
-				<dt>⼟地利⽤予測</dt>
-				<dd></dd>
-				<dt>⼈⼝推計</dt>
-				<dd></dd>
-				<dt>感度分析</dt>
-				<dd></dd>
-				<dt>デフォルト値セット</dt>
-				<dd></dd>
-			</dl>
-			<div class="c-area__btns column02 l-fixed__btns wide">
-				<button class="c-btn c-btn__contents" type="submit">設定を保存する</button>
-				<span class="c-btn c-btn__contents blue l-fixed__close js-fixed-close">便利機能を閉じる</span>
+			</form>
+		</main>
+		<form class="l-fixed js-fixed" id="useful" action="./">
+			<div class="l-fixed__box js-fixed-box">
+				<h2 class="l-contents__tit l-fixed__tit">便利機能</h2>
+				<dl class="l-fixed__setting">
+					<dt class="center">外部データ読み込み</dt>
+					<dd><input name="useful_file" class="c-input__file" type="file"></dd>
+					<dt>⼟地利⽤予測</dt>
+					<dd></dd>
+					<dt>⼈⼝推計</dt>
+					<dd></dd>
+					<dt>感度分析</dt>
+					<dd></dd>
+					<dt>デフォルト値セット</dt>
+					<dd></dd>
+				</dl>
+				<div class="c-area__btns column02 l-fixed__btns wide">
+					<button class="c-btn c-btn__contents" type="submit">設定を保存する</button>
+					<span class="c-btn c-btn__contents blue l-fixed__close js-fixed-close">便利機能を閉じる</span>
+				</div>
 			</div>
-		</div>
-		<div class="l-fixed__bg js-fixed-close"></div>
-	</form>
+			<div class="l-fixed__bg js-fixed-close"></div>
+		</form>
 	</div>
 	<!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script> -->
 	<script src="assets/js/jszip.min.js"></script>
@@ -2768,76 +2528,6 @@
 		});
 
 	</script>
-
-	<script>
-		(function () {
-			const block = document.getElementById('analysisBlock');
-			const btn = document.getElementById('toggleAnalysisBtn');
-			if (!block || !btn) return;
-
-			const MAX_VH = 60; // cap when open (adjust to taste)
-
-			function applyOpenStyles() {
-				// compute target height: min(content, cap)
-				const capPx = Math.floor(window.innerHeight * (MAX_VH / 100));
-				// temporarily remove maxHeight to read true scrollHeight
-				const prev = block.style.maxHeight;
-				block.style.maxHeight = 'none';
-				const contentHeight = block.scrollHeight;
-				const target = Math.min(contentHeight, capPx);
-
-				block.style.maxHeight = target + 'px';
-				block.classList.toggle('scroll', contentHeight > capPx); // allow internal scroll if capped
-			}
-
-			function setOpen(open) {
-				if (open) {
-					block.classList.add('open');
-					applyOpenStyles();
-					btn.textContent = '▲ 解析パネルを閉じる';
-				} else {
-					block.style.maxHeight = '0px';
-					block.classList.remove('open', 'scroll');
-					btn.textContent = '▼ 解析パネルを開く';
-				}
-				localStorage.setItem('analysisOpen', open ? '1' : '0');
-			}
-
-			// Recompute height on resize when open
-			function handleResize() {
-				if (block.classList.contains('open')) applyOpenStyles();
-			}
-			window.addEventListener('resize', handleResize);
-
-			// Watch for content changes (e.g., after table renders) and reflow
-			const mo = new MutationObserver(() => {
-				if (block.classList.contains('open')) {
-					// debounce a bit to let layout settle
-					requestAnimationFrame(applyOpenStyles);
-				}
-			});
-			mo.observe(block, { childList: true, subtree: true });
-
-			// Toggle click
-			btn.addEventListener('click', () => {
-				const next = !block.classList.contains('open');
-				setOpen(next);
-			});
-
-			// Restore previous state (default collapsed)
-			const saved = localStorage.getItem('analysisOpen');
-			const shouldOpen = saved === '1';
-			requestAnimationFrame(() => setOpen(shouldOpen));
-
-			// Optional: expose a manual hook you can call after rendering the table
-			window.reflowAnalysisPanel = () => {
-				if (block.classList.contains('open')) applyOpenStyles();
-			};
-		})();
-	</script>
-
-	<!-- libs -->
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.10.0/proj4.min.js"></script>
 
 
 </body>

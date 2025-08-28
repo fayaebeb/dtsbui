@@ -39,15 +39,6 @@
 
 			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 		}
-
-		/* Show only the AI tile */
-		.p-result__story-target>li:not(#aiStoryItem) {
-			display: none;
-		}
-
-		.p-result__story li {
-			display: list-item;
-		}
 	</style>
 </head>
 
@@ -268,18 +259,17 @@
 								<span class="p-result__story-txt c-area__scroll">こどもダミーテキストです。</span>
 							</div>
 						</li>
-						<li class="js-target-item current" data-target="target02" id="aiStoryItem">
+						<li class="js-target-item" data-target="target02" class="current">
 							<figure class="p-result__story-ico">
-								<img src="assets/image/ico_story_04.svg" width="100" height="100" alt="AIストーリー" />
-								<figcaption id="aiStoryTitle">AIストーリー</figcaption>
+								<img src="assets/image/ico_story_02.svg" width="100" height="100" alt="学生" />
+								<figcaption>学生</figcaption>
 							</figure>
 							<div class="p-result__story-fukidashi">
-								<span id="aiStoryText" class="p-result__story-txt c-area__scroll">生成中...</span>
-								<ul id="aiStoryBubbles" style="margin-top:8px; list-style:disc; padding-left:1.2em;">
-								</ul>
+								<span class="p-result__story-txt c-area__scroll"><span
+										class="u-ib">大学までの通学時間が20分短縮されて、寝られる時間が伸びた！</span><span
+										class="u-ib">大学からの帰り道に商業施設に寄りやすくなって、街が賑わっている</span> ・・・・・</span>
 							</div>
 						</li>
-
 						<li class="js-target-item" data-target="target03">
 							<figure class="p-result__story-ico">
 								<img src="assets/image/ico_story_03.svg" width="100" height="100" alt="主婦／主夫" />
@@ -746,45 +736,6 @@
 			});
 		});
 	</script>
-	<script>
-window.addEventListener("load", function () {
-  try {
-    const raw = localStorage.getItem("matsim-ai-story");
-    if (!raw) return;
-
-    const { story } = JSON.parse(raw) || {};
-    if (!story) return;
-
-    const titleEl = document.getElementById("aiStoryTitle");
-    const textEl  = document.getElementById("aiStoryText");
-    const ul      = document.getElementById("aiStoryBubbles");
-    const item    = document.getElementById("aiStoryItem");
-
-    // Title + one-liner (speech balloon)
-    titleEl.textContent = (story.title || "AIストーリー").trim();
-    textEl.textContent  = (story.one_liner || "").trim();
-
-    // Bubble text: append to #aiStoryText on the next line, hide the <ul>
-    const bubbleText = (typeof story.bubble === "string" ? story.bubble.trim() : "");
-    if (bubbleText) {
-      // break line then append bubble safely
-      textEl.appendChild(document.createElement("br"));
-      textEl.appendChild(document.createTextNode(bubbleText));
-      if (ul) ul.style.display = "none";
-    } else {
-      if (ul) ul.style.display = "none";
-    }
-
-    // No metadata (personId/score/timestamp) appended
-
-  } catch (e) {
-    console.warn("AI story render failed:", e);
-  }
-});
-</script>
-
-
-
 </body>
 
 </html>

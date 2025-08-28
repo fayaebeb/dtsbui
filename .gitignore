@@ -1,4 +1,2 @@
 /matsim_data/*
 !/matsim_data/network_bus_and_rail_up.geojson
-__pycache__
-.env
