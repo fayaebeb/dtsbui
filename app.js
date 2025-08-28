@@ -7,7 +7,7 @@ const exportSummaryBtn = document.getElementById("exportSummaryBtn");
 const exportStepsBtn = document.getElementById("exportStepsBtn");
 
 // ---- Persistence helpers ----
-const LS_KEY = "matsim-ui-v1";              // small UI state
+const LS_KEY = "matsim-ui-v1";          
 const DB_NAME = "matsim-cache";
 const DB_STORE = "persons";
 
@@ -406,7 +406,6 @@ clearSearchBtn?.addEventListener("click", () => {
 // === CSV export ===
 function downloadCSV(filename, rows) {
   const csv = rows.map(r => r.map(v => {
-    // CSV-safe: quote if needed, escape internal quotes
     const s = v == null ? "" : String(v);
     if (/[",\n]/.test(s)) {
       return `"${s.replace(/"/g, '""')}"`;
@@ -499,7 +498,6 @@ exportStepsBtn?.addEventListener("click", () => {
   downloadCSV(`matsim_steps_${Date.now()}.csv`, rows);
 });
 
-// Recompute button: recompute client-side with current weights
 document.getElementById("recomputeBtn").addEventListener("click", () => {
   const weights = getWeights();
   const rows = Array.from(plansTableBody.querySelectorAll("tr"));
@@ -610,3 +608,51 @@ document.getElementById("folderUpload").addEventListener("change", async (event)
     console.warn("Restore failed:", e);
   }
 })();
+
+// === AI Story generation ===
+// choose the top-scoring person/plan using CURRENT client weights
+function findTopByClientScore() {
+  const weights = getWeights();
+  let best = null; // { person, planIndex, plan, score }
+  __ALL_PERSONS__.forEach(p => {
+    if (!p?.plans?.length) return;
+    p.plans.forEach((pl, i) => {
+      const s = computeScoreClient(pl, weights);
+      if (!best || s > best.score) best = { person: p, planIndex: i, plan: pl, score: s };
+    });
+  });
+  return { best, weights };
+}
+
+// button to call the Flask /story endpoint and persist the result for results.html
+document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
+  const { best, weights } = findTopByClientScore();
+  if (!best) return alert("No plans available.");
+
+  try {
+    const res = await fetch("http://127.0.0.1:5000/story", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        personId: best.person.personId,
+        plan: { steps: best.plan.steps },
+        weights,
+        lang: "ja" // set to "en" if you add a language toggle later
+      })
+    });
+    const story = await res.json();
+
+    const payload = {
+      personId: best.person.personId,
+      planIndex: best.planIndex,
+      score: best.score,
+      story,  // { title, one_liner, bubble }
+      ts: Date.now()
+    };
+    localStorage.setItem("matsim-ai-story", JSON.stringify(payload));
+    alert("AIストーリーを保存しました。results.html を開いてください。");
+  } catch (e) {
+    console.error(e);
+    alert("AIストーリー生成に失敗しました。");
+  }
+});

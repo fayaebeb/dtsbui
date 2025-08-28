@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from flask import Flask, request, jsonify, make_response
 from flask_cors import CORS
 from flask_compress import Compress
@@ -17,6 +19,10 @@ CORS(
 
 # --- gzip compression for big JSON ---
 Compress(app)
+
+# --- REGISTER the AI story blueprint (separate module) ---
+from story_api import story_bp
+app.register_blueprint(story_bp)
 
 def parse_time_to_seconds(time_str: Optional[str]) -> Optional[int]:
     if not time_str:
@@ -44,13 +50,12 @@ def safe_float(val: Optional[str]) -> Optional[float]:
     except Exception:
         return None
 
-# ---- NEW: helpers for reading .xml or .xml.gz ----
+# ---- helpers for reading .xml or .xml.gz ----
 def open_maybe_gzip(file_storage):
     """
     Return a text-mode file-like object from a Werkzeug FileStorage,
     auto-detecting gzip by first two bytes.
     """
-    # Peek two bytes then rewind
     head = file_storage.stream.read(2)
     file_storage.stream.seek(0)
     if head == b"\x1f\x8b":
@@ -98,7 +103,6 @@ def score_plan(steps: List[Dict[str, Any]], weights=DEFAULT_WEIGHTS) -> float:
 
 @app.after_request
 def add_cors_headers(resp):
-    # For completeness; flask-cors normally handles this.
     origin = request.headers.get("Origin")
     if origin in ("http://localhost:3000", "http://127.0.0.1:3000"):
         resp.headers["Access-Control-Allow-Origin"] = origin
@@ -109,7 +113,6 @@ def add_cors_headers(resp):
 
 @app.route("/upload", methods=["OPTIONS"])
 def upload_preflight():
-    # Explicit preflight response
     resp = make_response("", 204)
     origin = request.headers.get("Origin")
     if origin in ("http://localhost:3000", "http://127.0.0.1:3000"):
@@ -122,9 +125,9 @@ def upload_preflight():
 def upload_file():
     # Query params to tame payload size
     try:
-        max_persons = int(request.args.get("limit", "2000"))
+        max_persons = int(request.args.get("limit", "200"))
     except Exception:
-        max_persons = 2000
+        max_persons = 200
 
     selected_only_flag = request.args.get("selected_only", "true").lower() != "false"
 
@@ -132,7 +135,7 @@ def upload_file():
     if not plans_file:
         return jsonify({"error": "No file uploaded"}), 400
 
-    # NEW: optional facilities file for enriching coordinates
+    # optional facilities file for enriching coordinates
     facilities_file = request.files.get("facilities")
     facilities_map = parse_facilities(facilities_file) if facilities_file else {}
 
@@ -174,7 +177,6 @@ def upload_file():
                     end_time = elem.attrib.get("end_time")
                     max_dur = elem.attrib.get("max_dur")
 
-                    # NEW: facility-based backfill for x/y
                     facility_id = elem.attrib.get("facility")
                     x = elem.attrib.get("x")
                     y = elem.attrib.get("y")
@@ -291,22 +293,21 @@ def upload_file():
                             break
                     current_person["selectedPlanIndex"] = sel_idx
 
-                    # Optionally keep only the selected plan to shrink payload
+                    # keep only the selected plan to shrink payload if requested
                     if selected_only_flag and current_person["plans"]:
                         current_person["plans"] = [current_person["plans"][sel_idx]]
 
-                    # ✅ only append persons that actually have plans
+                    # only append persons that actually have plans
                     if current_person["plans"]:
                         persons.append(current_person)
 
                     current_person = None
                     elem.clear()
 
-                    # stop once we hit the limit (prevents MemoryError)
+                    # stop once we hit the limit
                     if len(persons) >= max_persons:
                         break
 
-        # keep response smaller by default
         return jsonify(persons)
 
 if __name__ == "__main__":
