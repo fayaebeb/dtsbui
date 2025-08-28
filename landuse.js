@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("loadMeshToggle").addEventListener("change", function () {
     if (this.checked && !meshLayer) {
+      // Load and add the mesh layer
       fetch("assets/data/hh.geojson")
         .then(res => {
           if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -51,6 +52,10 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         })
         .catch(err => console.error("Error loading mesh layer:", err));
+    } else if (!this.checked && meshLayer) {
+      map.removeLayer(meshLayer);
+      meshLayer = null;
+      labelLayer.clearLayers();
     }
   });
 
@@ -90,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     return {
-      color: selected ? '#000' : '#555', 
+      color: selected ? '#000' : '#555',
       weight: selected ? 3 : 1,
       fillColor: baseColor,
       fillOpacity: fillOpacity
@@ -128,7 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const coords = center.geometry.coordinates;
         const growthText = `+${growth.toFixed(1)}%`;
 
-        // ラベル作成
+        // Create the label
         const label = L.marker([coords[1], coords[0]], {
           icon: L.divIcon({
             className: 'mesh-label',
