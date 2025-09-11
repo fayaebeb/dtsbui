@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Login</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif;
+      margin: 2rem;
+    }
+
+    form {
+      max-width: 360px;
+      margin: auto;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px
+    }
+
+    label {
+      display: block;
+      margin: .5rem 0 .25rem
+    }
+
+    input {
+      width: 100%;
+      padding: .5rem
+    }
+
+    .error {
+      color: #b00020;
+      margin: .5rem 0
+    }
+
+    button {
+      margin-top: 1rem;
+      padding: .5rem 1rem
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Admin Login</h1>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  {% for category, msg in messages %}
+  <div class="error">{{ msg }}</div>
+  {% endfor %}
+  {% endif %}
+  {% endwith %}
+  <form method="post" action="{{ url_for('auth.login') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="username">Username</label>
+    <input id="username" name="username" required>
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" required>
+    <button type="submit">Login</button>
+  </form>
+</body>
+</html>
