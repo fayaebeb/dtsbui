@@ -1,4 +1,3 @@
-# story_api.py
 import os
 import json
 import logging
@@ -8,6 +7,12 @@ from collections import Counter, defaultdict
 
 from flask import Blueprint, request, jsonify
 from openai import OpenAI
+from openai.types.chat import (
+    ChatCompletionMessageParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam,
+)
+from openai.types.chat.completion_create_params import ResponseFormat
 
 # --- logging setup ---
 _LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -21,8 +26,8 @@ DEFAULT_WEIGHTS: Dict[str, Dict[str, float]] = {
     "leg": {"car": -2.0, "walk": 0.5, "pt": 0.1, "__other__": 0.0},
 }
 
-client = OpenAI()
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+client = OpenAI(timeout=20, max_retries=2)
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
 
 story_bp = Blueprint("story_bp", __name__)
 
@@ -265,8 +270,7 @@ def generate_story():
 
     try:
         # ---- Build request payload for the LLM ----
-        messages = [
-            {
+        sys_msg: ChatCompletionSystemMessageParam = {
                 "role": "system",
                 "content": (
                     "You write short, concrete, optimistic day-in-the-life blurbs "
@@ -275,10 +279,10 @@ def generate_story():
                     "Style: concise but vivid, time-anchored. Do not use line breaks. "
                     "Do not introduce numeric values (times, counts, minutes) that are not listed as MUST-USE facts."
                 ),
-            },
-            {
-                "role": "user",
-                "content": (
+            }
+        user_msg: ChatCompletionUserMessageParam = {
+            "role": "user",
+            "content": (
                     f"personId: {person_id}\n"
                     f"Weights(act/leg): {json.dumps(weights, ensure_ascii=False)}\n\n"
                     "Chronology sample:\n" + "\n".join(lines) + "\n\n"
@@ -291,10 +295,11 @@ def generate_story():
                     "Weave at least TWO of the MUST-USE facts naturally (use numbers/times exactly as written).\n"
                     "- bubble: pick EXACTLY one from APPROVED facts.\n"
                 ),
-            },
-        ]
+            }
+        
+        messages: list[ChatCompletionMessageParam] = [sys_msg, user_msg]
 
-        response_format = {
+        response_format: ResponseFormat = {
             "type": "json_schema",
             "json_schema": {
                 "name": "story_payload",
@@ -335,7 +340,6 @@ def generate_story():
             messages=messages,
             temperature=0.5,
             max_tokens=260,
-            timeout=20,
         )
 
         # ---- Handle response ----

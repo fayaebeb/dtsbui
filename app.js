@@ -208,6 +208,53 @@ function computeScoreClient(plan, weights) {
   return score;
 }
 
+function findTopBusByClientScore() {
+  const baseW = getWeights();
+  baseW.leg.bus = baseW.leg.pt; // treat bus like PT
+  let best = null;
+  __ALL_PERSONS__.forEach(p => (p.plans||[]).forEach((pl,i) => {
+    const hasBus = (pl.steps||[]).some(s => s.kind==='leg' && s.mode==='pt');
+    if (!hasBus) return;
+    const score = computeScoreClient(pl, baseW);
+    if (!best || score > best.score) {
+      best = { person:p, planIndex:i, plan:pl, score };
+    }
+  }));
+  return best;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const busBtn = document.getElementById("topBusBtn");
+  if (busBtn) {
+    busBtn.addEventListener("click", () => {
+      const best = findTopBusByClientScore();
+      const out = document.getElementById("bus-result");
+      if (!best) {
+        out.textContent = "No bus users found.";
+        return;
+      }
+
+      // Show summary
+      out.textContent =
+        `Person: ${best.person.personId}\n` +
+        `Plan Index: ${best.planIndex}\n` +
+        `Client Score: ${best.score.toFixed(2)}\n` +
+        `MATSim Score: ${best.plan.matsimScore}\n` +
+        `Server Score: ${best.plan.serverScore}\n\n` +
+        `Behavior:\n` +
+        best.plan.steps.map((s,idx) =>
+          s.kind === "activity"
+            ? `${idx}. [ACT] ${s.type} ${s.startTime||'-'} → ${s.endTime||'-'}`
+            : `${idx}. [LEG] ${s.mode} dep=${s.depTime||'-'} dur=${s.durationSec||'-'}`
+        ).join("\n");
+
+      // Optionally draw on the map
+      //try { drawPlanOnMap(best.person, best.plan); } catch {}
+    });
+  }
+});
+
+
 // === UI <-> Persistence wiring (weights, filter, panel open) ===
 function applyWeightsToInputs() {
   document.getElementById("wHome").value      = UI.weights.act.Home;
@@ -646,7 +693,7 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
       personId: best.person.personId,
       planIndex: best.planIndex,
       score: best.score,
-      story,  // { title, one_liner, bubble }
+      story,
       ts: Date.now()
     };
     localStorage.setItem("matsim-ai-story", JSON.stringify(payload));
