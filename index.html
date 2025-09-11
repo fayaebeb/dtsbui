@@ -11,510 +11,7 @@
 	<link
 		href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@600;700&display=swap"
 		rel="stylesheet">
-
-	<style>
-		.dtsb-toolbar {
-			display: flex;
-			gap: 12px;
-			align-items: center;
-			flex-wrap: wrap;
-			padding: 8px 0;
-		}
-
-		.legend {
-			display: flex;
-			gap: 10px;
-			align-items: center;
-			font-size: 12px;
-		}
-
-		.legend .dot {
-			width: 10px;
-			height: 10px;
-			border-radius: 50%;
-			display: inline-block;
-		}
-
-		.status {
-			font-size: 13px;
-			color: #333;
-			margin-left: auto;
-		}
-
-		.panel {
-			display: flex;
-			gap: 16px;
-			padding: 10px;
-			border: 1px solid #eee;
-			border-radius: 10px;
-			background: #fafafa;
-			flex-wrap: wrap;
-			margin-top: 10px;
-		}
-
-		.card {
-			border: 1px solid #e5e5e5;
-			border-radius: 10px;
-			padding: 10px;
-			background: #fff;
-			min-width: 260px;
-		}
-
-		.card h3 {
-			margin: 0 0 8px;
-			font-size: 14px;
-		}
-
-		.weights-grid {
-			display: grid;
-			grid-template-columns: 1fr 90px;
-			gap: 6px 10px;
-			align-items: center;
-		}
-
-		.weights-grid label {
-			font-size: 12px;
-			color: #444;
-		}
-
-		.weights-grid input {
-			width: 90px;
-			padding: 4px;
-			font-size: 12px;
-		}
-
-		.btn {
-			cursor: pointer;
-			background: #31599E;
-			color: #fff;
-			border: none;
-			border-radius: 8px;
-			padding: 8px 12px;
-			font-weight: 600;
-		}
-
-		.btn.secondary {
-			background: #666;
-		}
-
-		.btn.ghost {
-			background: #f3f6ff;
-			color: #31599E;
-		}
-
-		.muted {
-			color: #666;
-			font-size: 12px;
-		}
-
-		.table-wrap {
-			max-height: 26vh;
-			overflow: auto;
-			border: 1px solid #eee;
-			border-radius: 10px;
-			background: #fff;
-		}
-
-		table {
-			border-collapse: collapse;
-			width: 100%;
-		}
-
-		th,
-		td {
-			border-bottom: 1px solid #eee;
-			padding: 6px 8px;
-			font-size: 12px;
-			text-align: left;
-		}
-
-		th {
-			background: #f7f7f7;
-			position: sticky;
-			top: 0;
-			z-index: 1;
-		}
-
-		.badge {
-			display: inline-block;
-			padding: 2px 6px;
-			border-radius: 999px;
-			font-size: 11px;
-			background: #e9efff;
-			color: #31599E;
-		}
-
-		#map {
-			width: 100%;
-			height: 65vh;
-		}
-
-		/* collapsible (unchanged) */
-		.collapsible {
-			overflow: hidden;
-			max-height: 0;
-			opacity: 0;
-			transition: max-height .35s ease, opacity .25s ease;
-			will-change: max-height, opacity;
-		}
-
-		.collapsible.open {
-			opacity: 1;
-		}
-
-		.collapsible.scroll {
-			overflow-y: auto;
-			-webkit-overflow-scrolling: touch;
-		}
-	</style>
-
-	<style>
-		details.c-route {
-			max-height: 400px;
-			overflow-y: auto;
-			-ms-overflow-style: none;
-			/* IE and Edge */
-			scrollbar-width: none;
-			/* Firefox */
-		}
-
-		details.c-route::-webkit-scrollbar {
-			display: none;
-			/* Chrome, Safari */
-		}
-
-		details.c-route>summary {
-			position: sticky;
-			top: 0;
-			z-index: 10;
-			background: #fff;
-			padding: 12px 16px;
-			border-bottom: 1px solid #ddd;
-		}
-
-		details.c-route>.c-route__setting {
-			padding-top: 40px;
-		}
-
-		.c-area__btns {
-			display: flex;
-			justify-content: flex-end;
-		}
-
-		.c-btn.c-btn__contents {
-			min-width: 400px;
-		}
-
-		#map {
-			border-radius: 12px;
-			overflow: hidden;
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-		}
-
-		.l-contents__map-data {
-			border-radius: 12px;
-		}
-
-		.l-contents__map-legends {
-			border-radius: 12px;
-
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-		}
-
-		.l-fixed__open.l-contents__useful.c-btn.js-fixed-open {
-			padding: 16px 16px;
-		}
-	</style>
-
-	<style>
-		.c-input__range-wrap.dual {
-			position: relative;
-			height: 60px;
-			margin-top: 10px;
-		}
-
-		.c-input__range-wrap.dual input[type=range] {
-			position: absolute;
-			width: 100%;
-			height: 6px;
-			margin: 0;
-			-webkit-appearance: none;
-			background: transparent;
-			pointer-events: none;
-			z-index: 1;
-		}
-
-		.c-input__range-wrap.dual input[type=range]#fareRangeMin {
-			z-index: 1;
-		}
-
-		.c-input__range-wrap.dual input[type=range]#fareRangeMax {
-			z-index: 2;
-		}
-
-		.c-input__range-wrap.dual input[type=range]::-webkit-slider-thumb {
-			-webkit-appearance: none;
-			pointer-events: all;
-			width: 16px;
-			height: 16px;
-			background: #7e3ff2;
-			border: 2px solid #fff;
-			border-radius: 50%;
-			box-shadow: 0 0 1px rgba(0, 0, 0, 0.4);
-			cursor: pointer;
-			margin-top: -5px;
-		}
-
-		.c-input__range-wrap.dual input[type=range]::-moz-range-thumb {
-			pointer-events: all;
-			width: 16px;
-			height: 16px;
-			background: #933df5;
-			border: 2px solid #fff;
-			border-radius: 50%;
-			cursor: pointer;
-		}
-
-		.c-input__range-wrap.dual input[type=range]::-webkit-slider-runnable-track {
-			height: 6px;
-			background: #ccc;
-			border-radius: 3px;
-		}
-
-		.c-input__range-wrap.dual .c-input__range-markforslider {
-			position: absolute;
-			top: 50%;
-			height: 6px;
-			background: #933df5;
-			border-radius: 3px;
-			transform: translateY(-50%);
-			z-index: 3;
-			pointer-events: none;
-		}
-
-
-		.c-input__range-mark {
-			position: absolute;
-			top: 50%;
-			width: 2px;
-			height: 4px;
-			transform: translateY(-50%);
-			background: #666666;
-		}
-
-		.c-input__range-mark.equal {
-			background: #fff;
-		}
-
-		.c-input__range-display {
-			display: flex;
-			align-items: baseline;
-			gap: 4px;
-			font-size: 1.1em;
-			margin-bottom: 4px;
-		}
-
-		.c-input__range-display strong {
-			font-weight: bold;
-			font-size: 1.2em;
-		}
-
-		.c-input__range-separator {
-			padding: 0 4px;
-		}
-
-		.c-input__range-unit {
-			font-size: 0.9em;
-			margin-left: 4px;
-		}
-
-		.c-input__range-diff {
-			color: #888;
-			margin-left: 8px;
-			font-size: 0.85em;
-		}
-
-		.range-bubble {
-			position: absolute;
-			top: -30px;
-			width: 65px;
-			text-align: center;
-			font-size: 1.4rem;
-			padding: 2px 5px;
-			background-color: #8d3dae;
-			color: #fff;
-			border-radius: 4px;
-			transform: translateX(-50%);
-			pointer-events: none;
-			line-height: 1.2;
-			display: block;
-			font-weight: 500;
-		}
-
-		.range-bubble::after {
-			content: "";
-			position: absolute;
-			bottom: -6px;
-			left: 50%;
-			transform: translateX(-50%);
-			border-width: 6px 6px 0 6px;
-			border-style: solid;
-			border-color: #8d3dae transparent transparent transparent;
-			display: block;
-			font-weight: 500;
-		}
-
-		.c-input__range-wrap input[type=range]::-webkit-slider-runnable-track {
-			height: 12px;
-			background: #ccc;
-			border-radius: 6px;
-		}
-
-		.c-input__range-wrap input[type=range]::-moz-range-track {
-			height: 12px;
-			background: #ccc;
-			border-radius: 6px;
-		}
-
-		.c-input__range-wrap input[type=range]::-webkit-slider-thumb {
-			-webkit-appearance: none;
-			pointer-events: all;
-			width: 22px;
-			height: 15px;
-			background: #7e3ff2;
-			border: none;
-			border-radius: 2px;
-			cursor: pointer;
-			margin-top: -3px;
-		}
-
-		.c-input__range-wrap input[type=range]::-moz-range-thumb {
-			pointer-events: all;
-			width: 4px;
-			height: 24px;
-			background: #7e3ff2;
-			border: none;
-			border-radius: 2px;
-			cursor: pointer;
-		}
-
-		.c-input__range-mark.js-range-mark {
-			height: 12px;
-			background: rgba(126, 63, 242, 0.4);
-			border-radius: 6px;
-			top: 50%;
-			transform: translateY(-50%);
-		}
-
-		.range-fixed-bubble {
-			background: #eee;
-			display: block;
-			padding: 0.2857142857em 0.7857142857em;
-			border-radius: var(--commonRadius);
-			width: fit-content;
-			font-size: 1.4rem;
-			transform: translateX(-50%);
-			position: absolute;
-			bottom: -14px;
-		}
-
-		.range-fixed-bubble::after {
-			content: "";
-			position: absolute;
-			top: -6px;
-			left: 50%;
-			transform: translateX(-50%);
-			border-width: 0 6px 6px 6px;
-			border-style: solid;
-			border-color: transparent transparent #aaa transparent;
-			display: none;
-		}
-	</style>
-
-	<style>
-		.mesh-label {
-			pointer-events: none;
-			text-align: center;
-		}
-
-		.mesh-label div {
-			background: rgba(255, 255, 255, 0.8);
-			border: 1px solid rgba(0, 0, 0, 0.15);
-			border-radius: 2px;
-			padding: 0px 1px;
-			font-size: 11px;
-			font-weight: bold;
-			color: #333;
-			box-shadow: none;
-			white-space: nowrap;
-			line-height: 1;
-			margin: 0;
-			display: inline-block;
-		}
-	</style>
-
-	<style>
-		/* Menu panel */
-		.landuse-panel {
-			display: none;
-			position: absolute;
-			top: 100px;
-			left: 10px;
-			min-width: 220px;
-			background: #fff;
-			border-radius: 8px;
-			border: 1px solid #ccc;
-			box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
-			padding: 16px;
-			z-index: 9999;
-			font-family: 'Segoe UI', sans-serif;
-			transition: opacity 0.2s ease;
-		}
-
-		/* Header */
-		.landuse-header {
-			font-size: 16px;
-			font-weight: 600;
-			margin-bottom: 10px;
-			color: #333;
-		}
-
-		/* Select dropdown */
-		.landuse-select {
-			width: 100%;
-			padding: 8px 10px;
-			font-size: 14px;
-			border-radius: 4px;
-			border: 1px solid #ccc;
-			appearance: none;
-			margin-bottom: 12px;
-			background: #f9f9f9;
-		}
-
-		/* Button */
-		.landuse-close {
-			display: inline-block;
-			padding: 8px 14px;
-			font-size: 14px;
-			background: #007bff;
-			color: white;
-			border: none;
-			border-radius: 4px;
-			cursor: pointer;
-			width: 100%;
-			transition: background 0.2s ease;
-		}
-
-		.landuse-close:hover {
-			background: #0056b3;
-		}
-
-		.landuse-header {
-			cursor: move;
-			user-select: none;
-		}
-	</style>
-
+	<link rel="stylesheet" href="assets/css/indexcss.css" />
 </head>
 
 <body>
@@ -2089,7 +1586,8 @@
 									style="padding:6px 8px; font-size:12px; width:220px; border:1px solid #ccd5ff; border-radius:8px;">
 								<button id="clearSearchBtn" type="button" class="btn ghost">Clear</button>
 								<button id="exportSummaryBtn" type="button" class="btn">Export Summary CSV</button>
-								<button id="exportStepsBtn" type="button" class="btn secondary">Export Steps CSV</button>
+								<button id="exportStepsBtn" type="button" class="btn secondary">Export Steps
+									CSV</button>
 								<button id="genStoryBtn" type="button" class="btn">
 									<span class="label">AIストーリー生成</span>
 									<span class="spin" style="display:none; margin-left:6px;">⏳</span>
@@ -2196,19 +1694,9 @@
 	<script src="landuse.js" defer></script>
 
 	<script>
-		const fareMinA = document.getElementById('fareRangeMin');
-		const fareMaxA = document.getElementById('fareRangeMax');
-		const rangeMarkA = document.querySelector('#current_a_fare .js-range-mark');
-
-		const bubbleMin = document.getElementById('bubbleMin');
-		const bubbleMax = document.getElementById('bubbleMax');
-		const defaultMin = 120;
-		const defaultMax = 390;
-
+		// ---------- Generic helpers ----------
 		function setBubblePosition(input, bubble) {
-			const min = +input.min;
-			const max = +input.max;
-			const val = +input.value;
+			const min = +input.min, max = +input.max, val = +input.value;
 			const percent = ((val - min) / (max - min)) * 100;
 			bubble.style.left = `${percent}%`;
 		}
@@ -2218,452 +1706,141 @@
 			return diff === 0 ? '(±0)' : (diff > 0 ? `(+${diff})` : `(${diff})`);
 		}
 
-		function updateBubbles(minVal, maxVal) {
-			bubbleMin.innerHTML = `${minVal}円<br>${formatDiff(minVal, defaultMin)}`;
-			bubbleMax.innerHTML = `${maxVal}円<br>${formatDiff(maxVal, defaultMax)}`;
+		function initRangePair({
+			minId,            // e.g. 'fareRangeMin'
+			maxId,            // e.g. 'fareRangeMax'
+			markSelector,     // e.g. '#current_a_fare .js-range-mark'
+			bubbleMinId,      // e.g. 'bubbleMin'
+			bubbleMaxId,      // e.g. 'bubbleMax'
+			defaultMin,       // e.g. 120
+			defaultMax,       // e.g. 390
+			resetSelector     // e.g. '[data-reset="current_a_fare"]'
+		}) {
+			const minEl = document.getElementById(minId);
+			const maxEl = document.getElementById(maxId);
+			const markEl = document.querySelector(markSelector);
+			const bubbleMinEl = document.getElementById(bubbleMinId);
+			const bubbleMaxEl = document.getElementById(bubbleMaxId);
+			const resetEl = document.querySelector(resetSelector);
 
-			setBubblePosition(fareMinA, bubbleMin);
-			setBubblePosition(fareMaxA, bubbleMax);
-		}
+			// Guard if any required element is missing
+			if (!minEl || !maxEl || !markEl || !bubbleMinEl || !bubbleMaxEl) return;
 
-		function updateVisualA(minVal, maxVal) {
-			const total = +fareMinA.max - +fareMinA.min;
-			const pctMin = ((minVal - +fareMinA.min) / total) * 100;
-			const pctMax = ((maxVal - +fareMinA.min) / total) * 100;
-
-			rangeMarkA.style.left = pctMin + '%';
-			rangeMarkA.style.width = (pctMax - pctMin) + '%';
-		}
-
-		function syncSlidersA() {
-			let minV = +fareMinA.value, maxV = +fareMaxA.value;
-
-			if (minV > maxV) {
-				minV = maxV;
-				fareMinA.value = minV;
-			}
-			if (maxV < minV) {
-				maxV = minV;
-				fareMaxA.value = maxV;
+			function updateBubbles(minVal, maxVal) {
+				bubbleMinEl.innerHTML = `${minVal}円<br>${formatDiff(minVal, defaultMin)}`;
+				bubbleMaxEl.innerHTML = `${maxVal}円<br>${formatDiff(maxVal, defaultMax)}`;
+				setBubblePosition(minEl, bubbleMinEl);
+				setBubblePosition(maxEl, bubbleMaxEl);
 			}
 
-			updateVisualA(minV, maxV);
-			updateBubbles(minV, maxV);
-		}
-
-		fareMinA.addEventListener('input', syncSlidersA);
-		fareMaxA.addEventListener('input', syncSlidersA);
-
-		fareMinA.addEventListener('pointerdown', () => {
-			fareMinA.style.zIndex = 3;
-			fareMaxA.style.zIndex = 2;
-		});
-		fareMaxA.addEventListener('pointerdown', () => {
-			fareMaxA.style.zIndex = 3;
-			fareMinA.style.zIndex = 2;
-		});
-
-		fareMinA.value = 120;
-		fareMaxA.value = 390;
-		syncSlidersA();
-
-		document.querySelector('[data-reset="current_a_fare"]').addEventListener('click', () => {
-			fareMinA.value = defaultMin;
-			fareMaxA.value = defaultMax;
-			syncSlidersA();
-		});
-
-	</script>
-
-	<script>
-		const fareMinB = document.getElementById('fareRangeMinB');
-		const fareMaxB = document.getElementById('fareRangeMaxB');
-		const rangeMarkB = document.querySelector('#current_b_fare .js-range-mark');
-
-		const bubbleMinB = document.getElementById('bubbleMinB');
-		const bubbleMaxB = document.getElementById('bubbleMaxB');
-		const defaultMinB = 120;
-		const defaultMaxB = 390;
-
-		function setBubblePositionB(input, bubble) {
-			const min = +input.min;
-			const max = +input.max;
-			const val = +input.value;
-			const percent = ((val - min) / (max - min)) * 100;
-			bubble.style.left = `${percent}%`;
-		}
-
-		function formatDiffB(current, base) {
-			const diff = current - base;
-			return diff === 0 ? '(±0)' : (diff > 0 ? `(+${diff})` : `(${diff})`);
-		}
-
-		function updateBubblesB(minVal, maxVal) {
-			bubbleMinB.innerHTML = `${minVal}円<br>${formatDiffB(minVal, defaultMinB)}`;
-			bubbleMaxB.innerHTML = `${maxVal}円<br>${formatDiffB(maxVal, defaultMaxB)}`;
-			setBubblePositionB(fareMinB, bubbleMinB);
-			setBubblePositionB(fareMaxB, bubbleMaxB);
-		}
-
-		function updateVisualB(minVal, maxVal) {
-			const total = +fareMinB.max - +fareMinB.min;
-			const pctMin = ((minVal - +fareMinB.min) / total) * 100;
-			const pctMax = ((maxVal - +fareMinB.min) / total) * 100;
-
-			rangeMarkB.style.left = pctMin + '%';
-			rangeMarkB.style.width = (pctMax - pctMin) + '%';
-		}
-
-		function syncSlidersB() {
-			let minV = +fareMinB.value, maxV = +fareMaxB.value;
-			if (minV > maxV) {
-				minV = maxV;
-				fareMinB.value = minV;
-			}
-			if (maxV < minV) {
-				maxV = minV;
-				fareMaxB.value = maxV;
-			}
-			updateVisualB(minV, maxV);
-			updateBubblesB(minV, maxV);
-		}
-
-		fareMinB.addEventListener('input', syncSlidersB);
-		fareMaxB.addEventListener('input', syncSlidersB);
-
-		fareMinB.addEventListener('pointerdown', () => {
-			fareMinB.style.zIndex = 3;
-			fareMaxB.style.zIndex = 2;
-		});
-		fareMaxB.addEventListener('pointerdown', () => {
-			fareMaxB.style.zIndex = 3;
-			fareMinB.style.zIndex = 2;
-		});
-
-		fareMinB.value = defaultMinB;
-		fareMaxB.value = defaultMaxB;
-		syncSlidersB();
-
-		document.querySelector('[data-reset="current_b_fare"]').addEventListener('click', () => {
-			fareMinB.value = defaultMinB;
-			fareMaxB.value = defaultMaxB;
-			syncSlidersB();
-		});
-	</script>
-
-	<script>
-		const fareMin_s01a = document.getElementById('fareRangeMin_scenario01a');
-		const fareMax_s01a = document.getElementById('fareRangeMax_scenario01a');
-		const rangeMark_s01a = document.querySelector('#scenario01_a_fare .js-range-mark');
-
-		const bubbleMin_s01a = document.getElementById('bubbleMin_scenario01a');
-		const bubbleMax_s01a = document.getElementById('bubbleMax_scenario01a');
-
-		const defaultMin_s01a = 140;
-		const defaultMax_s01a = 410;
-
-		function setBubblePos_s01a(input, bubble) {
-			const min = +input.min;
-			const max = +input.max;
-			const val = +input.value;
-			const percent = ((val - min) / (max - min)) * 100;
-			bubble.style.left = `${percent}%`;
-		}
-
-		function formatDiff_s01a(current, base) {
-			const diff = current - base;
-			return diff === 0 ? '(±0)' : (diff > 0 ? `(+${diff})` : `(${diff})`);
-		}
-
-		function updateBubbles_s01a(minVal, maxVal) {
-			bubbleMin_s01a.innerHTML = `${minVal}円<br>${formatDiff_s01a(minVal, defaultMin_s01a)}`;
-			bubbleMax_s01a.innerHTML = `${maxVal}円<br>${formatDiff_s01a(maxVal, defaultMax_s01a)}`;
-			setBubblePos_s01a(fareMin_s01a, bubbleMin_s01a);
-			setBubblePos_s01a(fareMax_s01a, bubbleMax_s01a);
-		}
-
-		function updateVisual_s01a(minVal, maxVal) {
-			const total = +fareMin_s01a.max - +fareMin_s01a.min;
-			const pctMin = ((minVal - +fareMin_s01a.min) / total) * 100;
-			const pctMax = ((maxVal - +fareMin_s01a.min) / total) * 100;
-
-			rangeMark_s01a.style.left = pctMin + '%';
-			rangeMark_s01a.style.width = (pctMax - pctMin) + '%';
-		}
-
-		function syncSliders_s01a() {
-			let minV = +fareMin_s01a.value, maxV = +fareMax_s01a.value;
-			if (minV > maxV) {
-				minV = maxV;
-				fareMin_s01a.value = minV;
-			}
-			if (maxV < minV) {
-				maxV = minV;
-				fareMax_s01a.value = maxV;
-			}
-			updateVisual_s01a(minV, maxV);
-			updateBubbles_s01a(minV, maxV);
-		}
-
-		fareMin_s01a.addEventListener('input', syncSliders_s01a);
-		fareMax_s01a.addEventListener('input', syncSliders_s01a);
-
-		fareMin_s01a.addEventListener('pointerdown', () => {
-			fareMin_s01a.style.zIndex = 3;
-			fareMax_s01a.style.zIndex = 2;
-		});
-		fareMax_s01a.addEventListener('pointerdown', () => {
-			fareMax_s01a.style.zIndex = 3;
-			fareMin_s01a.style.zIndex = 2;
-		});
-
-		fareMin_s01a.value = defaultMin_s01a;
-		fareMax_s01a.value = defaultMax_s01a;
-		syncSliders_s01a();
-
-		document.querySelector('[data-reset="scenario01_a_fare"]').addEventListener('click', () => {
-			fareMin_s01a.value = defaultMin_s01a;
-			fareMax_s01a.value = defaultMax_s01a;
-			syncSliders_s01a();
-		});
-	</script>
-
-	<script>
-		const fareMin_s01b = document.getElementById('fareRangeMin_scenario01b');
-		const fareMax_s01b = document.getElementById('fareRangeMax_scenario01b');
-		const rangeMark_s01b = document.querySelector('#scenario01_b_fare .js-range-mark');
-
-		const bubbleMin_s01b = document.getElementById('bubbleMin_scenario01b');
-		const bubbleMax_s01b = document.getElementById('bubbleMax_scenario01b');
-
-		const defaultMin_s01b = 120;
-		const defaultMax_s01b = 390;
-
-		function setBubblePos_s01b(input, bubble) {
-			const min = +input.min;
-			const max = +input.max;
-			const val = +input.value;
-			const percent = ((val - min) / (max - min)) * 100;
-			bubble.style.left = `${percent}%`;
-		}
-
-		function formatDiff_s01b(current, base) {
-			const diff = current - base;
-			return diff === 0 ? '(±0)' : (diff > 0 ? `(+${diff})` : `(${diff})`);
-		}
-
-		function updateBubbles_s01b(minVal, maxVal) {
-			bubbleMin_s01b.innerHTML = `${minVal}円<br>${formatDiff_s01b(minVal, defaultMin_s01b)}`;
-			bubbleMax_s01b.innerHTML = `${maxVal}円<br>${formatDiff_s01b(maxVal, defaultMax_s01b)}`;
-			setBubblePos_s01b(fareMin_s01b, bubbleMin_s01b);
-			setBubblePos_s01b(fareMax_s01b, bubbleMax_s01b);
-		}
-
-		function updateVisual_s01b(minVal, maxVal) {
-			const total = +fareMin_s01b.max - +fareMin_s01b.min;
-			const pctMin = ((minVal - +fareMin_s01b.min) / total) * 100;
-			const pctMax = ((maxVal - +fareMin_s01b.min) / total) * 100;
-
-			rangeMark_s01b.style.left = pctMin + '%';
-			rangeMark_s01b.style.width = (pctMax - pctMin) + '%';
-		}
-
-		function syncSliders_s01b() {
-			let minV = +fareMin_s01b.value, maxV = +fareMax_s01b.value;
-
-			if (minV > maxV) {
-				minV = maxV;
-				fareMin_s01b.value = minV;
-			}
-			if (maxV < minV) {
-				maxV = minV;
-				fareMax_s01b.value = maxV;
+			function updateVisual(minVal, maxVal) {
+				const total = +minEl.max - +minEl.min;
+				const base = +minEl.min;
+				const pctMin = ((minVal - base) / total) * 100;
+				const pctMax = ((maxVal - base) / total) * 100;
+				markEl.style.left = pctMin + '%';
+				markEl.style.width = (pctMax - pctMin) + '%';
 			}
 
-			updateVisual_s01b(minV, maxV);
-			updateBubbles_s01b(minV, maxV);
-		}
-
-		fareMin_s01b.addEventListener('input', syncSliders_s01b);
-		fareMax_s01b.addEventListener('input', syncSliders_s01b);
-
-		fareMin_s01b.addEventListener('pointerdown', () => {
-			fareMin_s01b.style.zIndex = 3;
-			fareMax_s01b.style.zIndex = 2;
-		});
-		fareMax_s01b.addEventListener('pointerdown', () => {
-			fareMax_s01b.style.zIndex = 3;
-			fareMin_s01b.style.zIndex = 2;
-		});
-
-		fareMin_s01b.value = defaultMin_s01b;
-		fareMax_s01b.value = defaultMax_s01b;
-		syncSliders_s01b();
-
-		document.querySelector('[data-reset="scenario01_b_fare"]').addEventListener('click', () => {
-			fareMin_s01b.value = defaultMin_s01b;
-			fareMax_s01b.value = defaultMax_s01b;
-			syncSliders_s01b();
-		});
-	</script>
-
-
-	<script>
-		const fareMin_s02a = document.getElementById('fareRangeMin_scenario02a');
-		const fareMax_s02a = document.getElementById('fareRangeMax_scenario02a');
-		const rangeMark_s02a = document.querySelector('#scenario02_a_fare .js-range-mark');
-
-		const bubbleMin_s02a = document.getElementById('bubbleMin_scenario02a');
-		const bubbleMax_s02a = document.getElementById('bubbleMax_scenario02a');
-
-		const defaultMin_s02a = 160;
-		const defaultMax_s02a = 430;
-
-		function setBubblePos_s02a(input, bubble) {
-			const min = +input.min;
-			const max = +input.max;
-			const val = +input.value;
-			const percent = ((val - min) / (max - min)) * 100;
-			bubble.style.left = `${percent}%`;
-		}
-
-		function formatDiff_s02a(current, base) {
-			const diff = current - base;
-			return diff === 0 ? '(±0)' : (diff > 0 ? `(+${diff})` : `(${diff})`);
-		}
-
-		function updateBubbles_s02a(minVal, maxVal) {
-			bubbleMin_s02a.innerHTML = `${minVal}円<br>${formatDiff_s02a(minVal, defaultMin_s02a)}`;
-			bubbleMax_s02a.innerHTML = `${maxVal}円<br>${formatDiff_s02a(maxVal, defaultMax_s02a)}`;
-			setBubblePos_s02a(fareMin_s02a, bubbleMin_s02a);
-			setBubblePos_s02a(fareMax_s02a, bubbleMax_s02a);
-		}
-
-		function updateVisual_s02a(minVal, maxVal) {
-			const total = +fareMin_s02a.max - +fareMin_s02a.min;
-			const pctMin = ((minVal - +fareMin_s02a.min) / total) * 100;
-			const pctMax = ((maxVal - +fareMin_s02a.min) / total) * 100;
-
-			rangeMark_s02a.style.left = pctMin + '%';
-			rangeMark_s02a.style.width = (pctMax - pctMin) + '%';
-		}
-
-		function syncSliders_s02a() {
-			let minV = +fareMin_s02a.value, maxV = +fareMax_s02a.value;
-
-			if (minV > maxV) {
-				minV = maxV;
-				fareMin_s02a.value = minV;
-			}
-			if (maxV < minV) {
-				maxV = minV;
-				fareMax_s02a.value = maxV;
+			function sync() {
+				let minV = +minEl.value, maxV = +maxEl.value;
+				if (minV > maxV) { minV = maxV; minEl.value = minV; }
+				if (maxV < minV) { maxV = minV; maxEl.value = maxV; }
+				updateVisual(minV, maxV);
+				updateBubbles(minV, maxV);
 			}
 
-			updateVisual_s02a(minV, maxV);
-			updateBubbles_s02a(minV, maxV);
-		}
+			// Events
+			minEl.addEventListener('input', sync);
+			maxEl.addEventListener('input', sync);
 
-		fareMin_s02a.addEventListener('input', syncSliders_s02a);
-		fareMax_s02a.addEventListener('input', syncSliders_s02a);
+			minEl.addEventListener('pointerdown', () => {
+				minEl.style.zIndex = 3; maxEl.style.zIndex = 2;
+			});
+			maxEl.addEventListener('pointerdown', () => {
+				maxEl.style.zIndex = 3; minEl.style.zIndex = 2;
+			});
 
-		fareMin_s02a.addEventListener('pointerdown', () => {
-			fareMin_s02a.style.zIndex = 3;
-			fareMax_s02a.style.zIndex = 2;
-		});
-		fareMax_s02a.addEventListener('pointerdown', () => {
-			fareMax_s02a.style.zIndex = 3;
-			fareMin_s02a.style.zIndex = 2;
-		});
+			// Init
+			minEl.value = defaultMin;
+			maxEl.value = defaultMax;
+			sync();
 
-		fareMin_s02a.value = defaultMin_s02a;
-		fareMax_s02a.value = defaultMax_s02a;
-		syncSliders_s02a();
-
-		document.querySelector('[data-reset="scenario02_a_fare"]').addEventListener('click', () => {
-			fareMin_s02a.value = defaultMin_s02a;
-			fareMax_s02a.value = defaultMax_s02a;
-			syncSliders_s02a();
-		});
-	</script>
-
-	<script>
-		const fareMin_s02b = document.getElementById('fareRangeMin_scenario02b');
-		const fareMax_s02b = document.getElementById('fareRangeMax_scenario02b');
-		const rangeMark_s02b = document.querySelector('#scenario02_b_fare .js-range-mark');
-
-		const bubbleMin_s02b = document.getElementById('bubbleMin_scenario02b');
-		const bubbleMax_s02b = document.getElementById('bubbleMax_scenario02b');
-
-		const defaultMin_s02b = 120;
-		const defaultMax_s02b = 390;
-
-		function setBubblePos_s02b(input, bubble) {
-			const min = +input.min;
-			const max = +input.max;
-			const val = +input.value;
-			const percent = ((val - min) / (max - min)) * 100;
-			bubble.style.left = `${percent}%`;
-		}
-
-		function formatDiff_s02b(current, base) {
-			const diff = current - base;
-			return diff === 0 ? '(±0)' : (diff > 0 ? `(+${diff})` : `(${diff})`);
-		}
-
-		function updateBubbles_s02b(minVal, maxVal) {
-			bubbleMin_s02b.innerHTML = `${minVal}円<br>${formatDiff_s02b(minVal, defaultMin_s02b)}`;
-			bubbleMax_s02b.innerHTML = `${maxVal}円<br>${formatDiff_s02b(maxVal, defaultMax_s02b)}`;
-			setBubblePos_s02b(fareMin_s02b, bubbleMin_s02b);
-			setBubblePos_s02b(fareMax_s02b, bubbleMax_s02b);
-		}
-
-		function updateVisual_s02b(minVal, maxVal) {
-			const total = +fareMin_s02b.max - +fareMin_s02b.min;
-			const pctMin = ((minVal - +fareMin_s02b.min) / total) * 100;
-			const pctMax = ((maxVal - +fareMin_s02b.min) / total) * 100;
-
-			rangeMark_s02b.style.left = pctMin + '%';
-			rangeMark_s02b.style.width = (pctMax - pctMin) + '%';
-		}
-
-		function syncSliders_s02b() {
-			let minV = +fareMin_s02b.value, maxV = +fareMax_s02b.value;
-
-			if (minV > maxV) {
-				minV = maxV;
-				fareMin_s02b.value = minV;
+			// Reset
+			if (resetEl) {
+				resetEl.addEventListener('click', () => {
+					minEl.value = defaultMin;
+					maxEl.value = defaultMax;
+					sync();
+				});
 			}
-			if (maxV < minV) {
-				maxV = minV;
-				fareMax_s02b.value = maxV;
-			}
-
-			updateVisual_s02b(minV, maxV);
-			updateBubbles_s02b(minV, maxV);
 		}
 
-		fareMin_s02b.addEventListener('input', syncSliders_s02b);
-		fareMax_s02b.addEventListener('input', syncSliders_s02b);
+		// ---------- Define and initialize all pairs here ----------
+		const PAIRS = [
+			{
+				minId: 'fareRangeMin',
+				maxId: 'fareRangeMax',
+				markSelector: '#current_a_fare .js-range-mark',
+				bubbleMinId: 'bubbleMin',
+				bubbleMaxId: 'bubbleMax',
+				defaultMin: 120,
+				defaultMax: 390,
+				resetSelector: '[data-reset="current_a_fare"]'
+			},
+			{
+				minId: 'fareRangeMinB',
+				maxId: 'fareRangeMaxB',
+				markSelector: '#current_b_fare .js-range-mark',
+				bubbleMinId: 'bubbleMinB',
+				bubbleMaxId: 'bubbleMaxB',
+				defaultMin: 120,
+				defaultMax: 390,
+				resetSelector: '[data-reset="current_b_fare"]'
+			},
+			{
+				minId: 'fareRangeMin_scenario01a',
+				maxId: 'fareRangeMax_scenario01a',
+				markSelector: '#scenario01_a_fare .js-range-mark',
+				bubbleMinId: 'bubbleMin_scenario01a',
+				bubbleMaxId: 'bubbleMax_scenario01a',
+				defaultMin: 140,
+				defaultMax: 410,
+				resetSelector: '[data-reset="scenario01_a_fare"]'
+			},
+			{
+				minId: 'fareRangeMin_scenario01b',
+				maxId: 'fareRangeMax_scenario01b',
+				markSelector: '#scenario01_b_fare .js-range-mark',
+				bubbleMinId: 'bubbleMin_scenario01b',
+				bubbleMaxId: 'bubbleMax_scenario01b',
+				defaultMin: 120,
+				defaultMax: 390,
+				resetSelector: '[data-reset="scenario01_b_fare"]'
+			},
+			{
+				minId: 'fareRangeMin_scenario02a',
+				maxId: 'fareRangeMax_scenario02a',
+				markSelector: '#scenario02_a_fare .js-range-mark',
+				bubbleMinId: 'bubbleMin_scenario02a',
+				bubbleMaxId: 'bubbleMax_scenario02a',
+				defaultMin: 160,
+				defaultMax: 430,
+				resetSelector: '[data-reset="scenario02_a_fare"]'
+			},
+			{
+				minId: 'fareRangeMin_scenario02b',
+				maxId: 'fareRangeMax_scenario02b',
+				markSelector: '#scenario02_b_fare .js-range-mark',
+				bubbleMinId: 'bubbleMin_scenario02b',
+				bubbleMaxId: 'bubbleMax_scenario02b',
+				defaultMin: 120,
+				defaultMax: 390,
+				resetSelector: '[data-reset="scenario02_b_fare"]'
+			}
+		];
 
-		fareMin_s02b.addEventListener('pointerdown', () => {
-			fareMin_s02b.style.zIndex = 3;
-			fareMax_s02b.style.zIndex = 2;
-		});
-		fareMax_s02b.addEventListener('pointerdown', () => {
-			fareMax_s02b.style.zIndex = 3;
-			fareMin_s02b.style.zIndex = 2;
-		});
-
-		fareMin_s02b.value = defaultMin_s02b;
-		fareMax_s02b.value = defaultMax_s02b;
-		syncSliders_s02b();
-
-		document.querySelector('[data-reset="scenario02_b_fare"]').addEventListener('click', () => {
-			fareMin_s02b.value = defaultMin_s02b;
-			fareMax_s02b.value = defaultMax_s02b;
-			syncSliders_s02b();
-		});
+		PAIRS.forEach(initRangePair);
 	</script>
 
 
@@ -2842,7 +2019,6 @@
 
 	<!-- libs -->
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.10.0/proj4.min.js"></script>
-
 
 </body>
 
