@@ -565,6 +565,61 @@ document.getElementById("recomputeBtn").addEventListener("click", () => {
 // (Optional) expose for debugging
 window._dbg = { atlantisToWGS84 };
 
+// === Public simulation loader (no uploads) ===
+async function populateSimulationList() {
+  try {
+    const res = await fetch('/api/simulations');
+    const sims = await res.json();
+    const sel = document.getElementById('simulationSelect');
+    if (!sel) return;
+    sel.innerHTML = '';
+    if (!Array.isArray(sims) || sims.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'No published simulations';
+      sel.appendChild(opt);
+      return;
+    }
+    sims.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = `${s.name} — ${s.id.slice(0, 8)}`;
+      sel.appendChild(opt);
+    });
+  } catch (e) {
+    console.error('Failed to load simulations', e);
+  }
+}
+
+document.getElementById('loadSimulationBtn')?.addEventListener('click', async () => {
+  const sel = document.getElementById('simulationSelect');
+  if (!sel || !sel.value) return alert('Select a simulation');
+  const id = sel.value;
+  const spinner = document.getElementById('loadSimSpinner');
+  spinner && (spinner.style.display = 'inline');
+  statusMsg.textContent = '';
+  try {
+    const res = await fetch(`/api/simulations/${id}/data`);
+    const parsed = await res.json();
+    if (!Array.isArray(parsed)) throw new Error('Server returned invalid JSON');
+    window.__PARSED__ = parsed;
+    __ALL_PERSONS__ = parsed;
+    const dsKey = `pub:${id}`;
+    await Persist.idbPut(dsKey, parsed);
+    UI.datasetKey = dsKey;
+    Persist.saveUI(UI);
+    applyFilterAndRender();
+    statusMsg.textContent = `Loaded ${__FILTERED_PERSONS__.length} of ${__ALL_PERSONS__.length} persons (filtered)`;
+    redrawMapFromFiltered();
+  } catch (err) {
+    console.error(err);
+    alert('Load failed.');
+  } finally {
+    spinner && (spinner.style.display = 'none');
+  }
+});
+
+/*
 // === Upload handling with caching + facilities ===
 document.getElementById("folderUpload").addEventListener("change", async (event) => {
   const files = Array.from(event.target.files);
@@ -599,7 +654,7 @@ document.getElementById("folderUpload").addEventListener("change", async (event)
     }
 
     // selected_only=false so you can browse multiple plans per person
-    const res = await fetch("http://127.0.0.1:5000/upload?limit=1000&selected_only=false", {
+    const res = await fetch("http://127.0.0.1:3000/upload?limit=1000&selected_only=false", {
       method: "POST",
       body: formData
     });
@@ -623,7 +678,7 @@ document.getElementById("folderUpload").addEventListener("change", async (event)
     labelText.textContent = "✅ Plans Loaded";
     statusMsg.textContent = `Loaded ${__FILTERED_PERSONS__.length} of ${__ALL_PERSONS__.length} persons (filtered)`;
 
-    // Default map draw: selected plan for each filtered person
+    // Default map draw: selected plan for each filtered persona
     redrawMapFromFiltered();
   } catch (err) {
     console.error(err);
@@ -633,10 +688,12 @@ document.getElementById("folderUpload").addEventListener("change", async (event)
     spinner.style.display = "none";
   }
 });
+*/
 
 // === Boot-time restore from cache ===
 (async function bootRestore() {
   try {
+    populateSimulationList();
     if (UI.datasetKey) {
       const cached = await Persist.idbGet(UI.datasetKey);
       if (Array.isArray(cached) && cached.length) {
@@ -677,7 +734,7 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
   if (!best) return alert("No plans available.");
 
   try {
-    const res = await fetch("http://127.0.0.1:5000/story", {
+    const res = await fetch("http://127.0.0.1:3000/story", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

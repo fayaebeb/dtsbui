@@ -1,186 +1,196 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin Dashboard</title>
-    <!-- Make CSRF available via meta as a fallback -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <style>
-      body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;margin:1.5rem}
-      header{display:flex;gap:1rem;align-items:center}
-      table{border-collapse:collapse;width:100%;margin-top:1rem}
-      th,td{border:1px solid #ddd;padding:.5rem}
-      th{background:#f6f6f6;text-align:left}
-      .actions{display:flex;gap:.5rem}
-      progress{width:240px;height:10px}
-    </style>
-  </head>
-  <body>
-    <header>
-      <h1>Admin</h1>
-      <form method="post" action="/admin/logout" style="margin-left:auto">
-        <!-- CSRF as hidden input (required for Flask-WTF forms) -->
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit">Logout</button>
-      </form>
-    </header>
+<html lang="en">
 
-    <section>
-      <h2>Upload Simulation (zip)</h2>
-      <form id="uploadForm">
-        <!-- CSRF as hidden input (JS will also read this) -->
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="file" name="file" id="zipFile" accept=".zip" required>
-        <button type="submit">Upload</button>
-      </form>
-      <div style="margin-top:.5rem">
-        <progress id="prog" max="100" value="0"></progress>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Dashboard</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body class="bg-soft">
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <span class="brand-badge">DTSB</span>
+        <span class="brand-sub">Admin</span>
       </div>
-      <div id="uploadStatus" style="margin-top:.5rem"></div>
+
+      <nav class="actions" style="display:flex; gap:1rem; align-items:center;">
+        <a href="/admin/sim" class="btn outline" target="_blank">Sim Preview</a>
+        <form method="post" action="/admin/logout">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn outline" type="submit">Logout</button>
+        </form>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container stack gap-xl py-lg">
+    <section class="card">
+      <header class="section-header">
+        <div>
+          <h2>Upload Simulation</h2>
+          <p class="muted">Upload a .zip file to add a new simulation.</p>
+        </div>
+      </header>
+      <form id="uploadForm" class="grid grid-auto gap-sm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input class="file-input" type="file" name="file" id="zipFile" accept=".zip" required>
+        <button class="btn primary" type="submit">Upload</button>
+      </form>
+      <div class="stack gap-xs mt-sm">
+        <progress id="prog" max="100" value="0" class="progress"></progress>
+        <div id="uploadStatus" class="muted"></div>
+      </div>
     </section>
 
-    <section>
-      <h2>All Simulations</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Published</th>
-            <th>Uploaded</th>
-            <th>Size</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="simsBody"></tbody>
-      </table>
+    <section class="card">
+      <header class="section-header">
+        <div>
+          <h2>All Simulations</h2>
+          <p class="muted">Manage publication, parsing, and removal.</p>
+        </div>
+        <button id="refreshBtn" class="btn subtle">Refresh</button>
+      </header>
+
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width:80px">ID</th>
+              <th>Name</th>
+              <th style="width:120px">Published</th>
+              <th style="width:180px">Uploaded</th>
+              <th style="width:120px">Size</th>
+              <th style="width:260px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="simsBody"></tbody>
+        </table>
+      </div>
     </section>
+  </main>
 
-    <script>
-      // Read CSRF from hidden input, else from meta
-      function getCsrf() {
-        const inp = document.querySelector('input[name="csrf_token"]');
-        if (inp && inp.value) return inp.value;
-        const meta = document.querySelector('meta[name="csrf-token"]');
-        return meta ? meta.content : null;
-      }
-      const csrf = getCsrf();
+  <script>
+    function getCsrf() {
+      const inp = document.querySelector('input[name="csrf_token"]');
+      if (inp && inp.value) return inp.value;
+      const meta = document.querySelector('meta[name="csrf-token"]');
+      return meta ? meta.content : null;
+    }
+    const csrf = getCsrf();
 
-      async function refresh() {
-        const res = await fetch('/admin/api/simulations', { credentials: 'same-origin' });
-        if (!res.ok) {
-          console.error('Failed to load list', res.status);
-          return;
-        }
-        const rows = await res.json();
-        const tb = document.getElementById('simsBody');
-        tb.innerHTML = '';
-        rows.forEach(r => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${r.id}</td>
-            <td>${r.name}</td>
-            <td>${r.published ? 'Yes' : 'No'}</td>
-            <td>${r.uploaded_at}</td>
-            <td>${r.size || ''}</td>
-            <td class="actions">
-              <button data-act="publish">${r.published ? 'Unpublish' : 'Publish'}</button>
-              <button data-act="parse">Parse/Cache</button>
-              <button data-act="delete">Delete</button>
-            </td>`;
-          tr.querySelector('[data-act="publish"]').onclick = async () => {
-            const resp = await fetch(`/admin/api/simulations/${r.id}`, {
-              method: 'PATCH',
-              headers: {
-                'Content-Type':'application/json',
-                ...(csrf ? {'X-CSRFToken': csrf} : {})
-              },
-              body: JSON.stringify({published: !r.published}),
-              credentials: 'same-origin'
-            });
-            if (!resp.ok) alert('Publish toggle failed');
-            refresh();
-          };
-          tr.querySelector('[data-act="parse"]').onclick = async () => {
-            const resp = await fetch(`/admin/api/simulations/${r.id}/parse`, {
-              method: 'POST',
-              headers: { ...(csrf ? {'X-CSRFToken': csrf} : {}) },
-              credentials: 'same-origin'
-            });
-            if (!resp.ok) alert('Parse failed');
-            refresh();
-          };
-          tr.querySelector('[data-act="delete"]').onclick = async () => {
-            if (!confirm('Delete this simulation?')) return;
-            const resp = await fetch(`/admin/api/simulations/${r.id}`, {
-              method: 'DELETE',
-              headers: { ...(csrf ? {'X-CSRFToken': csrf} : {}) },
-              credentials: 'same-origin'
-            });
-            if (!resp.ok) alert('Delete failed');
-            refresh();
-          };
-          tb.appendChild(tr);
-        });
-      }
-
-      // Optional: show upload progress via XHR (better than fetch for progress)
-      async function uploadWithProgress(file, csrf) {
-        return new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open('POST', '/admin/api/simulations', true);
-          if (csrf) xhr.setRequestHeader('X-CSRFToken', csrf);
-          xhr.withCredentials = true;
-
-          const prog = document.getElementById('prog');
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-              prog.value = Math.round((e.loaded / e.total) * 100);
-            }
-          };
-          xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve(xhr.response) : reject(xhr.response);
-          xhr.onerror = () => reject('network error');
-
-          const fd = new FormData();
-          fd.append('file', file);
-          xhr.send(fd);
-        });
-      }
-
-      let uploading = false;
-      window.addEventListener('beforeunload', (e) => {
-        if (!uploading) return;
-        e.preventDefault();
-        e.returnValue = '';
-      });
-
-      document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const fileEl = document.getElementById('zipFile');
-        const f = fileEl && fileEl.files ? fileEl.files[0] : null;
-        const st = document.getElementById('uploadStatus');
-        const prog = document.getElementById('prog');
-        if (!f) {
-          st.textContent = 'Please choose a .zip file.';
-          return;
-        }
-        st.textContent = 'Uploading...';
-        prog.value = 0;
-        uploading = true;
-        try {
-          await uploadWithProgress(f, csrf);
-          st.textContent = 'Uploaded';
+    async function refresh() {
+      const res = await fetch('/admin/api/simulations', { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const rows = await res.json();
+      const tb = document.getElementById('simsBody');
+      tb.innerHTML = '';
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.id}</td>
+          <td class="cell-ellipsis" title="${r.name}">${r.name}</td>
+          <td>${r.published ? '<span class="badge success">Yes</span>' : '<span class="badge">No</span>'}</td>
+          <td>${r.uploaded_at}</td>
+          <td>${r.size || ''}</td>
+          <td>
+            <div class="actions">
+              <button class="btn small ${r.published ? 'warning' : 'secondary'}" data-act="publish">${r.published ? 'Unpublish' : 'Publish'}</button>
+              <button class="btn small secondary" data-act="parse">Parse/Cache</button>
+              <button class="btn small danger" data-act="delete">Delete</button>
+            </div>
+          </td>`;
+        tr.querySelector('[data-act="publish"]').onclick = async () => {
+          const resp = await fetch(`/admin/api/simulations/${r.id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(csrf ? { 'X-CSRFToken': csrf } : {})
+            },
+            body: JSON.stringify({ published: !r.published }),
+            credentials: 'same-origin'
+          });
+          if (!resp.ok) alert('Publish toggle failed');
           refresh();
-        } catch (err) {
-          console.error(err);
-          st.textContent = 'Upload failed';
-        } finally {
-          uploading = false;
-        }
+        };
+        tr.querySelector('[data-act="parse"]').onclick = async () => {
+          const resp = await fetch(`/admin/api/simulations/${r.id}/parse`, {
+            method: 'POST',
+            headers: { ...(csrf ? { 'X-CSRFToken': csrf } : {}) },
+            credentials: 'same-origin'
+          });
+          if (!resp.ok) alert('Parse failed');
+          refresh();
+        };
+        tr.querySelector('[data-act="delete"]').onclick = async () => {
+          if (!confirm('Delete this simulation?')) return;
+          const resp = await fetch(`/admin/api/simulations/${r.id}`, {
+            method: 'DELETE',
+            headers: { ...(csrf ? { 'X-CSRFToken': csrf } : {}) },
+            credentials: 'same-origin'
+          });
+          if (!resp.ok) alert('Delete failed');
+          refresh();
+        };
+        tb.appendChild(tr);
       });
+    }
 
-      refresh();
-    </script>
-  </body>
+    async function uploadWithProgress(file, csrf) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/admin/api/simulations', true);
+        if (csrf) xhr.setRequestHeader('X-CSRFToken', csrf);
+        xhr.withCredentials = true;
+        const prog = document.getElementById('prog');
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) prog.value = Math.round((e.loaded / e.total) * 100);
+        };
+        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve(xhr.response) : reject(xhr.response);
+        xhr.onerror = () => reject('network error');
+        const fd = new FormData();
+        fd.append('file', file);
+        xhr.send(fd);
+      });
+    }
+
+    let uploading = false;
+    window.addEventListener('beforeunload', (e) => {
+      if (!uploading) return;
+      e.preventDefault();
+      e.returnValue = '';
+    });
+
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fileEl = document.getElementById('zipFile');
+      const f = fileEl && fileEl.files ? fileEl.files[0] : null;
+      const st = document.getElementById('uploadStatus');
+      const prog = document.getElementById('prog');
+      if (!f) {
+        st.textContent = 'Please choose a .zip file.';
+        return;
+      }
+      st.textContent = 'Uploading...';
+      prog.value = 0;
+      uploading = true;
+      try {
+        await uploadWithProgress(f, csrf);
+        st.textContent = 'Uploaded';
+        refresh();
+      } catch (err) {
+        st.textContent = 'Upload failed';
+      } finally {
+        uploading = false;
+      }
+    });
+
+    document.getElementById('refreshBtn').addEventListener('click', refresh);
+    refresh();
+  </script>
+</body>
+
 </html>

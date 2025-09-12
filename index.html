@@ -1551,22 +1551,32 @@
 							<!--//シナリオ2-->
 						</div>
 					</div>
-					<div class="c-area__btns column02 js-btns" style="display: flex; flex-wrap: wrap; gap: 8px;">
-						<button class="c-btn c-btn__contents blue" type="submit"
-							style="flex: 1 1 auto; min-width: 150px;">
-							シミュレーション結果
-						</button>
-						<label class="c-btn c-btn__contents blue"
-							style="cursor: pointer; flex: 1 1 auto; min-width: 150px; position: relative;">
-							<input type="file" id="folderUpload" webkitdirectory style="display: none;">
-							<span id="folderUploadLabel">📁 Upload MATSim Folder</span>
-							<span id="folderUploadSpinner" style="display: none; margin-left: 8px;">⏳</span>
-						</label>
 
-						<button id="toggleAnalysisBtn" type="button" class="c-btn c-btn__contents"
-							style="flex: 0 0 auto; min-width: 150px;">
-							▼ 解析パネルを開く
-						</button>
+
+					<div class="c-area__btns" style="display:flex; flex-direction:column; gap:12px;">
+						<div style="display:flex; gap:8px; align-items:flex-start;">
+							<button class="c-btn c-btn__contents blue" type="submit"
+								style="min-width:150px; flex:0 0 auto;">
+								シミュレーション結果
+							</button>
+
+							<div class="c-btn c-btn__contents blue" style=" display:flex; flex-direction:column; gap:6px; flex:0 0 auto; min-height:48px; min-width:150px; width:fit-content; padding:10px 12px; line-height:1.2; box-sizing:border-box;">
+								<div style="font-weight:700; color:#fff; text-align:center; white-space:nowrap;">Published Simulations</div>
+								<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+									<select id="simulationSelect"
+										style="flex:1 1 auto; min-width:0; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></select>
+									<button type="button" id="loadSimulationBtn" class="c-btn__small">Load</button>
+									<span id="loadSimSpinner" style="display:none; margin-left:8px;">⏳</span>
+								</div>
+							</div>
+						</div>
+
+						<div style="display:inline-flex;">
+							<button id="toggleAnalysisBtn" type="button" class="c-btn c-btn__contents"
+								style="min-width:150px; flex:0 0 auto;">
+								▼ 解析パネルを開く
+							</button>
+						</div>
 					</div>
 
 					<div id="analysisBlock" class="collapsible">

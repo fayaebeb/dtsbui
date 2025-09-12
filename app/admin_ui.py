@@ -10,3 +10,7 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 def dashboard():
     return render_template("admin_index.html")
 
+@admin_bp.route("/sim")
+@login_required
+def sim_view():
+    return render_template("sim.html")

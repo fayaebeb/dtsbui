@@ -1,7 +1,7 @@
 import json
 import os
 import gzip
-from flask import Blueprint, render_template, jsonify, current_app
+from flask import Blueprint, render_template, jsonify, current_app, send_file, send_from_directory
 from .models import list_simulations, get_simulation
 from .parsing import parse_plans_to_json
 
@@ -11,13 +11,22 @@ public_bp = Blueprint("public", __name__)
 
 @public_bp.route("/")
 def home():
+    # Serve the existing rich viewer at project root
+    root_index = os.path.join(os.getcwd(), "index.html")
+    if os.path.isfile(root_index):
+        return send_file(root_index)
     return render_template("index.html")
+
+
+@public_bp.route("/assets/<path:filename>")
+def assets(filename):
+    assets_root = os.path.join(os.getcwd(), "assets")
+    return send_from_directory(assets_root, filename)
 
 
 @public_bp.route("/api/simulations", methods=["GET"])
 def public_list():
     rows = list_simulations(all_rows=False)
-    # Return minimal public metadata
     return jsonify([
         {
             "id": r["id"],

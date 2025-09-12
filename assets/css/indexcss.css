@@ -497,3 +497,11 @@ details.c-route>.c-route__setting {
     cursor: move;
     user-select: none;
 }
+
+#loadSimulationBtn.c-btn__small {
+  padding: 6px 14px;
+}
+
+#loadSimulationBtn.c-btn__small::before {
+  content: none !important;
+}
