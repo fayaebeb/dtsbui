@@ -1,56 +1,69 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Simulation Viewer</title>
-    <style>
-      body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;margin:1.5rem}
-      .list{margin:1rem 0}
-      li{margin:.25rem 0}
-      pre{white-space:pre-wrap; word-break:break-word; background:#f7f7f7; padding:1rem; border-radius:8px}
-    </style>
-  </head>
-  <body>
-    <header>
-      <h1>Public Simulation Viewer</h1>
-      <p>No login required. Published simulations only.</p>
-    </header>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulation Viewer</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-soft">
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <span class="brand-badge">DTSB</span>
+        <span class="brand-sub">Viewer</span>
+      </div>
+    </div>
+  </header>
 
-    <section>
-      <h2>Published Simulations</h2>
+  <main class="container py-lg grid grid-2col gap-xl">
+    <section class="card">
+      <header class="section-header">
+        <div>
+          <h2>Published Simulations</h2>
+          <p class="muted">Public list of available simulations.</p>
+        </div>
+        <button id="reload" class="btn subtle">Reload</button>
+      </header>
       <ul id="simList" class="list"></ul>
     </section>
 
-    <section>
-      <h2>Data (preview)</h2>
-      <p>First person only, pretty-printed for demo.</p>
-      <pre id="dataOut">Select a simulation to fetch parsed data...</pre>
+    <section class="card">
+      <header class="section-header">
+        <div>
+          <h2>Data Preview</h2>
+          <p class="muted">First record, pretty-printed.</p>
+        </div>
+      </header>
+      <pre id="dataOut" class="code-block">Select a simulation to fetch parsed data...</pre>
     </section>
+  </main>
 
-    <script>
-      async function loadList(){
-        const res = await fetch('/api/simulations');
-        const rows = await res.json();
-        const ul = document.getElementById('simList');
-        ul.innerHTML = '';
-        rows.forEach(r => {
-          const li = document.createElement('li');
-          const a = document.createElement('a');
-          a.href = '#';
-          a.textContent = `${r.name} — ${r.id}`;
-          a.onclick = async () => {
-            const resp = await fetch(`/api/simulations/${r.id}/data`);
-            const data = await resp.json();
-            const first = Array.isArray(data) && data.length ? data[0] : data;
-            document.getElementById('dataOut').textContent = JSON.stringify(first, null, 2);
-          };
-          li.appendChild(a);
-          ul.appendChild(li);
-        });
-      }
-      loadList();
-    </script>
-  </body>
-  </html>
-
+  <script>
+    async function loadList(){
+      const res = await fetch('/api/simulations');
+      const rows = await res.json();
+      const ul = document.getElementById('simList');
+      ul.innerHTML = '';
+      rows.forEach(r => {
+        const li = document.createElement('li');
+        li.className = 'list-item';
+        const a = document.createElement('a');
+        a.href = '#';
+        a.className = 'link';
+        a.textContent = `${r.name} — ${r.id}`;
+        a.onclick = async () => {
+          const resp = await fetch(`/api/simulations/${r.id}/data`);
+          const data = await resp.json();
+          const first = Array.isArray(data) && data.length ? data[0] : data;
+          document.getElementById('dataOut').textContent = JSON.stringify(first, null, 2);
+        };
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+    }
+    document.getElementById('reload').addEventListener('click', loadList);
+    loadList();
+  </script>
+</body>
+</html>
