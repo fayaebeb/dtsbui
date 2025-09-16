@@ -2,7 +2,7 @@ Flask
 Flask-Login
 Flask-WTF
 Flask-Compress
-python-dotenv
+python-dotenv==1.0.1
 openai
 gunicorn
 azure-storage-blob
