@@ -59,7 +59,7 @@
 								<dt>表示切替</dt>
 								<dd>
 									<label class="l-contents__map-btn">
-										<input type="checkbox" id="data_root" name="data_root" checked>
+										<input type="checkbox" id="data_root" name="data_root">
 										<span class="btn">路線</span>
 									</label>
 									<label class="l-contents__map-btn">
@@ -72,7 +72,7 @@
 										<span class="btn">乗降客数</span>
 									</label>
 									<label class="l-contents__map-btn">
-										<input type="checkbox" id="toggleBusRoutes">
+										<input type="checkbox" id="toggleBusRoutes" checked>
 										<span class="btn">バス路線表示</span>
 									</label>
 									<label class="l-contents__map-btn">
@@ -141,23 +141,15 @@
 				</div>
 				<div class="l-contents__data">
 					<div class="c-box c-box__route c-area__scroll">
-						<dl class="c-route__setting l-contents__parameter">
+						<!-- <dl class="c-route__setting l-contents__parameter">
 							<dt style="font-size: 2.0rem; font-weight: bold;">パラメーター</dt>
 							<dd class="c-input__radio">
 								<label class="c-input__radio-label">
 									<input type="radio" name="parameter_mode" value="現状" checked
 										data-target=".js-parameter-content.current">現状
 								</label>
-								<label class="c-input__radio-label">
-									<input type="radio" name="parameter_mode" value="シナリオ1"
-										data-target=".js-parameter-content.scenario1">シナリオ1
-								</label>
-								<label class="c-input__radio-label">
-									<input type="radio" name="parameter_mode" value="シナリオ2"
-										data-target=".js-parameter-content.scenario2">シナリオ2
-								</label>
 							</dd>
-						</dl>
+						</dl> -->
 
 						<div class="c-box__route-wrap">
 							<!--現状-->
@@ -619,936 +611,6 @@
 								<!--//現状：路線B-->
 							</div>
 							<!--//現状-->
-							<!--シナリオ1-->
-							<div class="c-box__route-content js-parameter-content">
-								<!--シナリオ1：路線A-->
-								<details class="c-route c-details js-route" data-route="scenario01_route_a" open>
-									<summary class="c-details__summary">路線A</summary>
-									<dl class="c-route__setting">
-										<dt>BRT導入</dt>
-										<dd class="c-input__radio">
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario01_a_brt" value="0">無</label>
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario01_a_brt" value="1" checked>有</label>
-										</dd>
-										<dt class="fare-label">
-											運賃
-											<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="scenario01_a_fare">
-												リセット
-											</span>
-										</dt>
-										<dd class="c-input__range" id="scenario01_a_fare">
-											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-rangeforslider">
-												<div class="c-input__range-minmax u-en">
-													<span class="js-range-min">0</span>
-													<span class="js-range-max">1000</span>
-												</div>
-
-												<div class="c-input__range-wrap dual">
-													<input type="range" id="fareRangeMin_scenario01a" min="0" max="1000"
-														value="140" step="10" />
-													<input type="range" id="fareRangeMax_scenario01a" min="0" max="1000"
-														value="410" step="10" />
-
-													<div class="range-bubble range-bubble-min"
-														id="bubbleMin_scenario01a">140円<br>(±0)</div>
-													<div class="range-bubble range-bubble-max"
-														id="bubbleMax_scenario01a">410円<br>(±0)</div>
-													<div class="range-fixed-bubble" style="left: 27.5%;">140～410円</div>
-
-													<i class="c-input__range-markforslider js-range-mark equal"></i>
-
-
-												</div>
-											</div>
-										</dd>
-										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="scenario01_a_frequency">まとめてリセット</span></dt>
-										<dd id="scenario01_a_frequency">
-											<dl class="c-frequency">
-												<dt class="c-frequency__hours">6～9時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario01_a_frequency_0609">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario01_a_frequency_0609">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="4">4</span>
-															<small class="js-range-diff" data-saved="(+2)">(+2)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario01_a_frequency_0609"
-																value="4" data-saved="4" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">9～12時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario01_a_frequency_0912">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario01_a_frequency_0912">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="1">1</span>
-															<small class="js-range-diff" data-saved="(-1)">(-1)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario01_a_frequency_0912"
-																value="1" data-saved="1" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">12～15時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario01_a_frequency_1215">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario01_a_frequency_1215">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario01_a_frequency_1215"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">15～18時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario01_a_frequency_1518">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario01_a_frequency_1518">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario01_a_frequency_1518"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">18～21時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario01_a_frequency_1821">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario01_a_frequency_1821">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario01_a_frequency_1821"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">21時～<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario01_a_frequency_21">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario01_a_frequency_21">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario01_a_frequency_21"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-											</dl>
-										</dd>
-										<dt>専用レーン</dt>
-										<dd class="c-input__radio">
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario01_a_lanes" class="js-route-lanes" value="0"
-													checked>無</label>
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario01_a_lanes" class="js-route-lanes" value="1">有</label>
-										</dd>
-										<dt>隊列走行</dt>
-										<dd class="c-input__radio">
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario01_a_platooning" value="0">無</label>
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario01_a_platooning" value="1" checked>有</label>
-										</dd>
-									</dl>
-								</details>
-								<!--//シナリオ1：路線A-->
-								<!--シナリオ1：路線B-->
-								<details class="c-route c-details js-route" data-route="scenario01_route_b">
-									<summary class="c-details__summary">路線B</summary>
-									<dl class="c-route__setting">
-										<dt>BRT導入</dt>
-										<dd class="c-input__radio">
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario01_b_brt" value="0">無</label>
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario01_b_brt" value="1" checked>有</label>
-										</dd>
-										<dt class="fare-label">
-											運賃
-											<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="scenario01_b_fare">
-												リセット
-											</span>
-										</dt>
-										<dd class="c-input__range" id="scenario01_b_fare">
-											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-rangeforslider">
-												<div class="c-input__range-minmax u-en">
-													<span class="js-range-min">0</span>
-													<span class="js-range-max">1000</span>
-												</div>
-
-												<div class="c-input__range-wrap dual">
-													<input type="range" id="fareRangeMin_scenario01b" min="0" max="1000"
-														value="120" step="10" />
-													<input type="range" id="fareRangeMax_scenario01b" min="0" max="1000"
-														value="390" step="10" />
-
-													<div class="range-bubble range-bubble-min"
-														id="bubbleMin_scenario01b">120円<br>(±0)</div>
-													<div class="range-bubble range-bubble-max"
-														id="bubbleMax_scenario01b">390円<br>(±0)</div>
-													<div class="range-fixed-bubble" style="left: 25.5%;">120～390円</div>
-
-
-													<i class="c-input__range-markforslider js-range-mark equal"></i>
-
-
-												</div>
-											</div>
-										</dd>
-										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="scenario01_b_frequency">まとめてリセット</span></dt>
-										<dd id="scenario01_b_frequency">
-											<dl class="c-frequency">
-												<dt class="c-frequency__hours">6～9時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario01_b_frequency_0609">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario01_b_frequency_0609">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario01_b_frequency_0609"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">9～12時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario01_b_frequency_0912">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario01_b_frequency_0912">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario01_b_frequency_0912"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">12～15時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario01_b_frequency_1215">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario01_b_frequency_1215">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario01_b_frequency_1215"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">15～18時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario01_b_frequency_1518">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario01_b_frequency_1518">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario01_b_frequency_1518"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">18～21時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario01_b_frequency_1821">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario01_b_frequency_1821">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario01_b_frequency_1821"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">21時～<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario01_b_frequency_21">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario01_b_frequency_21">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario01_b_frequency_21"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-											</dl>
-										</dd>
-										<dt>専用レーン</dt>
-										<dd class="c-input__radio">
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario01_b_lanes" class="js-route-lanes" value="0"
-													checked>無</label>
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario01_b_lanes" class="js-route-lanes" value="1">有</label>
-										</dd>
-										<dt>隊列走行</dt>
-										<dd class="c-input__radio">
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario01_b_platooning" value="0">無</label>
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario01_b_platooning" value="1" checked>有</label>
-										</dd>
-									</dl>
-								</details>
-								<!--//シナリオ1：路線B-->
-							</div>
-							<!--//シナリオ1-->
-							<!--シナリオ2-->
-							<div class="c-box__route-content js-parameter-content">
-								<!--シナリオ2：路線A-->
-								<details class="c-route c-details js-route" data-route="scenario02_route_a" open>
-									<summary class="c-details__summary">路線A</summary>
-									<dl class="c-route__setting">
-										<dt>BRT導入</dt>
-										<dd class="c-input__radio">
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario02_a_brt" value="0">無</label>
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario02_a_brt" value="1" checked>有</label>
-										</dd>
-										<dt class="fare-label">
-											運賃
-											<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="scenario02_a_fare">
-												リセット
-											</span>
-										</dt>
-										<dd class="c-input__range" id="scenario02_a_fare">
-											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-rangeforslider">
-												<div class="c-input__range-minmax u-en">
-													<span class="js-range-min">0</span>
-													<span class="js-range-max">1000</span>
-												</div>
-
-												<div class="c-input__range-wrap dual">
-													<input type="range" id="fareRangeMin_scenario02a" min="0" max="1000"
-														value="160" step="10" />
-													<input type="range" id="fareRangeMax_scenario02a" min="0" max="1000"
-														value="430" step="10" />
-
-													<div class="range-bubble range-bubble-min"
-														id="bubbleMin_scenario02a">160円<br>(±0)</div>
-													<div class="range-bubble range-bubble-max"
-														id="bubbleMax_scenario02a">430円<br>(±0)</div>
-													<div class="range-fixed-bubble" style="left: 29.5%;">160～430円</div>
-
-
-													<i class="c-input__range-markforslider js-range-mark equal"></i>
-
-
-												</div>
-											</div>
-										</dd>
-										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="scenario02_a_frequency">まとめてリセット</span></dt>
-										<dd id="scenario02_a_frequency">
-											<dl class="c-frequency">
-												<dt class="c-frequency__hours">6～9時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario02_a_frequency_0609">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario02_a_frequency_0609">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="6">6</span>
-															<small class="js-range-diff" data-saved="(+4)">(+4)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario02_a_frequency_0609"
-																value="6" data-saved="6" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">9～12時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario02_a_frequency_0912">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario02_a_frequency_0912">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="4">4</span>
-															<small class="js-range-diff" data-saved="(+3)">(+3)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario02_a_frequency_0912"
-																value="4" data-saved="4" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">12～15時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario02_a_frequency_1215">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario02_a_frequency_1215">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario02_a_frequency_1215"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">15～18時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario02_a_frequency_1518">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario02_a_frequency_1518">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario02_a_frequency_1518"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">18～21時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario02_a_frequency_1821">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario02_a_frequency_1821">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario02_a_frequency_1821"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">21時～<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario02_a_frequency_21">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario02_a_frequency_21">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario02_a_frequency_21"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-											</dl>
-										</dd>
-										<dt>専用レーン</dt>
-										<dd class="c-input__radio">
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario02_a_lanes" class="js-route-lanes" value="0">無</label>
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario02_a_lanes" class="js-route-lanes" value="1"
-													checked>有</label>
-										</dd>
-										<dt>隊列走行</dt>
-										<dd class="c-input__radio">
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario02_a_platooning" value="0">無</label>
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario02_a_platooning" value="1" checked>有</label>
-										</dd>
-									</dl>
-								</details>
-								<!--//シナリオ2：路線A-->
-								<!--シナリオ2：路線B-->
-								<details class="c-route c-details js-route" data-route="scenario02_route_b">
-									<summary class="c-details__summary">路線B</summary>
-									<dl class="c-route__setting">
-										<dt>BRT導入</dt>
-										<dd class="c-input__radio">
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario02_b_brt" value="0">無</label>
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario02_b_brt" value="1" checked>有</label>
-										</dd>
-										<dt class="fare-label">
-											運賃
-											<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="scenario02_b_fare">
-												リセット
-											</span>
-										</dt>
-										<dd class="c-input__range" id="scenario02_b_fare">
-											<span class="c-input__range-unit">運賃 (円)</span>
-											<div class="c-input__range-container js-rangeforslider">
-												<div class="c-input__range-minmax u-en">
-													<span class="js-range-min">0</span>
-													<span class="js-range-max">1000</span>
-												</div>
-
-												<div class="c-input__range-wrap dual">
-													<input type="range" id="fareRangeMin_scenario02b" min="0" max="1000"
-														value="120" step="10" />
-													<input type="range" id="fareRangeMax_scenario02b" min="0" max="1000"
-														value="390" step="10" />
-
-													<div class="range-bubble range-bubble-min"
-														id="bubbleMin_scenario02b">120円<br>(±0)</div>
-													<div class="range-bubble range-bubble-max"
-														id="bubbleMax_scenario02b">390円<br>(±0)</div>
-													<div class="range-fixed-bubble" style="left: 25.5%;">120～390円</div>
-
-													<i class="c-input__range-markforslider js-range-mark equal"></i>
-
-
-												</div>
-											</div>
-										</dd>
-										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="scenario02_b_frequency">まとめてリセット</span></dt>
-										<dd id="scenario02_b_frequency">
-											<dl class="c-frequency">
-												<dt class="c-frequency__hours">6～9時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario02_b_frequency_0609">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario02_b_frequency_0609">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario02_b_frequency_0609"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">9～12時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario02_b_frequency_0912">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario02_b_frequency_0912">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario02_b_frequency_0912"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">12～15時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario02_b_frequency_1215">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario02_b_frequency_1215">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario02_b_frequency_1215"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">15～18時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario02_b_frequency_1518">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario02_b_frequency_1518">
-													<span class=" c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario02_b_frequency_1518"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">18～21時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario02_b_frequency_1821">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario02_b_frequency_1821">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario02_b_frequency_1821"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-												<dt class="c-frequency__hours">21時～<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="scenario02_b_frequency_21">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="scenario02_b_frequency_21">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="scenario02_b_frequency_21"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-											</dl>
-										</dd>
-										<dt>専用レーン</dt>
-										<dd class="c-input__radio">
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario02_b_lanes" class="js-route-lanes" value="0">無</label>
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario02_b_lanes" class="js-route-lanes" value="1"
-													checked>有</label>
-										</dd>
-										<dt>隊列走行</dt>
-										<dd class="c-input__radio">
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario02_b_platooning" value="0">無</label>
-											<label class="c-input__radio-label"><input type="radio"
-													name="scenario02_b_platooning" value="1" checked>有</label>
-										</dd>
-									</dl>
-								</details>
-								<!--//シナリオ2：路線B-->
-							</div>
-							<!--//シナリオ2-->
 						</div>
 					</div>
 
@@ -1560,8 +622,10 @@
 								シミュレーション結果
 							</button>
 
-							<div class="c-btn c-btn__contents blue" style=" display:flex; flex-direction:column; gap:6px; flex:0 0 auto; min-height:48px; min-width:150px; width:fit-content; padding:10px 12px; line-height:1.2; box-sizing:border-box;">
-								<div style="font-weight:700; color:#fff; text-align:center; white-space:nowrap;">Published Simulations</div>
+							<div class="c-btn c-btn__contents blue"
+								style=" display:flex; flex-direction:column; gap:6px; flex:0 0 auto; min-height:48px; min-width:150px; width:fit-content; padding:10px 12px; line-height:1.2; box-sizing:border-box;">
+								<div style="font-weight:700; color:#fff; text-align:center; white-space:nowrap;">
+									Published Simulations</div>
 								<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
 									<select id="simulationSelect"
 										style="flex:1 1 auto; min-width:0; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></select>
@@ -1870,35 +934,12 @@
 			const breadcrumbLinks = document.querySelectorAll('.breadcrumb-arrow a');
 			breadcrumbLinks.forEach(link => {
 				link.addEventListener('click', function (e) {
-					e.preventDefault(); // Block navigation
+					e.preventDefault();
 				});
 			});
 		});
 	</script>
 
-
-	<div id="lane-popup" style="
-    position: absolute;
-    top: 300px;
-    left: 40%;
-    transform: translateX(-50%);
-    background: linear-gradient(135deg, #8a2be2, #6a0dad);
-    color: #f8f6ff;
-    border: 1px solid #c8a2ff;
-    padding: 14px 28px;
-    border-radius: 14px;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
-    display: none;
-    z-index: 9999;
-    font-size: 17px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-weight: 600;
-    max-width: 90%;
-    text-align: center;
-    transition: opacity 0.3s ease, transform 0.3s ease;
-">
-		専用レーンを選択してください
-	</div>
 
 	<div id="landUseMenu" class="landuse-panel">
 		<div class="landuse-header" id="landUseMenuHeader">用途選択</div>
@@ -1966,19 +1007,17 @@
 			const btn = document.getElementById('toggleAnalysisBtn');
 			if (!block || !btn) return;
 
-			const MAX_VH = 60; // cap when open (adjust to taste)
+			const MAX_VH = 60;
 
 			function applyOpenStyles() {
-				// compute target height: min(content, cap)
 				const capPx = Math.floor(window.innerHeight * (MAX_VH / 100));
-				// temporarily remove maxHeight to read true scrollHeight
 				const prev = block.style.maxHeight;
 				block.style.maxHeight = 'none';
 				const contentHeight = block.scrollHeight;
 				const target = Math.min(contentHeight, capPx);
 
 				block.style.maxHeight = target + 'px';
-				block.classList.toggle('scroll', contentHeight > capPx); // allow internal scroll if capped
+				block.classList.toggle('scroll', contentHeight > capPx);
 			}
 
 			function setOpen(open) {
@@ -1994,41 +1033,33 @@
 				localStorage.setItem('analysisOpen', open ? '1' : '0');
 			}
 
-			// Recompute height on resize when open
 			function handleResize() {
 				if (block.classList.contains('open')) applyOpenStyles();
 			}
 			window.addEventListener('resize', handleResize);
 
-			// Watch for content changes (e.g., after table renders) and reflow
 			const mo = new MutationObserver(() => {
 				if (block.classList.contains('open')) {
-					// debounce a bit to let layout settle
 					requestAnimationFrame(applyOpenStyles);
 				}
 			});
 			mo.observe(block, { childList: true, subtree: true });
 
-			// Toggle click
 			btn.addEventListener('click', () => {
 				const next = !block.classList.contains('open');
 				setOpen(next);
 			});
 
-			// Restore previous state (default collapsed)
 			const saved = localStorage.getItem('analysisOpen');
 			const shouldOpen = saved === '1';
 			requestAnimationFrame(() => setOpen(shouldOpen));
 
-			// Optional: expose a manual hook you can call after rendering the table
 			window.reflowAnalysisPanel = () => {
 				if (block.classList.contains('open')) applyOpenStyles();
 			};
 		})();
 	</script>
 
-	<!-- libs -->
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.10.0/proj4.min.js"></script>
 
 </body>
 
