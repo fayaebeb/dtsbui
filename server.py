@@ -1,8 +1,10 @@
 from dotenv import load_dotenv
 load_dotenv()
+
+import os
 from flask import Flask, send_from_directory
 from flask_compress import Compress
-import os
+
 from app import create_app, csrf
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -14,6 +16,12 @@ def build_app() -> Flask:
     from story_api import story_bp
     csrf.exempt(story_bp)
     app.register_blueprint(story_bp)
+
+    try:
+        from app.admin_uploads import bp as admin_uploads_bp
+        app.register_blueprint(admin_uploads_bp)
+    except Exception:
+        pass
 
     @app.route("/matsim_data/<path:filename>")
     def matsim_files(filename):
@@ -30,6 +38,10 @@ def build_app() -> Flask:
     @app.route("/")
     def index():
         return send_from_directory(BASE_DIR, "index.html")
+
+    @app.route("/healthz")
+    def healthz():
+        return "ok", 200
 
     return app
 

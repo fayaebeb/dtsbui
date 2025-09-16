@@ -4,5 +4,5 @@ Flask-WTF
 Flask-Compress
 python-dotenv
 openai
-azure-storage-blob
 gunicorn
+azure-storage-blob

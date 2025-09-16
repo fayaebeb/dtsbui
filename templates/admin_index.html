@@ -191,6 +191,27 @@
     document.getElementById('refreshBtn').addEventListener('click', refresh);
     refresh();
   </script>
+
+  <script type="module">
+    import { BlobClient, BlockBlobClient } from "https://esm.sh/@azure/storage-blob@12.16.0";
+
+    async function uploadBig(file) {
+      const res = await fetch("/admin/api/upload-sas", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name })
+      });
+      const { sasUrl } = await res.json();
+
+      const blob = new BlockBlobClient(sasUrl);
+      await blob.uploadBrowserData(file, { blockSize: 4 * 1024 * 1024, concurrency: 8 });
+
+      await fetch("/admin/api/simulations/import-from-blob", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name })
+      });
+    }
+  </script>
+
 </body>
 
 </html>

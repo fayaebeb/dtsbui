@@ -48,7 +48,7 @@ def create_app():
     # ---- Init extensions ----
     csrf.init_app(app)
     login_manager.init_app(app)
-    login_manager.login_view = "auth.login"
+    login_manager.login_view = "auth.login"  # type: ignore[assignment]
 
     # Make csrf_token() available in templates
     from flask_wtf.csrf import generate_csrf
