@@ -4,6 +4,7 @@ import logging
 import re
 from typing import Any, Dict, List, Tuple, Optional
 from collections import Counter, defaultdict
+from threading import Lock
 
 from flask import Blueprint, request, jsonify
 from openai import OpenAI
@@ -26,8 +27,33 @@ DEFAULT_WEIGHTS: Dict[str, Dict[str, float]] = {
     "leg": {"car": -2.0, "walk": 0.5, "pt": 0.1, "__other__": 0.0},
 }
 
-client = OpenAI(timeout=20, max_retries=2)
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
+
+_OPENAI_CLIENT_LOCK = Lock()
+_OPENAI_CLIENT: Optional[OpenAI] = None
+_OPENAI_CLIENT_WARNED = False
+
+
+def _get_openai_client() -> Optional[OpenAI]:
+    global _OPENAI_CLIENT, _OPENAI_CLIENT_WARNED
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        if not _OPENAI_CLIENT_WARNED:
+            logger.warning("OPENAI_API_KEY not configured; story endpoints disabled")
+            _OPENAI_CLIENT_WARNED = True
+        return None
+    with _OPENAI_CLIENT_LOCK:
+        if _OPENAI_CLIENT is not None:
+            return _OPENAI_CLIENT
+        try:
+            _OPENAI_CLIENT = OpenAI(api_key=api_key, timeout=20, max_retries=2)
+        except Exception as exc:
+            if not _OPENAI_CLIENT_WARNED:
+                logger.exception("Failed to initialize OpenAI client: %s", exc)
+                _OPENAI_CLIENT_WARNED = True
+            return None
+        return _OPENAI_CLIENT
+
 
 story_bp = Blueprint("story_bp", __name__)
 
@@ -267,6 +293,10 @@ def generate_story():
     lines, stats = _summarize_plan(steps, cap=60)
     approved_facts = _safe_facts(stats)
     must_use = _core_facts(stats, approved_facts)  # 2–4 prioritized facts
+
+    client = _get_openai_client()
+    if client is None:
+        return jsonify({"error": "LLM integration not configured"}), 503
 
     try:
         # ---- Build request payload for the LLM ----
