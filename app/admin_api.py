@@ -181,29 +181,111 @@ def delete_sim(sim_id):
 @admin_api_bp.route("/simulations/<sim_id>/parse", methods=["POST"])
 @login_required
 def parse_and_cache(sim_id):
+    """
+    Parse plans/facilities from a simulation.
+    If local extracted folder exists, use it.
+    Otherwise, stream only needed XMLs from Azure Blob without downloading entire zip.
+    """
+    import io, tempfile, json, gzip, zipfile
+    from azure.storage.blob import BlobClient
+
     sim = get_simulation(sim_id)
     if not sim:
         return jsonify({"error": "Not found"}), 404
-    folder = sim["path"]
 
-    # locate plans and optional facilities
-    plan_candidates = ["output_plans.xml.gz", "output_plans.xml"]
-    plans_path = next((os.path.join(folder, c) for c in plan_candidates if os.path.isfile(os.path.join(folder, c))), None)
-    if not plans_path:
-        return jsonify({"error": "plans file not found"}), 400
+    plans_path = None
+    facilities_path = None
 
-    fac_candidates = ["output_facilities.xml.gz", "facilities.xml.gz", "output_facilities.xml", "facilities.xml"]
-    facilities_path = next((os.path.join(folder, c) for c in fac_candidates if os.path.isfile(os.path.join(folder, c))), None)
+    # --------------------------
+    # Case 1: local extracted folder
+    # --------------------------
+    folder = sim.get("path")
+    if folder and os.path.isdir(folder):
+        plan_candidates = ["output_plans.xml.gz", "output_plans.xml"]
+        plans_path = next((os.path.join(folder, c) for c in plan_candidates if os.path.isfile(os.path.join(folder, c))), None)
 
+        fac_candidates = ["output_facilities.xml.gz", "facilities.xml.gz", "output_facilities.xml", "facilities.xml"]
+        facilities_path = next((os.path.join(folder, c) for c in fac_candidates if os.path.isfile(os.path.join(folder, c))), None)
+
+        if not plans_path:
+            return jsonify({"error": "plans file not found"}), 400
+
+    else:
+        # --------------------------
+        # Case 2: blob-only storage
+        # --------------------------
+        blob_name = sim.get("blob_name")
+        if not blob_name:
+            return jsonify({"error": "No path or blob available"}), 400
+
+        bsc, account, container, _key = get_storage_context()
+        blob: BlobClient = bsc.get_blob_client(container, blob_name)
+
+        # Download the *central directory only* to find candidate names
+        props = blob.get_blob_properties()
+        blob_size = props.size
+        cd_tail_size = min(blob_size, 2 * 1024 * 1024)  # last 2MB should cover central dir
+        cd_tail = io.BytesIO()
+        blob.download_blob(offset=blob_size - cd_tail_size, length=cd_tail_size).readinto(cd_tail)
+        cd_tail.seek(0)
+
+        # Fake file for ZipFile
+        with zipfile.ZipFile(blob.download_blob().chunks(), "r") as zf:
+            # Find candidate files
+            plan_candidates = ["output_plans.xml.gz", "output_plans.xml"]
+            fac_candidates = ["output_facilities.xml.gz", "facilities.xml.gz", "output_facilities.xml", "facilities.xml"]
+
+            with tempfile.TemporaryDirectory(dir=current_app.config["STORAGE_ROOT"]) as tmpd:
+                for candidate in plan_candidates:
+                    try:
+                        with zf.open(candidate) as src, open(os.path.join(tmpd, candidate), "wb") as dst:
+                            shutil.copyfileobj(src, dst, length=1024 * 1024)
+                        plans_path = os.path.join(tmpd, candidate)
+                        break
+                    except KeyError:
+                        continue
+
+                for candidate in fac_candidates:
+                    try:
+                        with zf.open(candidate) as src, open(os.path.join(tmpd, candidate), "wb") as dst:
+                            shutil.copyfileobj(src, dst, length=1024 * 1024)
+                        facilities_path = os.path.join(tmpd, candidate)
+                        break
+                    except KeyError:
+                        continue
+
+                if not plans_path:
+                    return jsonify({"error": "plans file not found"}), 400
+
+                # --------------------------
+                # Parse immediately and save cache
+                # --------------------------
+                persons = parse_plans_to_json(
+                    plans_path,
+                    facilities_path,
+                    max_persons=int(request.args.get("limit", 1000)),
+                    selected_only_flag=False,
+                )
+
+                parsed_dir = os.path.join(current_app.config["STORAGE_ROOT"], "parsed")
+                os.makedirs(parsed_dir, exist_ok=True)
+                out_path = os.path.join(parsed_dir, f"{sim_id}.json.gz")
+                with gzip.open(out_path, "wt", encoding="utf-8") as g:
+                    json.dump(persons, g)
+
+                row = update_simulation(sim_id, cached_json_path=out_path)
+                return jsonify({"ok": True, "count": len(persons), "cache": out_path, "simulation": row})
+
+    # --------------------------
+    # Case 1 parsing (local folder)
+    # --------------------------
     persons = parse_plans_to_json(
         plans_path,
         facilities_path,
         max_persons=int(request.args.get("limit", 1000)),
-        selected_only_flag=False
+        selected_only_flag=False,
     )
 
-    # store as gzip json
-    import json, gzip
     parsed_dir = os.path.join(current_app.config["STORAGE_ROOT"], "parsed")
     os.makedirs(parsed_dir, exist_ok=True)
     out_path = os.path.join(parsed_dir, f"{sim_id}.json.gz")

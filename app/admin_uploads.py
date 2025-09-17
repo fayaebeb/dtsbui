@@ -136,3 +136,48 @@ def import_from_blob():
         "blobSize": getattr(props, "size", None),
     })
 
+
+@bp.route("/simulations/register-blob", methods=["POST"])
+@login_required
+def register_blob():
+    """
+    Body: { "blob_name": "simulations/<uuid>_file.zip", "original_name": "file.zip" }
+    Creates a DB row pointing at the blob. No extraction here.
+    """
+    from flask_login import current_user
+    from typing import cast
+    import os, uuid
+    from .models import insert_simulation_with_id
+    from .azure_utils import get_storage_context
+    from azure.storage.blob import BlobClient
+
+    payload = request.get_json(silent=True) or {}
+    blob_name = (payload.get("blob_name") or "").strip()
+    display_name = (payload.get("original_name") or os.path.basename(blob_name)).strip() or os.path.basename(blob_name)
+    if not blob_name:
+        return jsonify({"error": "blob_name required"}), 400
+
+    bsc, account, container, _key = get_storage_context()
+    blob: BlobClient = bsc.get_blob_client(container, blob_name)
+
+    try:
+        props = blob.get_blob_properties()
+    except Exception:
+        return jsonify({"error": "Blob not found"}), 404
+
+    # We still keep a local root for DB/parsed cache; but we DO NOT extract the ZIP here.
+    storage_root = current_app.config.get("STORAGE_ROOT", "/home/site/storage")
+    os.makedirs(storage_root, exist_ok=True)
+
+    sim_id = uuid.uuid4().hex
+    username = cast(str, getattr(current_user, "username", "")) or ""
+    row = insert_simulation_with_id(
+        sim_id=sim_id,
+        name=display_name,
+        path="",              # no local extraction path
+        size=getattr(props, "size", None) or 0,
+        uploaded_by=username,
+        published=0,
+        blob_name=blob_name,  # **this** is how we locate the file later
+    )
+    return jsonify({"ok": True, "simulation": row})

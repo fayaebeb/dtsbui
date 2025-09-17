@@ -23,7 +23,7 @@ def create_app():
     # ---- Storage locations ----
     storage_root = os.getenv("STORAGE_ROOT", os.path.join(root, "data"))
     app.config["STORAGE_ROOT"] = storage_root
-    app.config["DB_PATH"] = os.getenv("DB_PATH", os.path.join(storage_root, "app.db"))
+    app.config["DB_PATH"] = os.path.join(os.getenv("STORAGE_ROOT", "/home/site/storage"), "app.db")
     app.config["UPLOAD_FOLDER"] = os.path.join(storage_root, "uploads")
     parsed_dir = os.path.join(storage_root, "parsed")
 

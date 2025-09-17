@@ -180,7 +180,7 @@
       });
       if (prog) prog.value = 100;
 
-      const importRes = await fetch('/admin/api/simulations/import-from-blob', {
+      const importRes = await fetch('/admin/api/simulations/register-blob', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...baseHeaders },
         body: JSON.stringify({ blob_name: blobName, original_name: file.name }),
