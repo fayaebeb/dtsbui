@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sqlite3
 import uuid
 from datetime import datetime
@@ -17,8 +17,18 @@ def get_db():
     return conn
 
 
+def _ensure_blob_column(conn: sqlite3.Connection) -> None:
+    cur = conn.cursor()
+    cur.execute("PRAGMA table_info(simulations)")
+    cols = [row[1] for row in cur.fetchall()]
+    if "blob_name" not in cols:
+        cur.execute("ALTER TABLE simulations ADD COLUMN blob_name TEXT")
+        conn.commit()
+
+
 def init_db(app=None):
     from flask import current_app as flask_current
+
     cfg_app = app or flask_current
     path = cfg_app.config["DB_PATH"]
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -44,11 +54,13 @@ def init_db(app=None):
             uploaded_at TEXT NOT NULL,
             uploaded_by TEXT,
             published INTEGER DEFAULT 0,
-            cached_json_path TEXT
+            cached_json_path TEXT,
+            blob_name TEXT
         );
         """
     )
     conn.commit()
+    _ensure_blob_column(conn)
     conn.close()
 
 
@@ -104,16 +116,16 @@ def create_admin_if_missing(app, username: str, password: str) -> bool:
     return True
 
 
-def insert_simulation(name: str, path: str, size: int, uploaded_by: str) -> Dict[str, Any]:
+def insert_simulation(name: str, path: str, size: int, uploaded_by: str, blob_name: Optional[str] = None) -> Dict[str, Any]:
     sim_id = str(uuid.uuid4())
     conn = get_db()
     cur = conn.cursor()
     cur.execute(
         """
-        INSERT INTO simulations(id, name, path, size, uploaded_at, uploaded_by, published)
-        VALUES(?,?,?,?,?,?,0)
+        INSERT INTO simulations(id, name, path, size, uploaded_at, uploaded_by, published, blob_name)
+        VALUES(?,?,?,?,?,?,0,?)
         """,
-        (sim_id, name, path, size, datetime.utcnow().isoformat(), uploaded_by),
+        (sim_id, name, path, size, datetime.utcnow().isoformat(), uploaded_by, blob_name),
     )
     conn.commit()
     cur.execute("SELECT * FROM simulations WHERE id=?", (sim_id,))
@@ -121,7 +133,16 @@ def insert_simulation(name: str, path: str, size: int, uploaded_by: str) -> Dict
     conn.close()
     return dict(row)
 
-def insert_simulation_with_id(sim_id: str, name: str, path: str, size: int, uploaded_by: str, published: int = 0) -> Dict[str, Any]:
+
+def insert_simulation_with_id(
+    sim_id: str,
+    name: str,
+    path: str,
+    size: int,
+    uploaded_by: str,
+    published: int = 0,
+    blob_name: Optional[str] = None,
+) -> Dict[str, Any]:
     """
     Insert a simulation row using a caller-provided sim_id (e.g., when the folder is already
     created under uploads/<sim_id>). Returns the inserted row as a dict.
@@ -130,10 +151,10 @@ def insert_simulation_with_id(sim_id: str, name: str, path: str, size: int, uplo
     cur = conn.cursor()
     cur.execute(
         """
-        INSERT INTO simulations(id, name, path, size, uploaded_at, uploaded_by, published)
-        VALUES(?,?,?,?,?,?,?)
+        INSERT INTO simulations(id, name, path, size, uploaded_at, uploaded_by, published, blob_name)
+        VALUES(?,?,?,?,?,?,?,?)
         """,
-        (sim_id, name, path, size, datetime.utcnow().isoformat(), uploaded_by, published),
+        (sim_id, name, path, size, datetime.utcnow().isoformat(), uploaded_by, published, blob_name),
     )
     conn.commit()
     cur.execute("SELECT * FROM simulations WHERE id=?", (sim_id,))
@@ -188,4 +209,3 @@ def delete_simulation(sim_id: str) -> bool:
     conn.commit()
     conn.close()
     return True
-

@@ -1,9 +1,13 @@
 import json
 import os
 import gzip
+import datetime
 from flask import Blueprint, render_template, jsonify, current_app, send_file, send_from_directory
+from azure.storage.blob import generate_blob_sas, BlobSasPermissions
+
 from .models import list_simulations, get_simulation
 from .parsing import parse_plans_to_json
+from .azure_utils import get_storage_context
 
 
 public_bp = Blueprint("public", __name__)
@@ -32,7 +36,8 @@ def public_list():
             "id": r["id"],
             "name": r["name"],
             "uploaded_at": r["uploaded_at"],
-            "size": r.get("size")
+            "size": r.get("size"),
+            "has_blob": bool(r.get("blob_name"))
         }
         for r in rows
     ])
@@ -75,3 +80,36 @@ def public_data(sim_id):
     persons = parse_plans_to_json(plans_path, facilities_path, max_persons=int(os.getenv("PUBLIC_MAX_PERSONS", "1000")), selected_only_flag=False)
     return jsonify(persons)
 
+
+
+
+
+@public_bp.route("/api/simulations/<sim_id>/blob-url", methods=["GET"])
+def public_blob_url(sim_id):
+    sim = get_simulation(sim_id)
+    if not sim or not sim.get("published"):
+        return jsonify({"error": "Not found"}), 404
+    blob_name = sim.get("blob_name")
+    if not blob_name:
+        return jsonify({"error": "No remote blob"}), 404
+
+    try:
+        bsc, account, container, account_key = get_storage_context(require_account_key=True)
+    except RuntimeError as exc:
+        current_app.logger.error("Blob SAS configuration error: %s", exc)
+        return jsonify({"error": "Blob access not configured"}), 500
+
+    expiry = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+    sas = generate_blob_sas(
+        account_name=account,
+        container_name=container,
+        blob_name=blob_name,
+        account_key=account_key,
+        permission=BlobSasPermissions(read=True),
+        expiry=expiry,
+    )
+    blob_url = f"https://{account}.blob.core.windows.net/{container}/{blob_name}"
+    return jsonify({
+        "downloadUrl": f"{blob_url}?{sas}",
+        "expiresAt": expiry.isoformat() + "Z",
+    })

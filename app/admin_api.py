@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_required, current_user
 from .models import insert_simulation, insert_simulation_with_id, list_simulations, update_simulation, delete_simulation, get_simulation
+from .azure_utils import get_storage_context
 from .parsing import parse_plans_to_json
 from typing import cast
 
@@ -114,7 +115,8 @@ def upload_simulation():
             path=dest_folder,
             size=total_size,
             uploaded_by=username,
-            published=0
+            published=0,
+            blob_name=None
         )
         return jsonify(row), 201
 
@@ -164,6 +166,15 @@ def delete_sim(sim_id):
             os.remove(row["cached_json_path"])
     except Exception:
         pass
+
+    blob_name = row.get("blob_name")
+    if blob_name:
+        try:
+            bsc, _account, container, _key = get_storage_context()
+            bsc.get_blob_client(container, blob_name).delete_blob()
+        except Exception:
+            current_app.logger.debug("Failed to delete blob %s", blob_name)
+
     ok = delete_simulation(sim_id)
     return ("", 204) if ok else (jsonify({"error": "Not found"}), 404)
 

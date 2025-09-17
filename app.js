@@ -5,6 +5,10 @@ const personSearchInput = document.getElementById("personSearch");
 const clearSearchBtn = document.getElementById("clearSearchBtn");
 const exportSummaryBtn = document.getElementById("exportSummaryBtn");
 const exportStepsBtn = document.getElementById("exportStepsBtn");
+const simulationSelect = document.getElementById("simulationSelect");
+const downloadSimulationBtn = document.getElementById("downloadSimulationBtn");
+if (downloadSimulationBtn) downloadSimulationBtn.disabled = true;
+window.__PUBLISHED_SIMS__ = window.__PUBLISHED_SIMS__ || [];
 
 // ---- Persistence helpers ----
 const LS_KEY = "matsim-ui-v1";          
@@ -566,30 +570,79 @@ document.getElementById("recomputeBtn").addEventListener("click", () => {
 window._dbg = { atlantisToWGS84 };
 
 // === Public simulation loader (no uploads) ===
+function updateDownloadButtonState() {
+  if (!downloadSimulationBtn) return;
+  const sims = Array.isArray(window.__PUBLISHED_SIMS__) ? window.__PUBLISHED_SIMS__ : [];
+  const selectedId = simulationSelect?.value || '';
+  const selected = sims.find((s) => s.id === selectedId);
+  const canDownload = !!(selected && selected.has_blob);
+  downloadSimulationBtn.disabled = !canDownload;
+  downloadSimulationBtn.title = canDownload ? 'Download the original simulation zip' : 'No Azure blob available for download';
+}
+
+if (simulationSelect) {
+  simulationSelect.addEventListener('change', updateDownloadButtonState);
+}
+
+if (downloadSimulationBtn) {
+  const originalDownloadLabel = downloadSimulationBtn.textContent || 'Download';
+  downloadSimulationBtn.addEventListener('click', async () => {
+    const selectedId = simulationSelect?.value;
+    if (!selectedId) return;
+    downloadSimulationBtn.disabled = true;
+    downloadSimulationBtn.textContent = 'Preparing...';
+    try {
+      const res = await fetch(`/api/simulations/${selectedId}/blob-url`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.downloadUrl) {
+        throw new Error(data?.error || 'Download link unavailable');
+      }
+      window.open(data.downloadUrl, '_blank', 'noopener');
+    } catch (err) {
+      console.error('Download link error', err);
+      alert(err?.message || 'Failed to retrieve download link.');
+    } finally {
+      if (downloadSimulationBtn) {
+        downloadSimulationBtn.textContent = originalDownloadLabel;
+        downloadSimulationBtn.disabled = false;
+      }
+      updateDownloadButtonState();
+    }
+  });
+}
+
 async function populateSimulationList() {
   try {
     const res = await fetch('/api/simulations');
     const sims = await res.json();
-    const sel = document.getElementById('simulationSelect');
+    window.__PUBLISHED_SIMS__ = Array.isArray(sims) ? sims : [];
+    const sel = simulationSelect;
     if (!sel) return;
     sel.innerHTML = '';
-    if (!Array.isArray(sims) || sims.length === 0) {
+
+    const list = window.__PUBLISHED_SIMS__;
+    if (!Array.isArray(list) || list.length === 0) {
       const opt = document.createElement('option');
       opt.value = '';
       opt.textContent = 'No published simulations';
       sel.appendChild(opt);
+      updateDownloadButtonState();
       return;
     }
-    sims.forEach(s => {
+
+    list.forEach((s) => {
       const opt = document.createElement('option');
       opt.value = s.id;
       opt.textContent = `${s.name} — ${s.id.slice(0, 8)}`;
       sel.appendChild(opt);
     });
+    updateDownloadButtonState();
   } catch (e) {
     console.error('Failed to load simulations', e);
+    if (downloadSimulationBtn) downloadSimulationBtn.disabled = true;
   }
 }
+
 
 document.getElementById('loadSimulationBtn')?.addEventListener('click', async () => {
   const sel = document.getElementById('simulationSelect');
