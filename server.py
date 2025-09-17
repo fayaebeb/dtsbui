@@ -11,6 +11,7 @@ from flask import Flask, send_from_directory
 from flask_compress import Compress
 
 from app import create_app, csrf
+from app.models import init_db, create_admin_if_missing
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -18,15 +19,15 @@ def build_app() -> Flask:
     app = create_app()
     Compress(app)
 
-    from story_api import story_bp
-    csrf.exempt(story_bp)
-    app.register_blueprint(story_bp)
-
     try:
         from app.admin_uploads import bp as admin_uploads_bp
         app.register_blueprint(admin_uploads_bp)
     except Exception:
         pass
+
+    from story_api import story_bp
+    csrf.exempt(story_bp)
+    app.register_blueprint(story_bp)
 
     @app.route("/matsim_data/<path:filename>")
     def matsim_files(filename):
@@ -51,6 +52,12 @@ def build_app() -> Flask:
     return app
 
 app = build_app()
+
+with app.app_context():
+    init_db(app)
+    admin_user = os.getenv("ADMIN_USER", "admin")
+    admin_pass = os.getenv("ADMIN_PASS", "changeme")
+    create_admin_if_missing(app, admin_user, admin_pass)
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=3000, debug=True)
