@@ -653,7 +653,18 @@ document.getElementById('loadSimulationBtn')?.addEventListener('click', async ()
   statusMsg.textContent = '';
   try {
     const res = await fetch(`/api/simulations/${id}/data`);
-    const parsed = await res.json();
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      if (data?.error?.includes('No cached data')) {
+        alert('⚠️ Admin has not parsed this simulation yet.');
+      } else {
+        alert(data?.error || 'Load failed.');
+      }
+      return;
+    }
+
+    const parsed = data;
     if (!Array.isArray(parsed)) throw new Error('Server returned invalid JSON');
     window.__PARSED__ = parsed;
     __ALL_PERSONS__ = parsed;

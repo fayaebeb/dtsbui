@@ -37,7 +37,8 @@ def public_list():
             "name": r["name"],
             "uploaded_at": r["uploaded_at"],
             "size": r.get("size"),
-            "has_blob": bool(r.get("blob_name"))
+            "has_blob": bool(r.get("blob_name")),
+            "has_cache": bool(r.get("cached_json_path"))
         }
         for r in rows
     ])
@@ -54,35 +55,7 @@ def public_data(sim_id):
         with gzip.open(cache, "rt", encoding="utf-8") as g:
             persons = json.load(g)
         return jsonify(persons)
-    # Parse on the fly
-    folder = sim["path"]
-    candidates = ["output_plans.xml.gz", "output_plans.xml"]
-    plans_path = None
-    for c in candidates:
-        p = os.path.join(folder, c)
-        if os.path.isfile(p):
-            plans_path = p
-            break
-    if not plans_path:
-        return jsonify({"error": "plans file not found"}), 400
-    fac_candidates = [
-        "output_facilities.xml.gz",
-        "facilities.xml.gz",
-        "output_facilities.xml",
-        "facilities.xml",
-    ]
-    facilities_path = None
-    for c in fac_candidates:
-        p = os.path.join(folder, c)
-        if os.path.isfile(p):
-            facilities_path = p
-            break
-    persons = parse_plans_to_json(plans_path, facilities_path, max_persons=int(os.getenv("PUBLIC_MAX_PERSONS", "1000")), selected_only_flag=False)
-    return jsonify(persons)
-
-
-
-
+    return jsonify({"error": "No cached data. Admin must parse this simulation first."}), 400
 
 @public_bp.route("/api/simulations/<sim_id>/blob-url", methods=["GET"])
 def public_blob_url(sim_id):
