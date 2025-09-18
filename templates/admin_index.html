@@ -126,14 +126,13 @@
         .then((data) => {
           const status = (data && data.status) ? String(data.status).toLowerCase() : 'idle';
 
-          if (data && data.simulation) {
-            const rowEl = document.querySelector(`#simsBody tr td:first-child:contains("${simId}")`);
-            if (rowEl) {
-              const tr = rowEl.parentElement;
-              const parseCell = tr.querySelector("td:nth-child(6)");
-              if (parseCell) {
-                parseCell.innerHTML = formatParseCell(data.simulation);
-              }
+          const tr = [...document.querySelectorAll("#simsBody tr")]
+            .find((r) => r.firstElementChild && r.firstElementChild.textContent.trim() === simId);
+
+          if (tr && data && data.simulation) {
+            const parseCell = tr.querySelector("td:nth-child(6)");
+            if (parseCell) {
+              parseCell.innerHTML = formatParseCell(data.simulation);
             }
           }
 
