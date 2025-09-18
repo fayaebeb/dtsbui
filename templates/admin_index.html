@@ -64,6 +64,7 @@
               <th style="width:120px">Published</th>
               <th style="width:180px">Uploaded</th>
               <th style="width:120px">Size</th>
+              <th style="width:160px">Parse Status</th>
               <th style="width:260px">Actions</th>
             </tr>
           </thead>
@@ -82,28 +83,128 @@
     }
     const csrf = getCsrf();
 
+    const numberFmt = new Intl.NumberFormat();
+    const statusLabels = {
+      idle: 'Not parsed',
+      queued: 'Queued',
+      running: 'Parsing...',
+      succeeded: 'Ready',
+      failed: 'Failed'
+    };
+    const statusBadges = {
+      idle: 'badge',
+      queued: 'badge info',
+      running: 'badge info',
+      succeeded: 'badge success',
+      failed: 'badge danger'
+    };
+    const activePolls = new Map();
+    const POLL_DELAY_MS = 4000;
+
+    function escapeHtml(value) {
+      if (value === null || value === undefined) return '';
+      return String(value).replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch] || ch));
+    }
+
+    function stopPolling(simId) {
+      const handle = activePolls.get(simId);
+      if (handle) {
+        clearTimeout(handle);
+      }
+      activePolls.delete(simId);
+    }
+
+    function pollStatus(simId) {
+      fetch(`/admin/api/simulations/${simId}/parse/status`, { credentials: 'same-origin' })
+        .then((res) => (res.ok ? res.json() : Promise.reject(new Error('status fetch failed'))))
+        .then((data) => {
+          const status = (data && data.status) ? String(data.status).toLowerCase() : 'idle';
+
+          if (data && data.simulation) {
+            const rowEl = document.querySelector(`#simsBody tr td:first-child:contains("${simId}")`);
+            if (rowEl) {
+              const tr = rowEl.parentElement;
+              const parseCell = tr.querySelector("td:nth-child(6)");
+              if (parseCell) {
+                parseCell.innerHTML = formatParseCell(data.simulation);
+              }
+            }
+          }
+
+          if (status === 'queued' || status === 'running') {
+            const handle = setTimeout(() => pollStatus(simId), POLL_DELAY_MS);
+            activePolls.set(simId, handle);
+          } else {
+            stopPolling(simId);
+            refresh();
+          }
+        })
+        .catch(() => {
+          stopPolling(simId);
+          refresh();
+        });
+    }
+
+    function ensurePolling(simId) {
+      if (!activePolls.has(simId)) {
+        activePolls.set(simId, null);
+        pollStatus(simId);
+      }
+    }
+
+    function formatParseCell(row) {
+      const status = (row.parse_status || (row.cached_json_path ? 'succeeded' : 'idle')).toLowerCase();
+      const label = statusLabels[status] || status;
+      const badgeClass = statusBadges[status] || 'badge';
+      const pieces = [`<span class="${badgeClass}">${label}</span>`];
+      if (typeof row.parsed_person_count === 'number') {
+        pieces.push(`<small class="muted">${numberFmt.format(row.parsed_person_count)} persons</small>`);
+      }
+      if (row.parse_error) {
+        pieces.push(`<small class="muted">Error: ${escapeHtml(row.parse_error)}</small>`);
+      }
+      return `<div class="stack gap-xxs">${pieces.map((p) => `<div>${p}</div>`).join('')}</div>`;
+    }
+
     async function refresh() {
       const res = await fetch('/admin/api/simulations', { credentials: 'same-origin' });
       if (!res.ok) return;
       const rows = await res.json();
       const tb = document.getElementById('simsBody');
       tb.innerHTML = '';
-      rows.forEach(r => {
+      rows.forEach((r) => {
+        const status = (r.parse_status || (r.cached_json_path ? 'succeeded' : 'idle')).toLowerCase();
         const tr = document.createElement('tr');
+        const safeName = escapeHtml(r.name || '');
+        const sizeText = typeof r.size === 'number' ? numberFmt.format(r.size) : (r.size || '');
+        const parseCell = formatParseCell(r);
+        const parseLabel = status === 'succeeded' ? 'Re-parse' : (status === 'failed' ? 'Retry Parse' : 'Parse/Cache');
         tr.innerHTML = `
           <td>${r.id}</td>
-          <td class="cell-ellipsis" title="${r.name}">${r.name}</td>
+          <td class="cell-ellipsis" title="${safeName}">${safeName}</td>
           <td>${r.published ? '<span class="badge success">Yes</span>' : '<span class="badge">No</span>'}</td>
           <td>${r.uploaded_at}</td>
-          <td>${r.size || ''}</td>
+          <td>${sizeText}</td>
+          <td>${parseCell}</td>
           <td>
             <div class="actions">
               <button class="btn small ${r.published ? 'warning' : 'secondary'}" data-act="publish">${r.published ? 'Unpublish' : 'Publish'}</button>
-              <button class="btn small secondary" data-act="parse">Parse/Cache</button>
+              <button class="btn small secondary" data-act="parse">${parseLabel}</button>
               <button class="btn small danger" data-act="delete">Delete</button>
             </div>
           </td>`;
-        tr.querySelector('[data-act="publish"]').onclick = async () => {
+
+        const publishBtn = tr.querySelector('[data-act="publish"]');
+        const parseBtn = tr.querySelector('[data-act="parse"]');
+        const deleteBtn = tr.querySelector('[data-act="delete"]');
+
+        publishBtn.onclick = async () => {
           const resp = await fetch(`/admin/api/simulations/${r.id}`, {
             method: 'PATCH',
             headers: {
@@ -116,17 +217,51 @@
           if (!resp.ok) alert('Publish toggle failed');
           refresh();
         };
-        tr.querySelector('[data-act="parse"]').onclick = async () => {
-          const resp = await fetch(`/admin/api/simulations/${r.id}/parse`, {
-            method: 'POST',
-            headers: { ...(csrf ? { 'X-CSRFToken': csrf } : {}) },
-            credentials: 'same-origin'
-          });
-          if (!resp.ok) alert('Parse failed');
-          refresh();
+
+        parseBtn.onclick = async () => {
+          if (parseBtn.disabled) return;
+          const originalText = parseBtn.textContent;
+          parseBtn.disabled = true;
+          parseBtn.textContent = 'Starting...';
+          try {
+            const resp = await fetch(`/admin/api/simulations/${r.id}/parse`, {
+              method: 'POST',
+              headers: { ...(csrf ? { 'X-CSRFToken': csrf } : {}) },
+              credentials: 'same-origin'
+            });
+            let payload = null;
+            try {
+              payload = await resp.json();
+            } catch (_) { }
+            if (!resp.ok) {
+              alert(payload?.error || 'Parse failed');
+              parseBtn.disabled = false;
+              parseBtn.textContent = originalText;
+              return;
+            }
+            const nextStatus = payload?.status ? String(payload.status).toLowerCase() : status;
+            if (nextStatus === 'queued' || nextStatus === 'running') {
+              parseBtn.textContent = nextStatus === 'running' ? 'Parsing...' : 'Queued...';
+              ensurePolling(r.id);
+            } else if (nextStatus === 'succeeded') {
+              parseBtn.textContent = 'Re-parse';
+            } else if (nextStatus === 'failed') {
+              parseBtn.textContent = 'Retry Parse';
+            } else {
+              parseBtn.textContent = originalText;
+            }
+            refresh();
+          } catch (err) {
+            console.error('Parse failed', err);
+            alert(err?.message || 'Parse failed');
+            parseBtn.disabled = false;
+            parseBtn.textContent = originalText;
+          }
         };
-        tr.querySelector('[data-act="delete"]').onclick = async () => {
+
+        deleteBtn.onclick = async () => {
           if (!confirm('Delete this simulation?')) return;
+          stopPolling(r.id);
           const resp = await fetch(`/admin/api/simulations/${r.id}`, {
             method: 'DELETE',
             headers: { ...(csrf ? { 'X-CSRFToken': csrf } : {}) },
@@ -135,6 +270,15 @@
           if (!resp.ok) alert('Delete failed');
           refresh();
         };
+
+        if (status === 'queued' || status === 'running') {
+          parseBtn.disabled = true;
+          parseBtn.textContent = status === 'running' ? 'Parsing...' : 'Queued...';
+          ensurePolling(r.id);
+        } else {
+          stopPolling(r.id);
+        }
+
         tb.appendChild(tr);
       });
     }
@@ -157,7 +301,7 @@
         try {
           const data = await sasRes.json();
           if (data?.error) msg = data.error;
-        } catch (_) {}
+        } catch (_) { }
         throw new Error(msg);
       }
       const { sasUrl, blobName } = await sasRes.json();
@@ -191,7 +335,7 @@
         try {
           const data = await importRes.json();
           if (data?.error) msg = data.error;
-        } catch (_) {}
+        } catch (_) { }
         throw new Error(msg);
       }
       return importRes.json();
@@ -246,4 +390,3 @@
 </body>
 
 </html>
-

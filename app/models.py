@@ -26,6 +26,23 @@ def _ensure_blob_column(conn: sqlite3.Connection) -> None:
         conn.commit()
 
 
+
+def _ensure_parse_columns(conn: sqlite3.Connection) -> None:
+    cur = conn.cursor()
+    cur.execute("PRAGMA table_info(simulations)")
+    cols = {row[1] for row in cur.fetchall()}
+    if 'parse_status' not in cols:
+        cur.execute("ALTER TABLE simulations ADD COLUMN parse_status TEXT DEFAULT 'idle'")
+    if 'parse_started_at' not in cols:
+        cur.execute("ALTER TABLE simulations ADD COLUMN parse_started_at TEXT")
+    if 'parse_completed_at' not in cols:
+        cur.execute("ALTER TABLE simulations ADD COLUMN parse_completed_at TEXT")
+    if 'parse_error' not in cols:
+        cur.execute("ALTER TABLE simulations ADD COLUMN parse_error TEXT")
+    if 'parsed_person_count' not in cols:
+        cur.execute("ALTER TABLE simulations ADD COLUMN parsed_person_count INTEGER")
+    conn.commit()
+
 def init_db(app=None):
     from flask import current_app as flask_current
 
@@ -61,6 +78,7 @@ def init_db(app=None):
     )
     conn.commit()
     _ensure_blob_column(conn)
+    _ensure_parse_columns(conn)
     conn.close()
 
 
@@ -97,6 +115,15 @@ class User(UserMixin):
         return check_password_hash(self.password_hash, password)
 
 
+
+def _normalize_sim_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    if not row:
+        return row
+    status = row.get('parse_status')
+    if not status:
+        row['parse_status'] = 'succeeded' if row.get('cached_json_path') else 'idle'
+    return row
+
 def create_admin_if_missing(app, username: str, password: str) -> bool:
     """Returns True if created, False if exists."""
     init_db(app)
@@ -131,7 +158,7 @@ def insert_simulation(name: str, path: str, size: int, uploaded_by: str, blob_na
     cur.execute("SELECT * FROM simulations WHERE id=?", (sim_id,))
     row = cur.fetchone()
     conn.close()
-    return dict(row)
+    return _normalize_sim_row(dict(row))
 
 
 def insert_simulation_with_id(
@@ -160,7 +187,7 @@ def insert_simulation_with_id(
     cur.execute("SELECT * FROM simulations WHERE id=?", (sim_id,))
     row = cur.fetchone()
     conn.close()
-    return dict(row)
+    return _normalize_sim_row(dict(row))
 
 
 def list_simulations(all_rows: bool = True) -> List[Dict[str, Any]]:
@@ -170,7 +197,7 @@ def list_simulations(all_rows: bool = True) -> List[Dict[str, Any]]:
         cur.execute("SELECT * FROM simulations ORDER BY uploaded_at DESC")
     else:
         cur.execute("SELECT * FROM simulations WHERE published=1 ORDER BY uploaded_at DESC")
-    rows = [dict(r) for r in cur.fetchall()]
+    rows = [_normalize_sim_row(dict(r)) for r in cur.fetchall()]
     conn.close()
     return rows
 
@@ -181,7 +208,7 @@ def get_simulation(sim_id: str) -> Optional[Dict[str, Any]]:
     cur.execute("SELECT * FROM simulations WHERE id=?", (sim_id,))
     row = cur.fetchone()
     conn.close()
-    return dict(row) if row else None
+    return _normalize_sim_row(dict(row)) if row else None
 
 
 def update_simulation(sim_id: str, **kwargs) -> Optional[Dict[str, Any]]:
@@ -196,8 +223,15 @@ def update_simulation(sim_id: str, **kwargs) -> Optional[Dict[str, Any]]:
     cur.execute("SELECT * FROM simulations WHERE id=?", (sim_id,))
     row = cur.fetchone()
     conn.close()
-    return dict(row) if row else None
+    return _normalize_sim_row(dict(row)) if row else None
 
+def reset_stuck_jobs() -> None:
+    """Mark any simulations stuck in 'running' or 'queued' back to 'failed' on startup."""
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("UPDATE simulations SET parse_status='failed' WHERE parse_status IN ('running','queued')")
+    conn.commit()
+    conn.close()
 
 def delete_simulation(sim_id: str) -> bool:
     sim = get_simulation(sim_id)

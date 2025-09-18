@@ -55,6 +55,8 @@ app = build_app()
 
 with app.app_context():
     init_db(app)
+    from app.models import reset_stuck_jobs
+    reset_stuck_jobs()
     admin_user = os.getenv("ADMIN_USER", "admin")
     admin_pass = os.getenv("ADMIN_PASS", "changeme")
     create_admin_if_missing(app, admin_user, admin_pass)
