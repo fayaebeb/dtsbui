@@ -7,48 +7,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="stylesheet" href="assets/js/leaflet/leaflet.css" />
 	<link rel="stylesheet" href="assets/css/common.css" />
+	<link rel="stylesheet" href="assets/css/rcss.css" />
 
-	<style>
-		.c-area__btns.column02 {
-			--column: 2;
-			display: grid;
-			grid-template-columns: repeat(var(--column), 1fr);
-			gap: min(1.953125vh, 15px) min(1.4641288433vw, 20px);
-		}
-
-		.c-area__btns.column02>a {
-			grid-column: auto;
-		}
-
-		.c-area__btns.column02>button {
-			grid-column: 1 / -1;
-		}
-
-		#map {
-			border-radius: 12px;
-			overflow: hidden;
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-		}
-
-		.l-contents__map-data {
-			border-radius: 12px;
-		}
-
-		.l-contents__map-legends {
-			border-radius: 12px;
-
-			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-		}
-
-		/* Show only the AI tile */
-		.p-result__story-target>li:not(#aiStoryItem) {
-			display: none;
-		}
-
-		.p-result__story li {
-			display: list-item;
-		}
-	</style>
 </head>
 
 <body>
@@ -108,7 +68,6 @@
 				<div class="l-contents__map">
 					<div class="l-contents__main-tit">
 						<h2 class="tit">地図</h2>
-						<!-- <label class="l-contents__main-mesh c-input__checkbox">メッシュ表示<i class="c-ico__loading js-mesh-loading hidden"></i><input class="js-mesh" type="checkbox" name="mesh" value="1"><i class="c-input__checkbox-switch"></i></label> -->
 					</div>
 					<div class="l-contents__map-wrap">
 						<div class="l-contents__map-load" id="map"></div>
