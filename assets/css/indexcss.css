@@ -505,3 +505,14 @@ details.c-route>.c-route__setting {
 #loadSimulationBtn.c-btn__small::before {
   content: none !important;
 }
+
+/* Dynamic panel: keep this toggle compact and single-line */
+#dynRouteContainer .l-contents__map-btn {
+  display: inline-block;   /* don't span full line */
+  width: auto;             /* override 5em */
+}
+
+#dynRouteContainer .l-contents__map-btn .btn {
+  display: inline-block;   /* don't fill parent width */
+  white-space: nowrap;     /* no wrapping */
+}

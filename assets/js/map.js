@@ -410,3 +410,180 @@ rangeYearInput.addEventListener('input', () => {
   if (populationCheckbox?.checked) showPopulationData();
 });
 yearRange(parseInt(rangeYearInput.value));
+
+// --- Override: richer route details with slider + BRT toggle and persistence ---
+try {
+  const originalRender = renderRouteDetails;
+  renderRouteDetails = function (info) {
+    ensureDynRoutePanel();
+    const wrap = document.getElementById('dynRouteDetails');
+    if (!wrap) return;
+    if (!info) { wrap.innerHTML = ''; return; }
+    const lineName = info.lineId || '(不明)';
+    const routeName = info.routeId || '(不明)';
+    const freq = info.count0609 ?? 0;
+    const samples = (info.samples || []).join(', ');
+    wrap.innerHTML = `
+      <dl class="c-route__setting">
+        <dt>路線ID</dt><dd>${lineName}</dd>
+        <dt>経路ID</dt><dd>${routeName}</dd>
+        <dt>運行頻度（06:00-09:59）</dt><dd id="dynRouteFreqView">${freq} 本</dd>
+        <dt>出発サンプル</dt><dd>${samples || '?'}</dd>
+      </dl>
+    `;
+
+    // Ensure control host exists
+    let controls = document.getElementById('dynRouteControls');
+    if (!controls) {
+      controls = document.createElement('div');
+      controls.id = 'dynRouteControls';
+      controls.className = 'c-route__setting';
+      controls.style.marginTop = '8px';
+      controls.style.display = 'none';
+      controls.innerHTML = `
+      <dl class="c-route__setting">
+  <dt>運航頻度
+    <span class="c-btn__small c-btn__small-white reset js-reset" data-reset="dyn_frequency">
+      まとめてリセット
+    </span>
+  </dt>
+  <dd id="dyn_frequency">
+    <dl class="c-frequency">
+      <dt class="c-frequency__hours">6～9時台
+        <span class="c-btn__small c-btn__small-white reset js-reset" data-reset="dyn_frequency_0609">
+          リセット
+        </span>
+      </dt>
+      <dd class="c-frequency__number c-input__range" id="dyn_frequency_0609">
+        <span class="c-input__range-unit">台数(台)</span>
+        <div class="c-input__range-container js-range" id="dynFreqRange">
+          <span class="c-input__change c-input__range-change current-value u-en js-range-change">
+            <span class="js-range-value" data-saved="${freq}">${freq}</span>
+            <small class="js-range-diff" data-saved="(+0)">(+0)</small>
+          </span>
+          <div class="c-input__range-minmax u-en">
+            <span class="js-range-min">0</span>
+            <span class="js-range-max">60</span>
+          </div>
+          <div class="c-input__range-wrap">
+            <input type="range" name="dyn_frequency_0609"
+              value="${freq}" data-saved="${freq}" data-default="${freq}"
+              min="0" max="60" class="c-input__range-slider js-range-slider" />
+            <i class="c-input__range-mark js-range-mark equal"></i>
+          </div>
+          <span class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
+        </div>
+      </dd>
+    </dl>
+  <dt>BRT専用レーン</dt>
+  <dd>
+    <label class="l-contents__map-btn">
+      <input type="checkbox" id="dynBrtToggle" />
+      <span class="btn">専用レーンを付与</span>
+    </label>
+  
+    <div class="c-area__btns" style="gap:8px; display:flex; flex-wrap:wrap;">
+      <button id="applyDynParamsBtn" type="button" class="c-btn__small">変更を保存</button>
+      <button id="toggleParamsBtn" type="button" class="c-btn__small">パラメータを変更</button>
+      <small id="dynSaveStatus" class="muted" style="display:none;">保存しました</small>
+    </div>
+  </dd>
+  </dl>
+`;
+
+      const container = document.getElementById('dynRouteContainer') || wrap.parentElement;
+      container && container.appendChild(controls);
+    }
+    // Make sure the controls are visible when a route is selected
+    if (controls) controls.style.display = 'block';
+
+    // Initialize slider and bind UI sync
+    const freqRange = document.querySelector('#dynFreqRange .js-range-slider');
+    if (freqRange) {
+      freqRange.value = String(freq);
+      freqRange.setAttribute('data-saved', String(freq));
+      freqRange.setAttribute('data-default', String(freq));
+      const valEl = document.querySelector('#dynFreqRange .js-range-value');
+      const diffEl = document.querySelector('#dynFreqRange .js-range-diff');
+      if (valEl) valEl.textContent = String(freq);
+      if (diffEl) diffEl.textContent = '(+0)';
+      freqRange.oninput = () => {
+        const v = Number(freqRange.value || 0);
+        const def = Number(freqRange.dataset.default || 0);
+        const val = document.querySelector('#dynFreqRange .js-range-value');
+        const diff = document.querySelector('#dynFreqRange .js-range-diff');
+        if (val) val.textContent = String(v);
+        if (diff) diff.textContent = `(${v - def >= 0 ? '+' : ''}${v - def})`;
+        const view = document.getElementById('dynRouteFreqView');
+        if (view) view.textContent = `${v} 本`;
+      };
+    }
+
+    // Control buttons
+    const toggleBtn = document.getElementById('toggleParamsBtn');
+    if (toggleBtn && controls) {
+      toggleBtn.onclick = () => {
+        controls.style.display = (controls.style.display === 'none' || !controls.style.display) ? 'block' : 'none';
+      };
+    }
+    const applyBtn = document.getElementById('applyDynParamsBtn');
+    const saveMsg = document.getElementById('dynSaveStatus');
+    if (applyBtn) {
+      applyBtn.onclick = () => {
+        const newFreq = Number(document.querySelector('#dynFreqRange .js-range-slider')?.value || freq || 0);
+        const brt = !!document.getElementById('dynBrtToggle')?.checked;
+        const payload = {
+          routeId: info.routeId,
+          lineId: info.lineId,
+          systemId: info.systemId,
+          oldFrequency: freq,
+          newFrequency: newFreq,
+          brtExclusive: brt,
+          ts: Date.now()
+        };
+        try {
+          localStorage.setItem('routeParams', JSON.stringify(payload));
+          if (saveMsg) { saveMsg.style.display = 'inline'; setTimeout(() => saveMsg.style.display = 'none', 1200); }
+        } catch { }
+      };
+    }
+    document.getElementById('dynRouteContainer')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+} catch { }
+
+// Add this near the bottom of map.js (only once)
+// ========== Bind reset handler for dynamic panel ==========
+if (!window.__dynResetBound) {
+  document.addEventListener('click', (e) => {
+    const resetBtn = e.target.closest('.js-reset[data-reset]');
+    if (!resetBtn) return;
+
+    // Limit to dynamic panel
+    const dynPanel = document.getElementById('dynRouteContainer');
+    if (!dynPanel || !dynPanel.contains(resetBtn)) return;
+
+    e.preventDefault();
+
+    const target = resetBtn.getAttribute('data-reset');
+    if (target === 'dyn_frequency' || target === 'dyn_frequency_0609') {
+      const wrap = document.getElementById('dynFreqRange');
+      const slider = wrap?.querySelector('.js-range-slider');
+      if (!wrap || !slider) return;
+
+      const def = Number(slider.getAttribute('data-default') || 0);
+      slider.value = def;
+
+      // Sync UI via input event
+      slider.dispatchEvent(new Event('input', { bubbles: true }));
+
+      const valEl = wrap.querySelector('.js-range-value');
+      const diffEl = wrap.querySelector('.js-range-diff');
+      if (valEl) valEl.textContent = String(def);
+      if (diffEl) diffEl.textContent = '(+0)';
+
+      const view = document.getElementById('dynRouteFreqView');
+      if (view) view.textContent = `${def} 本`;
+    }
+  });
+  window.__dynResetBound = true;
+}

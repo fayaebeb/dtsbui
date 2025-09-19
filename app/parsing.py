@@ -1,4 +1,5 @@
 import gzip
+import json
 import io
 import os
 import xml.etree.ElementTree as ET
@@ -112,6 +113,7 @@ def parse_plans_to_json(path_or_stream: Union[str, io.BufferedReader], facilitie
     last_open_activity_idx: Optional[int] = None
     current_time: Optional[str] = None
     last_leg_arrival: Optional[str] = None
+    current_leg_idx: Optional[int] = None
 
     with fobj as f:
         context = ET.iterparse(f, events=("start", "end"))
@@ -170,7 +172,7 @@ def parse_plans_to_json(path_or_stream: Union[str, io.BufferedReader], facilitie
                         if prev_act.get("endTime") in (None, ""):
                             prev_act["endTime"] = dep_time
                     dt = dep_time or current_time or "00:00:00"
-                    step = {
+                    step: Dict[str, Any] = {
                         "kind": "leg",
                         "mode": mode,
                         "depTime": dt,
@@ -178,13 +180,44 @@ def parse_plans_to_json(path_or_stream: Union[str, io.BufferedReader], facilitie
                         "durationSec": None
                     }
                     steps.append(step)
+                    current_leg_idx = len(steps) - 1
                     dep_s = parse_time_to_seconds(dt)
                     tt_s = parse_time_to_seconds(trav_time) if trav_time else None
                     if dep_s is not None and tt_s is not None:
                         arr_s = dep_s + tt_s
                         last_leg_arrival = sec_to_time(arr_s)
                         current_time = last_leg_arrival
+                elif inside_plan and tag == "route" and current_leg_idx is not None and 0 <= current_leg_idx < len(steps):
+                    # Capture PT route metadata embedded in the leg's <route> element
+                    # Example:
+                    # <route type="default_pt" start_link="..." end_link="...">{ "transitRouteId": "...", ... }</route>
+                    try:
+                        steps[current_leg_idx]["routeType"] = elem.attrib.get("type")
+                        steps[current_leg_idx]["ptStartLink"] = elem.attrib.get("start_link")
+                        steps[current_leg_idx]["ptEndLink"] = elem.attrib.get("end_link")
+                        txt = (elem.text or "").strip()
+                        if txt:
+                            try:
+                                payload = json.loads(txt)
+                                if isinstance(payload, dict):
+                                    tri = payload.get("transitRouteId")
+                                    tli = payload.get("transitLineId")
+                                    if tri:
+                                        steps[current_leg_idx]["transitRouteId"] = tri
+                                    if tli:
+                                        steps[current_leg_idx]["transitLineId"] = tli
+                                    # Optionally persist a few other PT attributes if present
+                                    for k in ("boardingTime", "accessFacilityId", "egressFacilityId"):
+                                        if payload.get(k) is not None:
+                                            steps[current_leg_idx][k] = payload.get(k)
+                            except Exception:
+                                # Ignore malformed JSON inside <route>
+                                pass
+                    except Exception:
+                        pass
             elif event == "end":
+                if tag == "leg":
+                    current_leg_idx = None
                 if tag == "plan" and inside_plan:
                     for i, s in enumerate(steps):
                         if s["kind"] == "activity":
@@ -241,4 +274,3 @@ def parse_plans_to_json(path_or_stream: Union[str, io.BufferedReader], facilitie
                     if len(persons) >= max_persons:
                         break
     return persons
-
