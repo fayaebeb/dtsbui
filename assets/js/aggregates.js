@@ -29,9 +29,12 @@
       totalUtility: 0,
       avgUtility: 0,
       ptUsers: 0,
-      ptRoutes: {}, // requires transitRouteId (not available in current JSON)
-      actStats: {}, // { type: { people:Set, time:sec } }
-      modeStats: {} // { mode: { time:sec, people:Set } }
+      // ptRoutes: { routeId: { users:Set<string>, trips:number } }
+      ptRoutes: {},
+      // actStats: { type: { people:Set<string>, time:sec } }
+      actStats: {},
+      // modeStats: { mode: { time:sec, people:Set<string> } }
+      modeStats: {}
     };
 
     persons.forEach(p => {
@@ -51,7 +54,15 @@
           if (!out.modeStats[m]) out.modeStats[m] = { time: 0, people: new Set() };
           out.modeStats[m].time += d;
           seenModes.add(m);
-          if (m === 'pt') usedPt = true;
+          if (m === 'pt') {
+            usedPt = true;
+            const rid = s.transitRouteId || s.transitLineId || s.ptStartLink || null;
+            if (rid) {
+              if (!out.ptRoutes[rid]) out.ptRoutes[rid] = { users: new Set(), trips: 0 };
+              out.ptRoutes[rid].trips += 1;
+              out.ptRoutes[rid].users.add(p.personId);
+            }
+          }
         } else if (s.kind === 'activity') {
           const d = s.durationSec || 0;
           const t = s.type || '__other__';
@@ -97,13 +108,14 @@
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
           <div class="c-chart"><canvas id="chartActPeople"></canvas></div>
           <div class="c-chart"><canvas id="chartActTime"></canvas></div>
+          <div class="c-chart"><canvas id="chartActAvg"></canvas></div>
           <div class="c-chart"><canvas id="chartModeTime"></canvas></div>
+          <div class="c-chart"><canvas id="chartModeAvg"></canvas></div>
           <div class="c-chart"><canvas id="chartPt"></canvas></div>
+          <div class="c-chart">
+            <div id="ptRouteTable" style="max-height:240px; overflow:auto; border:1px solid #eee; border-radius:6px;"></div>
+          </div>
         </div>
-
-        <small style="display:block; margin-top:8px; color:#666;">
-          Note: PT per-route counts require transitRouteId in parsed JSON and are not available yet.
-        </small>
       </details>
     </div>
   `;
@@ -153,8 +165,18 @@
     const actLabels = Object.keys(data.actStats);
     const actPeople = actLabels.map(k => data.actStats[k].people.size);
     const actTime = actLabels.map(k => Math.round((data.actStats[k].time || 0) / 3600 * 10) / 10); // hours
+    const actAvg = actLabels.map(k => {
+      const ppl = data.actStats[k].people.size || 1;
+      const hours = (data.actStats[k].time || 0) / 3600;
+      return Math.round((hours / ppl) * 10) / 10;
+    });
     const modeLabels = Object.keys(data.modeStats);
     const modeTime = modeLabels.map(k => Math.round((data.modeStats[k].time || 0) / 3600 * 10) / 10); // hours
+    const modeAvg = modeLabels.map(k => {
+      const ppl = data.modeStats[k].people.size || 1;
+      const hours = (data.modeStats[k].time || 0) / 3600;
+      return Math.round((hours / ppl) * 10) / 10;
+    });
 
     const commonBar = {
       type: 'bar',
@@ -168,15 +190,44 @@
       ...commonBar,
       data: { labels: actLabels, datasets: [{ label: 'Activity time (hours)', data: actTime, backgroundColor: '#F5813C' }] }
     });
+    new Chart(document.getElementById('chartActAvg'), {
+      ...commonBar,
+      data: { labels: actLabels, datasets: [{ label: 'Avg activity time per person (hours)', data: actAvg, backgroundColor: '#f39c12' }] }
+    });
     new Chart(document.getElementById('chartModeTime'), {
       ...commonBar,
       data: { labels: modeLabels, datasets: [{ label: 'Travel time by mode (hours)', data: modeTime, backgroundColor: '#8E44AD' }] }
+    });
+    new Chart(document.getElementById('chartModeAvg'), {
+      ...commonBar,
+      data: { labels: modeLabels, datasets: [{ label: 'Avg travel time per person by mode (hours)', data: modeAvg, backgroundColor: '#27ae60' }] }
     });
     new Chart(document.getElementById('chartPt'), {
       type: 'bar',
       data: { labels: ['PT users', 'Non-PT'], datasets: [{ label: 'PT usage', data: [data.ptUsers, Math.max(0, data.totalPeople - data.ptUsers)], backgroundColor: ['#2ECC71', '#BDC3C7'] }] },
       options: { responsive: true, plugins: { legend: { display: false } } }
     });
+
+    // PT per-route top list
+    const ptHost = document.getElementById('ptRouteTable');
+    if (ptHost) {
+      const rows = Object.entries(data.ptRoutes || {})
+        .map(([rid, rec]) => ({ rid, users: rec.users?.size || 0, trips: rec.trips || 0 }))
+        .filter(r => r.users > 0 || r.trips > 0)
+        .sort((a, b) => (b.users - a.users) || (b.trips - a.trips))
+        .slice(0, 12);
+      if (!rows.length) {
+        ptHost.innerHTML = '<div style="color:#666; padding:8px;">PT per-route counts unavailable (no route IDs in dataset).</div>';
+      } else {
+        const html = [
+          '<table class="u-en" style="width:100%; border-collapse:collapse; font-size:12px;">',
+          '<thead><tr><th style="text-align:left; padding:6px; border-bottom:1px solid #eee;">PT Route</th><th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">Users</th><th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">Trips</th></tr></thead>',
+          '<tbody>' + rows.map(r => `<tr><td style="padding:6px; border-bottom:1px solid #f5f5f5;">${r.rid}</td><td style="padding:6px; text-align:right; border-bottom:1px solid #f5f5f5;">${r.users}</td><td style="padding:6px; text-align:right; border-bottom:1px solid #f5f5f5;">${r.trips}</td></tr>`).join('') + '</tbody>',
+          '</table>'
+        ].join('');
+        ptHost.innerHTML = html;
+      }
+    }
   }
 
   onReady(async () => {
@@ -190,4 +241,3 @@
     renderCharts(agg);
   });
 })();
-
