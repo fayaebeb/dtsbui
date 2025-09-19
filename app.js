@@ -683,77 +683,6 @@ document.getElementById('loadSimulationBtn')?.addEventListener('click', async ()
   }
 });
 
-/*
-// === Upload handling with caching + facilities ===
-document.getElementById("folderUpload").addEventListener("change", async (event) => {
-  const files = Array.from(event.target.files);
-  const fileMap = {};
-  for (let file of files) fileMap[file.name] = file;
-
-  const plansFile = fileMap["output_plans.xml.gz"] || fileMap["output_plans.xml"];
-  if (!plansFile) {
-    alert("output_plans.xml(.gz) not found in the uploaded folder.");
-    return;
-  }
-
-  // try to find a facilities file
-  const facilitiesName = [
-    "output_facilities.xml.gz",
-    "facilities.xml.gz",
-    "output_facilities.xml",
-    "facilities.xml"
-  ].find(n => fileMap[n]);
-
-  const spinner = document.getElementById("folderUploadSpinner");
-  const labelText = document.getElementById("folderUploadLabel");
-  spinner.style.display = "inline";
-  labelText.textContent = "Uploading to server...";
-  statusMsg.textContent = "";
-
-  try {
-    const formData = new FormData();
-    formData.append("file", plansFile);
-    if (facilitiesName) {
-      formData.append("facilities", fileMap[facilitiesName]); // optional
-    }
-
-    // selected_only=false so you can browse multiple plans per person
-    const res = await fetch("http://127.0.0.1:3000/upload?limit=1000&selected_only=false", {
-      method: "POST",
-      body: formData
-    });
-    const parsed = await res.json();
-
-    if (!Array.isArray(parsed)) throw new Error("Server returned invalid JSON.");
-
-    // keep originals
-    window.__PARSED__ = parsed;
-    __ALL_PERSONS__ = parsed;
-
-    // cache to IndexedDB and remember key
-    const dsKey = makeDatasetKey(fileMap) || `plans:${Date.now()}`;
-    await Persist.idbPut(dsKey, parsed);
-    UI.datasetKey = dsKey;
-    Persist.saveUI(UI);
-
-    // apply any active filter
-    applyFilterAndRender();
-
-    labelText.textContent = "✅ Plans Loaded";
-    statusMsg.textContent = `Loaded ${__FILTERED_PERSONS__.length} of ${__ALL_PERSONS__.length} persons (filtered)`;
-
-    // Default map draw: selected plan for each filtered persona
-    redrawMapFromFiltered();
-  } catch (err) {
-    console.error(err);
-    alert("Upload failed.");
-    labelText.textContent = "❌ Error";
-  } finally {
-    spinner.style.display = "none";
-  }
-});
-*/
-
 // === Boot-time restore from cache ===
 (async function bootRestore() {
   try {
@@ -777,8 +706,6 @@ document.getElementById("folderUpload").addEventListener("change", async (event)
   }
 })();
 
-// === AI Story generation ===
-// choose the top-scoring person/plan using CURRENT client weights
 function findTopByClientScore() {
   const weights = getWeights();
   let best = null; // { person, planIndex, plan, score }
