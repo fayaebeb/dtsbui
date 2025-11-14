@@ -314,24 +314,84 @@
       const { sasUrl, blobName } = await sasRes.json();
       if (!sasUrl || !blobName) throw new Error('Invalid SAS response');
 
-      const azure = window.AzureStorage || {};
-      const BlockBlobClientCtor = azure.BlockBlobClient;
-      if (!BlockBlobClientCtor) {
-        throw new Error('Azure storage SDK not loaded');
+      // Upload the file in blocks directly to the SAS URL using XHR so we can
+      // handle large files without hitting single-request size limits.
+      const url = new URL(sasUrl);
+      const baseUrl = `${url.origin}${url.pathname}`;
+      const sasParams = url.search ? url.search.slice(1) : '';
+      const apiVersion = url.searchParams.get('sv') || '2020-10-02';
+      const blockSize = 4 * 1024 * 1024; // 4 MiB per block
+      const totalBlocks = Math.ceil(file.size / blockSize) || 1;
+      const blockIds = [];
+      let uploadedBytes = 0;
+
+      for (let i = 0; i < totalBlocks; i += 1) {
+        const start = i * blockSize;
+        const end = Math.min(file.size, start + blockSize);
+        const chunk = file.slice(start, end);
+        const rawId = `block-${String(i).padStart(6, '0')}`;
+        const blockId = btoa(rawId);
+        blockIds.push(blockId);
+        const blockUrl = `${baseUrl}?comp=block&blockid=${encodeURIComponent(blockId)}${sasParams ? `&${sasParams}` : ''}`;
+
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('PUT', blockUrl, true);
+          xhr.setRequestHeader('x-ms-version', apiVersion);
+
+          xhr.upload.onprogress = (evt) => {
+            if (!prog || !file.size || !evt.lengthComputable) return;
+            const pct = Math.min(100, Math.round(((uploadedBytes + evt.loaded) / file.size) * 100));
+            prog.value = pct;
+          };
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              uploadedBytes += chunk.size;
+              if (prog) {
+                const pct = Math.min(100, Math.round((uploadedBytes / file.size) * 100));
+                prog.value = pct;
+              }
+              resolve();
+            } else {
+              reject(new Error(`Blob block upload failed (${xhr.status})`));
+            }
+          };
+
+          xhr.onerror = () => reject(new Error('Network error during blob upload'));
+          xhr.onabort = () => reject(new Error('Blob upload aborted'));
+
+          xhr.send(chunk);
+        });
       }
-      const client = new BlockBlobClientCtor(sasUrl);
-      await client.uploadBrowserData(file, {
-        blockSize: 4 * 1024 * 1024,
-        concurrency: 8,
-        onProgress: (evt) => {
-          const p = document.getElementById('prog');
-          if (!p || !file.size) return;
-          const pct = Math.min(100, Math.round((evt.loadedBytes / file.size) * 100));
-          p.value = pct;
-        }
+
+      // Commit the block list to finalize the blob.
+      const blockListUrl = `${baseUrl}?comp=blocklist${sasParams ? `&${sasParams}` : ''}`;
+      const blockListXml = `<?xml version="1.0" encoding="utf-8"?><BlockList>${blockIds.map((id) => `<Latest>${id}</Latest>`).join('')}</BlockList>`;
+
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', blockListUrl, true);
+        xhr.setRequestHeader('x-ms-version', apiVersion);
+        const contentType = file.type || 'application/octet-stream';
+        xhr.setRequestHeader('x-ms-blob-content-type', contentType);
+        xhr.setRequestHeader('Content-Type', 'application/xml');
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            if (prog) prog.value = 100;
+            resolve();
+          } else {
+            reject(new Error(`Blob commit failed (${xhr.status})`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Network error during blob commit'));
+        xhr.onabort = () => reject(new Error('Blob commit aborted'));
+
+        xhr.send(blockListXml);
       });
-      const p = document.getElementById('prog');
-      if (p) p.value = 100;
 
       const importRes = await fetch('/admin/api/simulations/register-blob', {
         method: 'POST',
@@ -391,9 +451,5 @@
     refresh();
   </script>
 
-  <script type="module">
-    import { BlockBlobClient } from "https://esm.sh/@azure/storage-blob@12.16.0";
-    window.AzureStorage = { BlockBlobClient };
-  </script>
 </body>
 </html>
