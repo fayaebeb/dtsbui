@@ -1,3 +1,20 @@
+import sys
+import subprocess
+import os
+
+# --- Azure App Service fallback: ensure dependencies are installed ---
+def ensure_deps():
+    try:
+        import flask_compress  # noqa: F401
+    except ImportError:
+        subprocess.check_call([
+            sys.executable, "-m", "pip", "install", "-r",
+            os.path.join(os.path.dirname(__file__), "requirements.txt")
+        ])
+
+ensure_deps()
+# -------------------------------------------------------------------
+
 try:
     from dotenv import load_dotenv
 except ModuleNotFoundError:
@@ -6,7 +23,6 @@ except ModuleNotFoundError:
 
 load_dotenv()
 
-import os
 from flask import Flask, send_from_directory
 from flask_compress import Compress
 
@@ -14,6 +30,7 @@ from app import create_app, csrf
 from app.models import init_db, create_admin_if_missing
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 def build_app() -> Flask:
     app = create_app()
@@ -51,15 +68,18 @@ def build_app() -> Flask:
 
     return app
 
+
 app = build_app()
 
 with app.app_context():
     init_db(app)
     from app.models import reset_stuck_jobs
     reset_stuck_jobs()
+
     admin_user = os.getenv("ADMIN_USER", "admin")
     admin_pass = os.getenv("ADMIN_PASS", "changeme")
     create_admin_if_missing(app, admin_user, admin_pass)
+
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=3000, debug=True)
