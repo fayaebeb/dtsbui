@@ -12,6 +12,8 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -19,6 +21,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
 
       - name: Sanity checks
         run: |
@@ -28,14 +32,15 @@ jobs:
           test -f server.py || (echo "Missing server.py (case-sensitive on Linux!)"; exit 1)
           test ! -f server.PY || (echo "Remove server.PY (case-sensitive conflict on Linux)"; exit 1)
 
-      # Install dependencies into a local folder that we will ship
-      - name: Install dependencies
+      - name: Install dependencies (ship with app)
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt --target="./.python_packages/lib/site-packages"
+          pip install -r requirements.txt --target "./.python_packages/lib/site-packages"
+          # verify it actually exists
+          test -d "./.python_packages/lib/site-packages" || (echo "Dependency folder missing"; exit 1)
+          ls -la "./.python_packages/lib/site-packages" | head
 
-      # Zip the app (including the .python_packages folder)
-      - name: Create deployment package
+      - name: Create deployment package (includes dot-folders)
         run: |
           zip -r app.zip . -x ".git/*" ".github/*" "__pycache__/*" "*.pyc"
 
