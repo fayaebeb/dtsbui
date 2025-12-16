@@ -516,3 +516,22 @@ details.c-route>.c-route__setting {
   display: inline-block;   /* don't fill parent width */
   white-space: nowrap;     /* no wrapping */
 }
+
+/* Published Simulations: prevent text touching borders */
+.pubsim-controls .c-btn__small,
+.pubsim-controls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;     /* increase breathing room */
+  line-height: 1.2;      /* avoid tight line box */
+  min-height: 32px;      /* consistent height */
+  box-sizing: border-box;
+}
+
+.pubsim-controls select {
+  padding: 6px 10px;
+  line-height: 1.2;
+  min-height: 32px;
+  box-sizing: border-box;
+}

@@ -196,19 +196,19 @@
 
 							<div class="c-btn c-btn__contents blue"
 								style=" display:flex; flex-direction:column; gap:6px; flex:1 1 auto; min-height:48px; min-width:150px; width:100%; max-width:100%; padding:10px 12px; line-height:1.2; box-sizing:border-box;">
-								<div style="font-weight:700; color:#fff; text-align:center; white-space:nowrap;">
-									Published Simulations</div>
-								<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+								<div style="font-weight:700; color:#fff; text-align:left; white-space:nowrap;">
+									公開済みシミュレーション</div>
+								<div class="pubsim-controls" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
 									<select id="simulationSelect"
 										style="flex:1 1 auto; min-width:0; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></select>
-									<button type="button" id="loadSimulationBtn" class="c-btn__small">Load</button>
-									<button type="button" id="showCachedSimulationBtn"
-										class="c-btn__small c-btn__ghost">Show on Map</button>
-									<button type="button" id="downloadSimulationBtn"
-										class="c-btn__small c-btn__ghost">Download</button>
-									<button type="button" id="clearMapTopBtn"
-										class="c-btn__small c-btn__ghost">Clear Map</button>
+									<button type="button" id="loadSimulationBtn" class="c-btn__small">読み込み</button>
 									<span id="loadSimSpinner" style="display:none; margin-left:8px;">⏳</span>
+									<button type="button" id="downloadSimulationBtn"
+										class="c-btn__small c-btn__ghost">ダウンロード</button>
+									<button type="button" id="showCachedSimulationBtn"
+										class="c-btn__small c-btn__ghost">地図に表示</button>
+									<button type="button" id="clearMapTopBtn"
+										class="c-btn__small c-btn__ghost">地図クリア</button>
 								</div>
 							</div>
 						</div>
