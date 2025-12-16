@@ -10,23 +10,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    permissions: { contents: read }
+
     steps:
       - uses: actions/checkout@v4
 
-      # (Optional) sanity checks in CI; Oryx will do the real install on Azure
       - uses: actions/setup-python@v5
-        with: { python-version: '3.11', cache: 'pip' }
-      - name: Verify Procfile & requirements.txt
+        with:
+          python-version: '3.11'
+
+      - name: Sanity checks
         run: |
           test -f Procfile || (echo "Missing Procfile"; exit 1)
           test -f requirements.txt || (echo "Missing requirements.txt"; exit 1)
+          # IMPORTANT: ensure filename casing is correct
+          test -f server.py || (echo "Missing server.py (case-sensitive on Linux!)"; exit 1)
+          test ! -f server.PY || (echo "Remove server.PY (case-sensitive conflict on Linux)"; exit 1)
 
-      - name: Deploy to Azure Web App (source)
+      # Install dependencies into a local folder that we will ship
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt --target="./.python_packages/lib/site-packages"
+
+      # Zip the app (including the .python_packages folder)
+      - name: Create deployment package
+        run: |
+          zip -r app.zip . -x ".git/*" ".github/*" "__pycache__/*" "*.pyc"
+
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: dtsb
           slot-name: Production
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          package: app.zip
