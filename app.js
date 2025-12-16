@@ -9,6 +9,7 @@ const simulationSelect = document.getElementById("simulationSelect");
 const downloadSimulationBtn = document.getElementById("downloadSimulationBtn");
 if (downloadSimulationBtn) downloadSimulationBtn.disabled = true;
 window.__PUBLISHED_SIMS__ = window.__PUBLISHED_SIMS__ || [];
+const showCachedSimulationBtn = document.getElementById("showCachedSimulationBtn");
 
 // ---- Persistence helpers ----
 const LS_KEY = "matsim-ui-v1";          
@@ -116,7 +117,8 @@ function clearMapGraphics() {
   drawnLayers.forEach(l => map.removeLayer(l));
   drawnLayers = [];
 }
-document.getElementById("clearMapBtn").addEventListener("click", clearMapGraphics);
+document.getElementById("clearMapBtn")?.addEventListener("click", clearMapGraphics);
+document.getElementById("clearMapTopBtn")?.addEventListener("click", clearMapGraphics);
 
 function drawPlanOnMap(person, plan) {
   if (!plan || !Array.isArray(plan.steps)) return; // guard
@@ -694,9 +696,7 @@ document.getElementById('loadSimulationBtn')?.addEventListener('click', async ()
         __ALL_PERSONS__ = cached;
 
         applyFilterAndRender();
-        redrawMapFromFiltered();
-
-        statusMsg.textContent = `Restored ${__FILTERED_PERSONS__.length} of ${__ALL_PERSONS__.length} persons (cached)`;
+        statusMsg.textContent = `Restored ${__FILTERED_PERSONS__.length} of ${__ALL_PERSONS__.length} persons (cached). Click "Show on Map" to display.`;
       }
     } else {
       applyFilterAndRender();
@@ -705,6 +705,20 @@ document.getElementById('loadSimulationBtn')?.addEventListener('click', async ()
     console.warn("Restore failed:", e);
   }
 })();
+
+// Button to show currently loaded (or cached) persons on the map on demand
+showCachedSimulationBtn?.addEventListener("click", () => {
+  if (!Array.isArray(__ALL_PERSONS__) || __ALL_PERSONS__.length === 0) {
+    alert("No simulation data loaded. Please Load a Published Simulation first.");
+    return;
+  }
+  // Ensure filtered list exists
+  if (!Array.isArray(__FILTERED_PERSONS__) || __FILTERED_PERSONS__.length === 0) {
+    applyFilterAndRender();
+  }
+  redrawMapFromFiltered();
+  statusMsg.textContent = `Displayed ${__FILTERED_PERSONS__.length} of ${__ALL_PERSONS__.length} persons on the map.`;
+});
 
 function findTopByClientScore() {
   const weights = getWeights();
