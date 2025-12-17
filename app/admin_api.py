@@ -169,8 +169,10 @@ def parse_and_cache(sim_id):
     # visualization.
     limit = int(request.args.get("limit", 1_000_000))
     force_flag = request.args.get("force", "0").lower() in {"1", "true", "yes"}
+    all_plans_flag = request.args.get("all_plans", "0").lower() in {"1", "true", "yes"}
+    selected_only = not all_plans_flag
     try:
-        payload = enqueue_parse_job(sim_id, limit, force=force_flag)
+        payload = enqueue_parse_job(sim_id, limit, force=force_flag, selected_only=selected_only)
     except LookupError:
         return jsonify({"error": "Not found"}), 404
 

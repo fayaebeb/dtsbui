@@ -46,7 +46,7 @@ def get_parse_status(sim_id: str) -> Optional[Dict[str, Any]]:
     return _job_payload(sim, status)
 
 
-def enqueue_parse_job(sim_id: str, limit: int, *, force: bool = False) -> Dict[str, Any]:
+def enqueue_parse_job(sim_id: str, limit: int, *, force: bool = False, selected_only: bool = True) -> Dict[str, Any]:
     sim = get_simulation(sim_id)
     if not sim:
         raise LookupError("simulation not found")
@@ -86,13 +86,13 @@ def enqueue_parse_job(sim_id: str, limit: int, *, force: bool = False) -> Dict[s
         if queued_row is None:
             raise LookupError("failed to update simulation")
 
-        future: Future = _EXECUTOR.submit(_run_job, app, sim_id, limit)
+        future: Future = _EXECUTOR.submit(_run_job, app, sim_id, limit, selected_only)
         _ACTIVE_JOBS[sim_id] = {"future": future, "status": "queued"}
 
     return _job_payload(queued_row, "queued")
 
 
-def _run_job(app: Flask, sim_id: str, limit: int) -> None:
+def _run_job(app: Flask, sim_id: str, limit: int, selected_only: bool) -> None:
     with app.app_context():
         current_app.logger.info("[parse] job started for %s", sim_id)
         update_simulation(
@@ -106,7 +106,7 @@ def _run_job(app: Flask, sim_id: str, limit: int) -> None:
                 _ACTIVE_JOBS[sim_id]["status"] = "running"
 
         try:
-            result = run_parse(sim_id, limit, selected_only=False)
+            result = run_parse(sim_id, limit, selected_only=selected_only)
             update_simulation(
                 sim_id,
                 parse_status="succeeded",

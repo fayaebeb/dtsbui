@@ -75,6 +75,16 @@ const UI = {
   selectedByPerson: {},   // { [personId]: number }
   analysisOpen: false,    // panel visibility
   datasetKey: null,       // key used in IndexedDB for persons array
+  station: {              // Station counts panel (Saijo by default in UI)
+    lat: null,
+    lon: null,
+    x: null,
+    y: null,
+    radiusM: 500,
+    binSec: 3600,
+    beforeSimId: null,
+    afterSimId: null,
+  },
 };
 
 // load immediately
@@ -99,6 +109,16 @@ function atlantisToWGS84(x, y) {
   } catch (e) {
     console.error("Projection failed:", e, x, y);
     return [0, 0];
+  }
+}
+
+function wgs84ToAtlantis(lat, lon) {
+  try {
+    const [x, y] = proj4("EPSG:4326", "EPSG:6671", [lon, lat]);
+    return [x, y];
+  } catch (e) {
+    console.error("Projection failed:", e, lat, lon);
+    return [null, null];
   }
 }
 
@@ -748,6 +768,25 @@ async function populateSimulationList() {
       sel.appendChild(opt);
     });
     updateDownloadButtonState();
+
+    // Mirror list into the station compare selects if present.
+    const beforeSel = document.getElementById("stationBeforeSimSelect");
+    const afterSel = document.getElementById("stationAfterSimSelect");
+    function fillCompareSelect(target) {
+      if (!target) return;
+      target.innerHTML = "";
+      list.forEach((s) => {
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = `${s.name} — ${s.id.slice(0, 8)}`;
+        target.appendChild(opt);
+      });
+    }
+    fillCompareSelect(beforeSel);
+    fillCompareSelect(afterSel);
+
+    if (beforeSel && UI.station?.beforeSimId) beforeSel.value = UI.station.beforeSimId;
+    if (afterSel && UI.station?.afterSimId) afterSel.value = UI.station.afterSimId;
   } catch (e) {
     console.error('Failed to load simulations', e);
     if (downloadSimulationBtn) downloadSimulationBtn.disabled = true;
@@ -966,3 +1005,201 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
     alert("AIストーリー生成に失敗しました。");
   }
 });
+
+
+// ================================
+// Station counts (Saijo area)
+// ================================
+(() => {
+  const beforeSel = document.getElementById("stationBeforeSimSelect");
+  const afterSel = document.getElementById("stationAfterSimSelect");
+  const pickBtn = document.getElementById("stationPickBtn");
+  const latInput = document.getElementById("stationLat");
+  const lonInput = document.getElementById("stationLon");
+  const radiusInput = document.getElementById("stationRadiusM");
+  const binSel = document.getElementById("stationBinSec");
+  const computeBtn = document.getElementById("stationComputeBtn");
+  const statusEl = document.getElementById("stationCountsStatus");
+  const outEl = document.getElementById("stationCountsOut");
+
+  if (!pickBtn || !latInput || !lonInput || !radiusInput || !binSel || !computeBtn || !outEl) return;
+
+  let pickMode = false;
+  let circleLayer = null;
+
+  function setStatus(msg) {
+    if (statusEl) statusEl.textContent = msg || "";
+  }
+
+  function formatHHMM(sec) {
+    const s = Math.max(0, Math.floor(sec || 0));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  }
+
+  function updateCircle() {
+    const lat = Number(latInput.value);
+    const lon = Number(lonInput.value);
+    const radiusM = Number(radiusInput.value || 0);
+    if (!isFinite(lat) || !isFinite(lon) || !isFinite(radiusM) || radiusM <= 0) return;
+    if (!window.map || !window.L) return;
+    const latlng = [lat, lon];
+    if (!circleLayer) {
+      circleLayer = window.L.circle(latlng, { radius: radiusM, color: "#00B3FF", weight: 2, fillOpacity: 0.08 });
+      circleLayer.addTo(window.map);
+    } else {
+      circleLayer.setLatLng(latlng);
+      circleLayer.setRadius(radiusM);
+    }
+  }
+
+  function persistStation() {
+    UI.station = UI.station || {};
+    UI.station.lat = latInput.value ? Number(latInput.value) : null;
+    UI.station.lon = lonInput.value ? Number(lonInput.value) : null;
+    UI.station.radiusM = Number(radiusInput.value || 500);
+    UI.station.binSec = Number(binSel.value || 3600);
+    UI.station.beforeSimId = beforeSel?.value || null;
+    UI.station.afterSimId = afterSel?.value || null;
+    Persist.saveUI(UI);
+  }
+
+  function applyStationFromUI() {
+    const st = UI.station || {};
+    if (st.lat != null) latInput.value = String(st.lat);
+    if (st.lon != null) lonInput.value = String(st.lon);
+    if (st.radiusM != null) radiusInput.value = String(st.radiusM);
+    if (st.binSec != null) binSel.value = String(st.binSec);
+    updateCircle();
+  }
+
+  applyStationFromUI();
+  beforeSel?.addEventListener("change", persistStation);
+  afterSel?.addEventListener("change", persistStation);
+  latInput.addEventListener("input", () => { persistStation(); updateCircle(); });
+  lonInput.addEventListener("input", () => { persistStation(); updateCircle(); });
+  radiusInput.addEventListener("input", () => { persistStation(); updateCircle(); });
+  binSel.addEventListener("change", persistStation);
+
+  pickBtn.addEventListener("click", () => {
+    pickMode = !pickMode;
+    pickBtn.textContent = pickMode ? "Click the map…" : "Pick on map";
+    setStatus(pickMode ? "Click the map to set the station point." : "");
+  });
+
+  if (window.map) {
+    window.map.on("click", (e) => {
+      if (!pickMode) return;
+      const lat = e?.latlng?.lat;
+      const lon = e?.latlng?.lng;
+      if (!isFinite(lat) || !isFinite(lon)) return;
+      latInput.value = String(lat);
+      lonInput.value = String(lon);
+      pickMode = false;
+      pickBtn.textContent = "Pick on map";
+      persistStation();
+      updateCircle();
+      setStatus("Station point updated.");
+    });
+  }
+
+  async function fetchStationCounts(simId, centerX, centerY, radiusM, binSec) {
+    const res = await fetch(`/api/simulations/${simId}/station-counts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ centerX, centerY, radiusM, binSec }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || "station-counts failed");
+    return data;
+  }
+
+  function peakInfo(arr) {
+    let best = { value: -1, idx: -1 };
+    if (!Array.isArray(arr)) return best;
+    arr.forEach((v, i) => {
+      const n = Number(v || 0);
+      if (n > best.value) best = { value: n, idx: i };
+    });
+    return best;
+  }
+
+  function renderCompare(before, after) {
+    const binSec = Number(before?.binSec || after?.binSec || binSel.value || 3600);
+    const a = Array.isArray(before?.presentByBin) ? before.presentByBin : [];
+    const b = Array.isArray(after?.presentByBin) ? after.presentByBin : [];
+    const n = Math.max(a.length, b.length);
+
+    const pv = Number(before?.uniqueVisitors || 0);
+    const av = Number(after?.uniqueVisitors || 0);
+
+    const pPeak = peakInfo(a);
+    const aPeak = peakInfo(b);
+
+    const lines = [];
+    lines.push(`Unique visitors: before=${pv} after=${av} diff=${av - pv}`);
+    lines.push(`Peak present:    before=${pPeak.value} @${formatHHMM(pPeak.idx * binSec)} after=${aPeak.value} @${formatHHMM(aPeak.idx * binSec)}`);
+    lines.push("");
+    lines.push("TimeBinStart,BeforePresent,AfterPresent,Diff");
+    for (let i = 0; i < n; i++) {
+      const bv = Number(a[i] || 0);
+      const nv = Number(b[i] || 0);
+      lines.push(`${formatHHMM(i * binSec)},${bv},${nv},${nv - bv}`);
+      if (i >= 47) break; // keep it compact
+    }
+    outEl.textContent = lines.join("\n");
+  }
+
+  computeBtn.addEventListener("click", async () => {
+    const beforeId = beforeSel?.value;
+    const afterId = afterSel?.value;
+    if (!beforeId || !afterId) {
+      alert("Select both Before and After simulations.");
+      return;
+    }
+
+    const lat = Number(latInput.value);
+    const lon = Number(lonInput.value);
+    const radiusM = Number(radiusInput.value || 500);
+    const binSec = Number(binSel.value || 3600);
+    if (!isFinite(lat) || !isFinite(lon)) {
+      alert("Set station Lat/Lon (or use Pick on map).");
+      return;
+    }
+    if (!isFinite(radiusM) || radiusM <= 0) {
+      alert("Radius must be > 0.");
+      return;
+    }
+
+    const [x, y] = wgs84ToAtlantis(lat, lon);
+    if (x == null || y == null) {
+      alert("Coordinate conversion failed (proj4).");
+      return;
+    }
+
+    UI.station.x = x;
+    UI.station.y = y;
+    UI.station.beforeSimId = beforeId;
+    UI.station.afterSimId = afterId;
+    UI.station.radiusM = radiusM;
+    UI.station.binSec = binSec;
+    Persist.saveUI(UI);
+
+    setStatus("Computing station counts from events…");
+    outEl.textContent = "";
+
+    try {
+      const [before, after] = await Promise.all([
+        fetchStationCounts(beforeId, x, y, radiusM, binSec),
+        fetchStationCounts(afterId, x, y, radiusM, binSec),
+      ]);
+      renderCompare(before, after);
+      setStatus("Done.");
+    } catch (e) {
+      console.error(e);
+      setStatus("Failed.");
+      outEl.textContent = e?.message || "Error";
+    }
+  });
+})();

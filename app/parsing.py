@@ -91,7 +91,12 @@ def score_plan(steps: List[Dict[str, Any]], weights=DEFAULT_WEIGHTS) -> float:
     return score
 
 
-def parse_plans_to_json(path_or_stream: Union[str, io.BufferedReader], facilities: Optional[Union[str, io.BufferedReader]] = None, max_persons: int = 200, selected_only_flag: bool = True) -> List[Dict[str, Any]]:
+def parse_plans_to_json(
+    path_or_stream: Union[str, io.BufferedReader],
+    facilities: Optional[Union[str, io.BufferedReader]] = None,
+    max_persons: int = 200,
+    selected_only_flag: bool = True,
+) -> List[Dict[str, Any]]:
     facilities_map = {}
     if facilities:
         try:
@@ -106,6 +111,8 @@ def parse_plans_to_json(path_or_stream: Union[str, io.BufferedReader], facilitie
 
     persons: List[Dict[str, Any]] = []
     current_person: Optional[Dict[str, Any]] = None
+    selected_plan_obj: Optional[Dict[str, Any]] = None
+    first_plan_obj: Optional[Dict[str, Any]] = None
     inside_plan = False
     plan_selected_flag = False
     plan_matsim_score: Optional[float] = None
@@ -122,6 +129,8 @@ def parse_plans_to_json(path_or_stream: Union[str, io.BufferedReader], facilitie
             if event == "start":
                 if tag == "person":
                     current_person = {"personId": elem.attrib.get("id"), "plans": []}
+                    selected_plan_obj = None
+                    first_plan_obj = None
                 elif tag == "plan" and current_person is not None:
                     inside_plan = True
                     plan_selected_flag = (elem.attrib.get("selected") == "yes")
@@ -250,7 +259,13 @@ def parse_plans_to_json(path_or_stream: Union[str, io.BufferedReader], facilitie
                             "serverScore": server_score,
                             "steps": steps
                         }
-                        current_person["plans"].append(plan_obj)
+                        if selected_only_flag:
+                            if first_plan_obj is None:
+                                first_plan_obj = plan_obj
+                            if plan_selected_flag:
+                                selected_plan_obj = plan_obj
+                        else:
+                            current_person["plans"].append(plan_obj)
                     inside_plan = False
                     plan_selected_flag = False
                     plan_matsim_score = None
@@ -259,16 +274,21 @@ def parse_plans_to_json(path_or_stream: Union[str, io.BufferedReader], facilitie
                     current_time = None
                     last_leg_arrival = None
                 elif tag == "person" and current_person is not None:
-                    sel_idx = 0
-                    for i, pl in enumerate(current_person["plans"]):
-                        if pl.get("selected"):
-                            sel_idx = i
-                            break
-                    current_person["selectedPlanIndex"] = sel_idx
-                    if selected_only_flag and current_person["plans"]:
-                        current_person["plans"] = [current_person["plans"][sel_idx]]
-                    if current_person["plans"]:
-                        persons.append(current_person)
+                    if selected_only_flag:
+                        plan_obj = selected_plan_obj or first_plan_obj
+                        if plan_obj is not None:
+                            current_person["plans"] = [plan_obj]
+                            current_person["selectedPlanIndex"] = 0
+                            persons.append(current_person)
+                    else:
+                        sel_idx = 0
+                        for i, pl in enumerate(current_person["plans"]):
+                            if pl.get("selected"):
+                                sel_idx = i
+                                break
+                        current_person["selectedPlanIndex"] = sel_idx
+                        if current_person["plans"]:
+                            persons.append(current_person)
                     current_person = None
                     elem.clear()
                     if len(persons) >= max_persons:

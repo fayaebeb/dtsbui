@@ -91,7 +91,7 @@ def _parse_and_cache(sim_id: str, plans_path: str, facilities_path: Optional[str
     }
 
 
-def run_parse(sim_id: str, limit: int, selected_only: bool = False) -> Dict[str, Any]:
+def run_parse(sim_id: str, limit: int, selected_only: bool = True) -> Dict[str, Any]:
     """Parse the specified simulation and cache the result to disk."""
     sim = get_simulation(sim_id)
     if not sim:

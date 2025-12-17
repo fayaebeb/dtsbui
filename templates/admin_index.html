@@ -50,7 +50,13 @@
           <h2>All Simulations</h2>
           <p class="muted">Manage publication, parsing, and removal.</p>
         </div>
-        <button id="refreshBtn" class="btn subtle">Refresh</button>
+        <div style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;">
+          <label class="muted" style="display:flex; gap:.5rem; align-items:center;">
+            <input id="allPlansToggle" type="checkbox">
+            Parse all plans (slow)
+          </label>
+          <button id="refreshBtn" class="btn subtle">Refresh</button>
+        </div>
       </header>
 
       <div class="table-wrap">
@@ -98,6 +104,19 @@
     };
     const activePolls = new Map();
     const POLL_DELAY_MS = 4000;
+
+    const allPlansToggle = document.getElementById('allPlansToggle');
+    try {
+      const saved = localStorage.getItem('admin_parse_all_plans');
+      if (allPlansToggle && saved === '1') allPlansToggle.checked = true;
+    } catch (_) {}
+    if (allPlansToggle) {
+      allPlansToggle.addEventListener('change', () => {
+        try {
+          localStorage.setItem('admin_parse_all_plans', allPlansToggle.checked ? '1' : '0');
+        } catch (_) {}
+      });
+    }
 
     function escapeHtml(value) {
       if (value === null || value === undefined) return '';
@@ -235,7 +254,8 @@
           try {
             // Always force a fresh parse so updated limits
             // (e.g., 1,000,000 persons) take effect.
-            const resp = await fetch(`/admin/api/simulations/${r.id}/parse?force=1`, {
+            const allPlans = allPlansToggle && allPlansToggle.checked ? 1 : 0;
+            const resp = await fetch(`/admin/api/simulations/${r.id}/parse?force=1&all_plans=${allPlans}`, {
               method: 'POST',
               headers: { ...(csrf ? { 'X-CSRFToken': csrf } : {}) },
               credentials: 'same-origin'
