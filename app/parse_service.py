@@ -11,8 +11,9 @@ from azure.storage.blob import BlobClient
 
 from .azure_utils import get_storage_context
 from .models import get_simulation, update_simulation
-from .parsing import parse_plans_to_json
-from .aggregates import compute_aggregates
+from .parsing import iter_plans_to_persons
+from .aggregates import Aggregator
+from .person_cache import write_ndjson_gz
 
 
 class ParseError(Exception):
@@ -55,7 +56,7 @@ def _locate_member(zf: zipfile.ZipFile, wanted: Tuple[str, ...]) -> Optional[str
 
 
 def _parse_and_cache(sim_id: str, plans_path: str, facilities_path: Optional[str], limit: int, selected_only: bool) -> Dict[str, Any]:
-    persons = parse_plans_to_json(
+    people_iter = iter_plans_to_persons(
         plans_path,
         facilities_path,
         max_persons=limit,
@@ -63,16 +64,40 @@ def _parse_and_cache(sim_id: str, plans_path: str, facilities_path: Optional[str
     )
     parsed_dir = os.path.join(current_app.config["STORAGE_ROOT"], "parsed")
     os.makedirs(parsed_dir, exist_ok=True)
-    out_path = os.path.join(parsed_dir, f"{sim_id}.json.gz")
-    with gzip.open(out_path, "wt", encoding="utf-8") as handle:
-        json.dump(persons, handle)
+    out_path = os.path.join(parsed_dir, f"{sim_id}.ndjson.gz")
+
+    # Stream persons to disk and compute aggregates on the fly to avoid OOM.
+    agg = Aggregator()
+    sample: list[dict[str, Any]] = []
+    sample_limit = int(os.getenv("PUBLIC_MAX_PERSONS", "1000") or "1000")
+    sample_limit = max(1, sample_limit)
+    count = 0
+
+    def _iter_and_accumulate():
+        nonlocal count
+        for p in people_iter:
+            if isinstance(p, dict):
+                plans = p.get("plans") or []
+                if isinstance(plans, list) and plans:
+                    pid = str(p.get("personId") or "")
+                    sel_idx = p.get("selectedPlanIndex")
+                    if not isinstance(sel_idx, int) or sel_idx < 0 or sel_idx >= len(plans):
+                        sel_idx = 0
+                    plan = plans[sel_idx] if 0 <= sel_idx < len(plans) else (plans[0] if plans else None)
+                    if isinstance(plan, dict):
+                        agg.add_person_plan(pid, plan)
+                if len(sample) < sample_limit:
+                    sample.append(p)
+                count += 1
+                yield p
+
+    write_ndjson_gz(out_path, _iter_and_accumulate())
 
     # Precompute aggregates for charts so the browser doesn't need all persons.
-    agg_path = os.path.join(parsed_dir, f"{sim_id}.aggregates.json")
+    agg_path: Optional[str] = os.path.join(parsed_dir, f"{sim_id}.aggregates.json")
     try:
-        agg = compute_aggregates(persons, top_routes=12)
         with open(agg_path, "w", encoding="utf-8") as ah:
-            json.dump(agg, ah)
+            json.dump(agg.to_dict(top_routes=12), ah)
     except Exception:
         current_app.logger.exception("[parse] failed to compute aggregates for %s", sim_id)
         agg_path = None
@@ -81,11 +106,11 @@ def _parse_and_cache(sim_id: str, plans_path: str, facilities_path: Optional[str
         sim_id,
         cached_json_path=out_path,
         cached_agg_path=agg_path,
-        parsed_person_count=len(persons),
+        parsed_person_count=count,
     )
     return {
         "ok": True,
-        "count": len(persons),
+        "count": count,
         "cache": out_path,
         "simulation": updated,
     }

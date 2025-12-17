@@ -3,7 +3,7 @@ import json
 import io
 import os
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 
 def parse_time_to_seconds(time_str: Optional[str]) -> Optional[int]:
@@ -294,3 +294,206 @@ def parse_plans_to_json(
                     if len(persons) >= max_persons:
                         break
     return persons
+
+
+def iter_plans_to_persons(
+    path_or_stream: Union[str, io.BufferedReader],
+    facilities: Optional[Union[str, io.BufferedReader]] = None,
+    max_persons: int = 200,
+    selected_only_flag: bool = True,
+) -> Iterator[Dict[str, Any]]:
+    """
+    Streaming variant of `parse_plans_to_json` that yields persons one-by-one
+    to avoid holding large datasets in memory.
+    """
+    facilities_map = {}
+    if facilities:
+        try:
+            facilities_map = parse_facilities_file(facilities)
+        except Exception:
+            facilities_map = {}
+
+    if isinstance(path_or_stream, str):
+        fobj = open_maybe_gzip_path(path_or_stream)
+    else:
+        fobj = open_maybe_gzip_stream(path_or_stream)
+
+    yielded = 0
+    current_person: Optional[Dict[str, Any]] = None
+    selected_plan_obj: Optional[Dict[str, Any]] = None
+    first_plan_obj: Optional[Dict[str, Any]] = None
+    inside_plan = False
+    plan_selected_flag = False
+    plan_matsim_score: Optional[float] = None
+    steps: List[Dict[str, Any]] = []
+    last_open_activity_idx: Optional[int] = None
+    current_time: Optional[str] = None
+    last_leg_arrival: Optional[str] = None
+    current_leg_idx: Optional[int] = None
+
+    with fobj as f:
+        context = ET.iterparse(f, events=("start", "end"))
+        for event, elem in context:
+            tag = elem.tag
+            if event == "start":
+                if tag == "person":
+                    current_person = {"personId": elem.attrib.get("id"), "plans": []}
+                    selected_plan_obj = None
+                    first_plan_obj = None
+                elif tag == "plan" and current_person is not None:
+                    inside_plan = True
+                    plan_selected_flag = (elem.attrib.get("selected") == "yes")
+                    plan_matsim_score = safe_float(elem.attrib.get("score"))
+                    steps = []
+                    last_open_activity_idx = None
+                    current_time = None
+                    last_leg_arrival = None
+                elif inside_plan and tag in ("act", "activity") and current_person is not None:
+                    act_type = elem.attrib.get("type")
+                    start_time = elem.attrib.get("start_time")
+                    end_time = elem.attrib.get("end_time")
+                    max_dur = elem.attrib.get("max_dur")
+                    facility_id = elem.attrib.get("facility")
+                    x = elem.attrib.get("x")
+                    y = elem.attrib.get("y")
+                    if (x is None or y is None) and facility_id and facilities_map:
+                        xy = facilities_map.get(facility_id)
+                        if xy:
+                            x, y = str(xy[0]), str(xy[1])
+                    if start_time:
+                        current_time = start_time
+                    elif current_time is None:
+                        current_time = "00:00:00"
+                    step: Dict[str, Any] = {
+                        "kind": "activity",
+                        "type": act_type,
+                        "startTime": start_time or current_time,
+                        "endTime": end_time,
+                        "maxDur": max_dur,
+                        "facility": facility_id,
+                        "x": safe_float(x),
+                        "y": safe_float(y),
+                        "durationSec": None,
+                    }
+                    steps.append(step)
+                    last_open_activity_idx = len(steps) - 1
+                    if end_time:
+                        current_time = end_time
+                elif inside_plan and tag == "leg" and current_person is not None:
+                    mode = elem.attrib.get("mode")
+                    dep = elem.attrib.get("dep_time")
+                    trav_time = elem.attrib.get("trav_time")
+                    dt = dep or current_time or "00:00:00"
+                    step = {
+                        "kind": "leg",
+                        "mode": mode,
+                        "depTime": dt,
+                        "travelTime": trav_time,
+                        "durationSec": None,
+                    }
+                    steps.append(step)
+                    current_leg_idx = len(steps) - 1
+                    dep_s = parse_time_to_seconds(dt)
+                    tt_s = parse_time_to_seconds(trav_time) if trav_time else None
+                    if dep_s is not None and tt_s is not None:
+                        arr_s = dep_s + tt_s
+                        last_leg_arrival = sec_to_time(arr_s)
+                        current_time = last_leg_arrival
+                elif inside_plan and tag == "route" and current_leg_idx is not None and 0 <= current_leg_idx < len(steps):
+                    try:
+                        steps[current_leg_idx]["routeType"] = elem.attrib.get("type")
+                        steps[current_leg_idx]["ptStartLink"] = elem.attrib.get("start_link")
+                        steps[current_leg_idx]["ptEndLink"] = elem.attrib.get("end_link")
+                        txt = (elem.text or "").strip()
+                        if txt:
+                            try:
+                                payload = json.loads(txt)
+                                if isinstance(payload, dict):
+                                    tri = payload.get("transitRouteId")
+                                    tli = payload.get("transitLineId")
+                                    if tri:
+                                        steps[current_leg_idx]["transitRouteId"] = tri
+                                    if tli:
+                                        steps[current_leg_idx]["transitLineId"] = tli
+                                    for k in ("boardingTime", "accessFacilityId", "egressFacilityId"):
+                                        if payload.get(k) is not None:
+                                            steps[current_leg_idx][k] = payload.get(k)
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+            elif event == "end":
+                if tag == "leg":
+                    current_leg_idx = None
+                if tag == "plan" and inside_plan:
+                    for i, s in enumerate(steps):
+                        if s.get("kind") == "activity":
+                            st_s = parse_time_to_seconds(s.get("startTime"))
+                            et = s.get("endTime")
+                            if et is None:
+                                found: Optional[str] = None
+                                for j in range(i + 1, len(steps)):
+                                    n = steps[j]
+                                    if n.get("kind") == "leg" and n.get("depTime"):
+                                        found = n.get("depTime")
+                                        break
+                                    if n.get("kind") == "activity" and n.get("startTime"):
+                                        found = n.get("startTime")
+                                        break
+                                if found:
+                                    s["endTime"] = found
+                                elif last_leg_arrival:
+                                    s["endTime"] = last_leg_arrival
+                            et_s = parse_time_to_seconds(s.get("endTime"))
+                            s["durationSec"] = (et_s - st_s) if (st_s is not None and et_s is not None) else None
+                        else:
+                            tt_s = parse_time_to_seconds(s.get("travelTime"))
+                            s["durationSec"] = tt_s if tt_s is not None else None
+
+                    server_score = score_plan(steps, DEFAULT_WEIGHTS)
+                    if current_person is not None:
+                        plan_obj = {
+                            "selected": plan_selected_flag,
+                            "matsimScore": plan_matsim_score,
+                            "serverScore": server_score,
+                            "steps": steps,
+                        }
+                        if selected_only_flag:
+                            if first_plan_obj is None:
+                                first_plan_obj = plan_obj
+                            if plan_selected_flag:
+                                selected_plan_obj = plan_obj
+                        else:
+                            current_person["plans"].append(plan_obj)
+
+                    inside_plan = False
+                    plan_selected_flag = False
+                    plan_matsim_score = None
+                    steps = []
+                    last_open_activity_idx = None
+                    current_time = None
+                    last_leg_arrival = None
+
+                elif tag == "person" and current_person is not None:
+                    if selected_only_flag:
+                        plan_obj = selected_plan_obj or first_plan_obj
+                        if plan_obj is not None:
+                            current_person["plans"] = [plan_obj]
+                            current_person["selectedPlanIndex"] = 0
+                            yield current_person
+                            yielded += 1
+                    else:
+                        sel_idx = 0
+                        for i, pl in enumerate(current_person.get("plans") or []):
+                            if isinstance(pl, dict) and pl.get("selected"):
+                                sel_idx = i
+                                break
+                        current_person["selectedPlanIndex"] = sel_idx
+                        if current_person.get("plans"):
+                            yield current_person
+                            yielded += 1
+
+                    current_person = None
+                    elem.clear()
+                    if yielded >= max_persons:
+                        break

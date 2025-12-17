@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from .aggregates import Aggregator
 
@@ -45,7 +45,7 @@ def _plan_affected_by_route(plan: Dict[str, Any], route_id: str) -> bool:
 
 
 def compare_frequency(
-    persons: List[Dict[str, Any]],
+    persons: Iterable[Dict[str, Any]],
     *,
     route_id: str,
     old_frequency: float,
@@ -110,7 +110,7 @@ def compare_frequency(
 
 
 def compute_frequency_compare_aggregates(
-    persons: List[Dict[str, Any]],
+    persons: Iterable[Dict[str, Any]],
     *,
     route_id: str,
     old_frequency: float,

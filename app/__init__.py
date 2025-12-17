@@ -1,5 +1,6 @@
 import os
 import tempfile
+import logging
 from flask import Flask, jsonify
 from flask_wtf import CSRFProtect
 from flask_login import LoginManager
@@ -8,6 +9,11 @@ csrf = CSRFProtect()
 login_manager = LoginManager()
 
 def create_app():
+    # Avoid extremely verbose Azure SDK request logging (per-range GETs) which
+    # can slow down parsing and flood App Service logs.
+    logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)
+    logging.getLogger("azure.storage").setLevel(logging.WARNING)
+
     root = os.getcwd()
     templates = os.path.join(root, "templates")
     static = os.path.join(root, "static")

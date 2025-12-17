@@ -8,11 +8,11 @@ from flask import Blueprint, render_template, jsonify, request, send_file, send_
 from azure.storage.blob import generate_blob_sas, BlobSasPermissions
 
 from .models import list_simulations, get_simulation
-from .parsing import parse_plans_to_json
 from .azure_utils import get_storage_context
-from .aggregates import compute_aggregates
 from .frequency_compare import compute_frequency_compare_aggregates
 from .station_counts import StationQuery, compute_station_counts
+from .person_cache import iter_cached_persons, read_cached_persons_sample
+from .aggregates import Aggregator
 
 
 public_bp = Blueprint("public", __name__)
@@ -65,9 +65,9 @@ def _compute_score_client(plan: Dict[str, Any], weights: Dict[str, Dict[str, flo
     return score
 
 
-def _compute_summary(persons: List[Dict[str, Any]], weights: Dict[str, Dict[str, float]]) -> Dict[str, Any]:
+def _compute_summary_iter(persons, weights: Dict[str, Dict[str, float]]) -> Dict[str, Any]:
     """Compute aggregate stats and top plans over all persons."""
-    person_count = len(persons)
+    person_count = 0
 
     total_client_score = 0.0
     selected_plan_count = 0
@@ -78,6 +78,7 @@ def _compute_summary(persons: List[Dict[str, Any]], weights: Dict[str, Dict[str,
     for p in persons:
         if not isinstance(p, dict):
             continue
+        person_count += 1
         plans = p.get("plans") or []
         if not isinstance(plans, list) or not plans:
             continue
@@ -184,7 +185,7 @@ def public_data(sim_id):
         if not os.path.isabs(cache_path):
             cache_path = os.path.abspath(cache_path)
         if os.path.isfile(cache_path):
-            # Down-sample the persons array before returning to the browser
+            # Down-sample persons before returning to the browser
             # to avoid loading hundreds of thousands of persons into JS.
             try:
                 limit = int((request.args.get("limit") or os.getenv("PUBLIC_MAX_PERSONS", "1000")))
@@ -192,13 +193,23 @@ def public_data(sim_id):
                 limit = 1000
             limit = max(1, limit)
 
-            with gzip.open(cache_path, "rt", encoding="utf-8") as g:
-                persons = json.load(g)
+            persons = read_cached_persons_sample(cache_path, limit)
 
-            if len(persons) > limit:
-                persons = persons[:limit]
+            # For map/UI, always ship only the selected plan per person to keep payload small.
+            slim: List[Dict[str, Any]] = []
+            for p in persons:
+                plans = p.get("plans") or []
+                if not isinstance(plans, list) or not plans:
+                    continue
+                idx = p.get("selectedPlanIndex")
+                if not isinstance(idx, int) or idx < 0 or idx >= len(plans):
+                    idx = 0
+                plan = plans[idx] if 0 <= idx < len(plans) else plans[0]
+                if not isinstance(plan, dict):
+                    continue
+                slim.append({"personId": p.get("personId"), "selectedPlanIndex": 0, "plans": [plan]})
 
-            return jsonify(persons)
+            return jsonify(slim)
 
     return jsonify({"error": "No cached data. Admin must parse this simulation first."}), 400
 
@@ -225,13 +236,8 @@ def public_summary(sim_id):
     weights_payload = payload.get("weights") or {}
     weights = _normalize_weights(weights_payload if isinstance(weights_payload, dict) else {})
 
-    with gzip.open(cache_path, "rt", encoding="utf-8") as g:
-        persons = json.load(g)
-
-    if not isinstance(persons, list):
-        return jsonify({"error": "Cached data is invalid"}), 500
-
-    summary = _compute_summary(persons, weights)
+    persons_iter = iter_cached_persons(cache_path)
+    summary = _compute_summary_iter(persons_iter, weights)
     return jsonify(summary)
 
 
@@ -262,12 +268,21 @@ def _get_aggregates_for_sim(sim_id: str, *, top_routes_n: int) -> Tuple[Optional
     if not os.path.isfile(cache_path):
         return None, ({"error": "Cached data file missing"}, 500)
 
-    with gzip.open(cache_path, "rt", encoding="utf-8") as g:
-        persons = json.load(g)
-    if not isinstance(persons, list):
-        return None, ({"error": "Cached data is invalid"}, 500)
-
-    agg = compute_aggregates(persons, top_routes=top_routes_n)
+    agg_calc = Aggregator()
+    for p in iter_cached_persons(cache_path):
+        if not isinstance(p, dict):
+            continue
+        plans = p.get("plans") or []
+        if not isinstance(plans, list) or not plans:
+            continue
+        idx = p.get("selectedPlanIndex")
+        if not isinstance(idx, int) or idx < 0 or idx >= len(plans):
+            idx = 0
+        plan = plans[idx] if 0 <= idx < len(plans) else plans[0]
+        if not isinstance(plan, dict):
+            continue
+        agg_calc.add_person_plan(str(p.get("personId") or ""), plan)
+    agg = agg_calc.to_dict(top_routes=top_routes_n)
     try:
         parsed_dir = os.path.dirname(cache_path)
         out_path = os.path.join(parsed_dir, f"{sim_id}.aggregates.json")
@@ -368,13 +383,14 @@ def public_frequency_compare(sim_id: str):
         body, code = pre_err
         return jsonify(body), code
 
-    with gzip.open(cache_path, "rt", encoding="utf-8") as g:
-        persons = json.load(g)
-    if not isinstance(persons, list):
-        return jsonify({"error": "Cached data is invalid"}), 500
+    # Frequency compare requires multiple plans per person to allow plan switching.
+    # If the simulation was parsed in selected-only mode, this will always show no change.
+    peek = read_cached_persons_sample(cache_path, 3)
+    if peek and all(isinstance(p.get("plans") or [], list) and len(p.get("plans") or []) <= 1 for p in peek):
+        return jsonify({"error": "This simulation was parsed with selected-only plans. Re-parse with 'Parse all plans' to enable frequency compare."}), 400
 
     cmp = compute_frequency_compare_aggregates(
-        persons,
+        iter_cached_persons(cache_path),
         route_id=route_id,
         old_frequency=float(old_f),
         new_frequency=float(new_f),
