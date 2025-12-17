@@ -979,7 +979,8 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
       };
     }
 
-    const res = await fetch("http://127.0.0.1:3000/story", {
+    // Use same-origin so it works on Azure App Service and locally.
+    const res = await fetch("/story", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
