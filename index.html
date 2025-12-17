@@ -8,7 +8,9 @@
 	<link rel="stylesheet" href="assets/js/leaflet/leaflet.css" />
 	<link rel="stylesheet" href="assets/css/common.css" />
 	<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&display=swap" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+	<link
+		href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@600;700&display=swap"
+		rel="stylesheet">
 	<link rel="stylesheet" href="assets/css/indexcss.css" />
 	<style>
 		/* Dynamic route panel (bus routes) */
@@ -263,122 +265,147 @@
 					<div class="c-box c-box__route c-area__scroll">
 						<div class="c-box__route-wrap">
 							<!--現状-->
-								<div class="c-box__route-content js-parameter-content current">
-									<details class="c-route c-details js-route dtsb-dynroute" data-route="current_route_a" open>
-										<summary class="c-details__summary">
-											<span>路線</span>
-											<span id="dynRouteSummaryBadge" class="dtsb-pill" data-state="empty">未選択</span>
-										</summary>
+							<div class="c-box__route-content js-parameter-content current">
+								<details class="c-route c-details js-route dtsb-dynroute" data-route="current_route_a"
+									open>
+									<summary class="c-details__summary">
+										<span>路線</span>
+										<span id="dynRouteSummaryBadge" class="dtsb-pill" data-state="empty">未選択</span>
+									</summary>
 
-											<div id="dynRouteContainer" class="dtsb-dynroute__container">
-											<div class="dtsb-dynroute__top">
-												<div class="dtsb-dynroute__mode">
-													<span class="dtsb-dynroute__label">運行頻度（06:00–09:59）</span>
-												</div>
-												<div class="dtsb-dynroute__actions">
-													<button id="dynToggleParamsBtn" type="button"
-														class="c-btn__small c-btn__small-white">パラメータ</button>
-													<button id="clearRouteBtn" type="button"
-														class="c-btn__small c-btn__small-white">クリア</button>
-												</div>
+									<div id="dynRouteContainer" class="dtsb-dynroute__container">
+										<div class="dtsb-dynroute__top">
+											<div class="dtsb-dynroute__mode">
+												<span class="dtsb-dynroute__label">運行頻度（06:00–09:59）</span>
 											</div>
-
-											<p id="dynRouteEmpty" class="dtsb-dynroute__empty muted">
-												地図上のバス路線をクリックすると詳細を表示します。
-											</p>
-
-											<dl id="dynRouteDetails" class="c-route__setting dtsb-dynroute__meta" aria-live="polite"></dl>
-
-											<div id="dynRouteControls" class="dtsb-dynroute__controls" hidden>
-												<dl class="c-route__setting">
-													<dt>運航頻度
-														<span class="c-btn__small c-btn__small-white reset js-reset"
-															data-reset="dyn_frequency">まとめてリセット</span>
-													</dt>
-													<dd id="dyn_frequency">
-														<dl class="c-frequency">
-															<dt class="c-frequency__hours">6～9時台
-																<span class="c-btn__small c-btn__small-white reset js-reset"
-																	data-reset="dyn_frequency_0609">リセット</span>
-															</dt>
-															<dd class="c-frequency__number c-input__range" id="dyn_frequency_0609">
-																<span class="c-input__range-unit">台数(台)</span>
-																<div class="c-input__range-container js-range" id="dynFreqRange">
-																	<span
-																		class="c-input__change c-input__range-change current-value u-en js-range-change">
-																		<span class="js-range-value" data-saved="0">0</span>
-																		<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-																	</span>
-																	<div class="c-input__range-minmax u-en">
-																		<span class="js-range-min">0</span>
-																		<span class="js-range-max">60</span>
-																	</div>
-																	<div class="c-input__range-wrap">
-																		<input type="range" name="dyn_frequency_0609" value="0" data-saved="0"
-																			data-default="0" min="0" max="60"
-																			class="c-input__range-slider js-range-slider" />
-																		<i class="c-input__range-mark js-range-mark equal"></i>
-																	</div>
-																	<span
-																		class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-																</div>
-															</dd>
-														</dl>
-													</dd>
-
-													<dt>BRT専用レーン</dt>
-													<dd>
-														<label class="l-contents__map-btn">
-															<input type="checkbox" id="dynBrtToggle" />
-															<span class="btn">専用レーンを付与</span>
-														</label>
-													</dd>
-												</dl>
-
-												<div class="dtsb-dynroute__footer">
-													<button id="applyDynParamsBtn" type="button" class="c-btn__small">変更を保存</button>
-													<small id="dynSaveStatus" class="muted" role="status" aria-live="polite" hidden>保存しました</small>
-												</div>
+											<div class="dtsb-dynroute__actions">
+												<button id="dynToggleParamsBtn" type="button"
+													class="c-btn__small c-btn__small-white">パラメータ</button>
+												<button id="clearRouteBtn" type="button"
+													class="c-btn__small c-btn__small-white">クリア</button>
 											</div>
 										</div>
-									</details>
-								</div>
-								<!--//現状-->
-							</div>
-						</div>
 
-					<div class="c-area__btns" style="display:flex; flex-direction:column; gap:12px;">
-						<div style="display:flex; gap:8px; align-items:flex-start;">
-							<button class="c-btn c-btn__contents blue" type="submit"
-								style="min-width:150px; flex:0 0 auto;">
+										<p id="dynRouteEmpty" class="dtsb-dynroute__empty muted">
+											地図上のバス路線をクリックすると詳細を表示します。
+										</p>
+
+										<dl id="dynRouteDetails" class="c-route__setting dtsb-dynroute__meta"
+											aria-live="polite"></dl>
+
+										<div id="dynRouteControls" class="dtsb-dynroute__controls" hidden>
+											<dl class="c-route__setting">
+												<dt>運航頻度
+													<span class="c-btn__small c-btn__small-white reset js-reset"
+														data-reset="dyn_frequency">まとめてリセット</span>
+												</dt>
+												<dd id="dyn_frequency">
+													<dl class="c-frequency">
+														<dt class="c-frequency__hours">6～9時台
+															<span class="c-btn__small c-btn__small-white reset js-reset"
+																data-reset="dyn_frequency_0609">リセット</span>
+														</dt>
+														<dd class="c-frequency__number c-input__range"
+															id="dyn_frequency_0609">
+															<span class="c-input__range-unit">台数(台)</span>
+															<div class="c-input__range-container js-range"
+																id="dynFreqRange">
+																<span
+																	class="c-input__change c-input__range-change current-value u-en js-range-change">
+																	<span class="js-range-value" data-saved="0">0</span>
+																	<small class="js-range-diff"
+																		data-saved="(+0)">(+0)</small>
+																</span>
+																<div class="c-input__range-minmax u-en">
+																	<span class="js-range-min">0</span>
+																	<span class="js-range-max">60</span>
+																</div>
+																<div class="c-input__range-wrap">
+																	<input type="range" name="dyn_frequency_0609"
+																		value="0" data-saved="0" data-default="0"
+																		min="0" max="60"
+																		class="c-input__range-slider js-range-slider" />
+																	<i
+																		class="c-input__range-mark js-range-mark equal"></i>
+																</div>
+																<span
+																	class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
+															</div>
+														</dd>
+													</dl>
+												</dd>
+
+												<dt>BRT専用レーン</dt>
+												<dd>
+													<label class="l-contents__map-btn">
+														<input type="checkbox" id="dynBrtToggle" />
+														<span class="btn">専用レーンを付与</span>
+													</label>
+												</dd>
+											</dl>
+
+											<div class="dtsb-dynroute__footer">
+												<button id="applyDynParamsBtn" type="button"
+													class="c-btn__small">変更を保存</button>
+												<small id="dynSaveStatus" class="muted" role="status" aria-live="polite"
+													hidden>保存しました</small>
+											</div>
+										</div>
+									</div>
+								</details>
+							</div>
+							<!--//現状-->
+						</div>
+					</div>
+
+					<div class="c-area__btns dtsb-actions" aria-label="シミュレーション操作">
+						<div class="dtsb-actions__left" aria-label="主要操作">
+							<button class="c-btn c-btn__contents blue dtsb-btn-compact dtsb-actions__primary"
+								type="submit">
 								シミュレーション結果
 							</button>
 
-							<div class="c-btn c-btn__contents blue"
-								style=" display:flex; flex-direction:column; gap:6px; flex:1 1 auto; min-height:48px; min-width:150px; width:100%; max-width:100%; padding:10px 12px; line-height:1.2; box-sizing:border-box;">
-								<div style="font-weight:700; color:#fff; text-align:left; white-space:nowrap;">
-									公開済みシミュレーション</div>
-								<div class="pubsim-controls" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-									<select id="simulationSelect"
-										style="flex:1 1 auto; min-width:0; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></select>
-									<button type="button" id="loadSimulationBtn" class="c-btn__small">読み込み</button>
-									<span id="loadSimSpinner" style="display:none; margin-left:8px;">⏳</span>
-									<button type="button" id="downloadSimulationBtn"
-										class="c-btn__small c-btn__ghost">ダウンロード</button>
-									<button type="button" id="showCachedSimulationBtn"
-										class="c-btn__small c-btn__ghost">地図に表示</button>
-									<button type="button" id="clearMapTopBtn"
-										class="c-btn__small c-btn__ghost">地図クリア</button>
-								</div>
-							</div>
-						</div>
-
-						<div style="display:inline-flex;">
-							<button id="toggleAnalysisBtn" type="button" class="c-btn c-btn__contents"
-								style="min-width:150px; flex:0 0 auto;">
+							<button id="toggleAnalysisBtn" type="button"
+								class="c-btn c-btn__contents dtsb-btn-compact dtsb-actions__analysis">
 								▼ 解析パネルを開く
 							</button>
 						</div>
+
+						<section class="dtsb-pubsims" aria-label="公開済みシミュレーション">
+							<div class="dtsb-pubsims__head">
+								<div class="dtsb-pubsims__title">公開済みシミュレーション</div>
+								<span id="loadSimSpinner" class="dtsb-pubsims__spinner" style="display:none;">⏳</span>
+							</div>
+							<div class="dtsb-pubsims__body">
+								<div class="dtsb-pubsims__row dtsb-pubsims__row--select">
+									<label class="dtsb-pubsims__select">
+										<span class="dtsb-pubsims__select-label">選択</span>
+										<select id="simulationSelect" aria-label="公開済みシミュレーションの選択"></select>
+									</label>
+								</div>
+
+								<div class="dtsb-pubsims__row dtsb-pubsims__row--buttons">
+									<button type="button" id="loadSimulationBtn"
+										class="c-btn__small dtsb-pubsims__btn">読み込み</button>
+
+									<!-- NEW single toggle button -->
+									<button type="button" id="toggleCachedSimulationBtn"
+										class="c-btn__small c-btn__ghost dtsb-pubsims__btn"
+										data-state="show">地図に表示</button>
+
+									<!-- Keep the old buttons for compatibility, but we’ll hide them -->
+									<button type="button" id="showCachedSimulationBtn"
+										class="c-btn__small c-btn__ghost dtsb-pubsims__btn"
+										style="display:none;">地図に表示</button>
+
+									<button type="button" id="clearMapTopBtn"
+										class="c-btn__small c-btn__ghost dtsb-pubsims__btn"
+										style="display:none;">地図クリア</button>
+								</div>
+
+
+							</div>
+						</section>
 					</div>
 
 					<div id="analysisBlock" class="collapsible">
@@ -437,7 +464,8 @@
 									<button id="recomputeBtn" type="button" class="btn">Recompute Scores</button>
 									<button id="clearMapBtn" type="button" class="btn secondary">Clear Map</button>
 									<button id="topBusBtn" type="button" class="btn">Find Top Bus User</button>
-									<button id="fullSummaryBtn" type="button" class="btn secondary">Full Summary</button>
+									<button id="fullSummaryBtn" type="button" class="btn secondary">Full
+										Summary</button>
 								</div>
 								<div id="fullSummaryStatus" class="muted" style="margin-top:8px;"></div>
 								<pre id="fullSummaryPre"

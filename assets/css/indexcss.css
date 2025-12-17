@@ -199,6 +199,201 @@ details.c-route>.c-route__setting {
     border-radius: 12px;
 }
 
+/* Action area (results / published sims / analysis toggle) */
+.c-area__btns.dtsb-actions {
+    display: grid;
+    grid-template-columns: minmax(180px, 240px) 1fr;
+    gap: 12px;
+    align-items: start;
+    justify-content: stretch;
+    grid-auto-rows: max-content;
+    width: 100%;
+}
+
+.dtsb-actions__left {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: stretch;
+    min-width: 0;
+}
+
+.c-area__btns.dtsb-actions .c-btn.c-btn__contents {
+    min-width: 0;
+    width: auto;
+    box-sizing: border-box;
+}
+
+.dtsb-btn-compact.c-btn__contents {
+    --btnContentsFts: 1.5rem;
+    padding: 12px 14px;
+    border-bottom-width: 4px;
+}
+
+.dtsb-btn-compact.c-btn__contents:hover {
+    margin-top: 4px;
+}
+
+.dtsb-actions__primary {
+    min-width: 0;
+}
+
+.dtsb-actions__analysis {
+    min-width: 0;
+}
+
+.dtsb-pubsims {
+    border: 1px solid rgba(var(--colorSubRgb), 0.18);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 14px;
+    box-shadow: var(--shadow-md);
+    padding: 10px 12px;
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+}
+
+.dtsb-pubsims__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.dtsb-pubsims__title {
+    font-weight: 800;
+    font-size: 1.3rem;
+    letter-spacing: 0.02em;
+    color: var(--commonBlack);
+    white-space: nowrap;
+}
+
+.dtsb-pubsims__spinner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 1.2rem;
+    background: rgba(var(--colorSubRgb), 0.1);
+    border: 1px solid rgba(var(--colorSubRgb), 0.18);
+    color: var(--commonBlack);
+}
+
+.dtsb-pubsims__body {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.dtsb-pubsims__row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+}
+
+.dtsb-pubsims__row--secondary {
+    grid-template-columns: 1fr auto auto;
+}
+
+.dtsb-pubsims__select {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: var(--shadow-sm);
+}
+
+.dtsb-pubsims__select-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: rgba(31, 27, 46, 0.75);
+    white-space: nowrap;
+}
+
+.dtsb-pubsims__select select {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--commonBlack);
+    font-size: 1.2rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dtsb-pubsims__btn {
+    padding: 4px 10px;
+    font-size: 1.2rem;
+    box-shadow: var(--shadow-sm);
+    white-space: nowrap;
+}
+
+.dtsb-pubsims .c-btn__small.dtsb-pubsims__btn {
+    background: rgba(var(--colorSubRgb), 0.95);
+    color: #fff;
+}
+
+.dtsb-pubsims .c-btn__small.dtsb-pubsims__btn:hover {
+    opacity: 0.92;
+}
+
+.dtsb-pubsims .c-btn__small.c-btn__ghost.dtsb-pubsims__btn {
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--colorSub);
+    border: 1px solid rgba(var(--colorSubRgb), 0.22);
+}
+
+.dtsb-pubsims .c-btn__small.c-btn__ghost.dtsb-pubsims__btn:hover {
+    background: rgba(var(--colorSubRgb), 0.08);
+}
+
+@media (max-width: 860px) {
+    .c-area__btns.dtsb-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .dtsb-actions__primary,
+    .dtsb-actions__analysis {
+        width: 100%;
+    }
+
+    .dtsb-pubsims__row--secondary {
+        grid-template-columns: 1fr auto auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .dtsb-pubsims__row {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .dtsb-pubsims__select {
+        grid-column: 1 / -1;
+    }
+
+    .dtsb-pubsims__btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .dtsb-pubsims__row--secondary {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
 .l-contents__map-legends {
     border-radius: 12px;
 

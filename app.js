@@ -12,7 +12,7 @@ window.__PUBLISHED_SIMS__ = window.__PUBLISHED_SIMS__ || [];
 const showCachedSimulationBtn = document.getElementById("showCachedSimulationBtn");
 
 // ---- Persistence helpers ----
-const LS_KEY = "matsim-ui-v1";          
+const LS_KEY = "matsim-ui-v1";
 const DB_NAME = "matsim-cache";
 const DB_STORE = "persons";
 
@@ -371,21 +371,21 @@ document.getElementById("fullSummaryBtn")?.addEventListener("click", computeAndS
 
 // === UI <-> Persistence wiring (weights, filter, panel open) ===
 function applyWeightsToInputs() {
-  document.getElementById("wHome").value      = UI.weights.act.Home;
-  document.getElementById("wWork").value      = UI.weights.act.Work;
-  document.getElementById("wBusiness").value  = UI.weights.act.Business;
-  document.getElementById("wShopping").value  = UI.weights.act.Shopping;
-  document.getElementById("wOtherAct").value  = UI.weights.act.__other__;
-  document.getElementById("wCar").value       = UI.weights.leg.car;
-  document.getElementById("wWalk").value      = UI.weights.leg.walk;
-  document.getElementById("wPt").value        = UI.weights.leg.pt;
-  document.getElementById("wOtherLeg").value  = UI.weights.leg.__other__;
+  document.getElementById("wHome").value = UI.weights.act.Home;
+  document.getElementById("wWork").value = UI.weights.act.Work;
+  document.getElementById("wBusiness").value = UI.weights.act.Business;
+  document.getElementById("wShopping").value = UI.weights.act.Shopping;
+  document.getElementById("wOtherAct").value = UI.weights.act.__other__;
+  document.getElementById("wCar").value = UI.weights.leg.car;
+  document.getElementById("wWalk").value = UI.weights.leg.walk;
+  document.getElementById("wPt").value = UI.weights.leg.pt;
+  document.getElementById("wOtherLeg").value = UI.weights.leg.__other__;
 }
 function readWeightsFromInputs() {
   UI.weights = getWeights();
   Persist.saveUI(UI);
 }
-["wHome","wWork","wBusiness","wShopping","wOtherAct","wCar","wWalk","wPt","wOtherLeg"]
+["wHome", "wWork", "wBusiness", "wShopping", "wOtherAct", "wCar", "wWalk", "wPt", "wOtherLeg"]
   .forEach(id => document.getElementById(id)?.addEventListener("input", readWeightsFromInputs));
 
 if (personSearchInput) {
@@ -833,6 +833,42 @@ showCachedSimulationBtn?.addEventListener("click", () => {
   );
   statusMsg.textContent = `Displayed ${shown} of ${__ALL_PERSONS__.length} persons on the map.`;
 });
+
+// === Single button: Show/Clear toggle (top published sims) ===
+(() => {
+  const toggleBtn = document.getElementById("toggleCachedSimulationBtn");
+  const showBtn = document.getElementById("showCachedSimulationBtn");
+  const clearBtn = document.getElementById("clearMapTopBtn"); // already wired to clearMapGraphics
+
+  if (!toggleBtn || !showBtn || !clearBtn) return;
+
+  const setState = (state) => {
+    toggleBtn.dataset.state = state;
+    toggleBtn.textContent = (state === "show") ? "地図に表示" : "地図クリア";
+  };
+
+  // initial label
+  setState("show");
+
+  toggleBtn.addEventListener("click", () => {
+    if (toggleBtn.dataset.state === "show") {
+      try {
+        showBtn.click();
+      } finally {
+        // flip only if something actually got drawn
+        if (Array.isArray(drawnLayers) && drawnLayers.length > 0) {
+          setState("clear");
+        }
+      }
+    } else {
+      clearBtn.click();
+      setState("show");
+    }
+  });
+
+  clearBtn.addEventListener("click", () => setState("show"));
+})();
+
 
 // button to call the Flask /story endpoint and persist the result for results.html
 document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
