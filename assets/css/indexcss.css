@@ -535,3 +535,91 @@ details.c-route>.c-route__setting {
   min-height: 32px;
   box-sizing: border-box;
 }
+
+/* ===== Purple "変更を保存" button ===== */
+#applyDynParamsBtn.c-btn__small{
+  -webkit-appearance: none;
+  appearance: none;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 9px 16px;
+  min-height: 36px;
+
+  border-radius: 12px;
+  border: 1px solid rgba(126, 63, 242, 0.35);
+
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: .02em;
+
+  background: linear-gradient(
+    180deg,
+    #9b5cff 0%,
+    #7e3ff2 55%,
+    #6a2adf 100%
+  );
+
+  box-shadow:
+    0 10px 20px rgba(126, 63, 242, 0.28),
+    0 2px 0 rgba(255,255,255,0.15) inset;
+
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    transform .12s ease,
+    box-shadow .12s ease,
+    filter .12s ease;
+}
+
+/* Remove unwanted pseudo icons */
+#applyDynParamsBtn.c-btn__small::before{
+  content: none !important;
+}
+
+#applyDynParamsBtn.c-btn__small:hover{
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow:
+    0 14px 28px rgba(126, 63, 242, 0.35),
+    0 2px 0 rgba(255,255,255,0.18) inset;
+}
+
+#applyDynParamsBtn.c-btn__small:active{
+  transform: translateY(0);
+  filter: brightness(0.97);
+  box-shadow:
+    0 8px 16px rgba(126, 63, 242, 0.3),
+    0 2px 0 rgba(255,255,255,0.12) inset;
+}
+
+/* Keyboard accessibility */
+#applyDynParamsBtn.c-btn__small:focus{
+  outline: none;
+}
+#applyDynParamsBtn.c-btn__small:focus-visible{
+  box-shadow:
+    0 0 0 3px rgba(126, 63, 242, 0.35),
+    0 14px 28px rgba(126, 63, 242, 0.35),
+    0 2px 0 rgba(255,255,255,0.18) inset;
+}
+
+/* Disabled state */
+#applyDynParamsBtn.c-btn__small:disabled{
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+  filter: none;
+}
+
+/* Saved status pill */
+#dynSaveStatus.muted{
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(126, 63, 242, 0.08);
+  border: 1px solid rgba(126, 63, 242, 0.25);
+  color: #7e3ff2;
+}

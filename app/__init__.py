@@ -66,6 +66,9 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(admin_api_bp)
     app.register_blueprint(public_bp)
+    # Public pages and public API endpoints are read-only; allow JS fetch calls
+    # without requiring a CSRF token.
+    csrf.exempt(public_bp)
 
     # ---- Error handlers helpful for uploads ----
     @app.errorhandler(413)

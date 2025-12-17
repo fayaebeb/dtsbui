@@ -41,6 +41,8 @@ def _ensure_parse_columns(conn: sqlite3.Connection) -> None:
         cur.execute("ALTER TABLE simulations ADD COLUMN parse_error TEXT")
     if 'parsed_person_count' not in cols:
         cur.execute("ALTER TABLE simulations ADD COLUMN parsed_person_count INTEGER")
+    if 'cached_agg_path' not in cols:
+        cur.execute("ALTER TABLE simulations ADD COLUMN cached_agg_path TEXT")
     conn.commit()
 
 def init_db(app=None):

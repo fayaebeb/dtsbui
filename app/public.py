@@ -2,15 +2,140 @@ import json
 import os
 import gzip
 import datetime
-from flask import Blueprint, render_template, jsonify, current_app, send_file, send_from_directory
+from typing import Any, Dict, List, Optional, Tuple
+
+from flask import Blueprint, render_template, jsonify, request, send_file, send_from_directory, current_app
 from azure.storage.blob import generate_blob_sas, BlobSasPermissions
 
 from .models import list_simulations, get_simulation
 from .parsing import parse_plans_to_json
 from .azure_utils import get_storage_context
+from .aggregates import compute_aggregates
+from .frequency_compare import compute_frequency_compare_aggregates
 
 
 public_bp = Blueprint("public", __name__)
+
+
+# ---- Shared scoring logic (mirror of app.js) ----
+_DEFAULT_WEIGHTS = {
+    "act": {"Home": 1.0, "Work": 0.5, "Business": 0.3, "Shopping": 0.2, "__other__": 0.1},
+    "leg": {"car": -2.0, "walk": 0.5, "pt": 0.1, "__other__": 0.0},
+}
+
+
+def _normalize_weights(payload: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
+    """Merge client-provided weights with defaults, keeping structure act/leg."""
+    weights: Dict[str, Dict[str, float]] = {"act": {}, "leg": {}}
+    src_act = (payload.get("act") or {}) if isinstance(payload, dict) else {}
+    src_leg = (payload.get("leg") or {}) if isinstance(payload, dict) else {}
+
+    for key, default_val in _DEFAULT_WEIGHTS["act"].items():
+        try:
+            weights["act"][key] = float(src_act.get(key, default_val))
+        except (TypeError, ValueError):
+            weights["act"][key] = default_val
+
+    for key, default_val in _DEFAULT_WEIGHTS["leg"].items():
+        try:
+            weights["leg"][key] = float(src_leg.get(key, default_val))
+        except (TypeError, ValueError):
+            weights["leg"][key] = default_val
+
+    return weights
+
+
+def _compute_score_client(plan: Dict[str, Any], weights: Dict[str, Dict[str, float]]) -> float:
+    """Client-side score: mirror of computeScoreClient in app.js."""
+    steps = plan.get("steps") or []
+    if not isinstance(steps, list):
+        return 0.0
+    score = 0.0
+    for s in steps:
+        if not isinstance(s, dict):
+            continue
+        kind = s.get("kind")
+        if kind == "activity":
+            w = weights["act"].get(s.get("type")) or weights["act"].get("__other__", 0.0)
+            score += float(s.get("durationSec") or 0.0) * float(w)
+        elif kind == "leg":
+            w = weights["leg"].get(s.get("mode")) or weights["leg"].get("__other__", 0.0)
+            score += float(s.get("durationSec") or 0.0) * float(w)
+    return score
+
+
+def _compute_summary(persons: List[Dict[str, Any]], weights: Dict[str, Dict[str, float]]) -> Dict[str, Any]:
+    """Compute aggregate stats and top plans over all persons."""
+    person_count = len(persons)
+
+    total_client_score = 0.0
+    selected_plan_count = 0
+
+    best_plan: Optional[Dict[str, Any]] = None
+    best_bus_plan: Optional[Dict[str, Any]] = None
+
+    for p in persons:
+        if not isinstance(p, dict):
+            continue
+        plans = p.get("plans") or []
+        if not isinstance(plans, list) or not plans:
+            continue
+
+        # Selected plan for this person
+        sel_idx = p.get("selectedPlanIndex")
+        if not isinstance(sel_idx, int) or sel_idx < 0 or sel_idx >= len(plans):
+            sel_idx = 0
+        sel_plan = plans[sel_idx] or plans[0]
+
+        sel_client = _compute_score_client(sel_plan, weights)
+        total_client_score += sel_client
+        selected_plan_count += 1
+
+        # Scan all plans for global best and best bus plan
+        person_id = p.get("personId")
+        for idx, pl in enumerate(plans):
+            if not isinstance(pl, dict):
+                continue
+            client_score = _compute_score_client(pl, weights)
+            if best_plan is None or client_score > best_plan.get("clientScore", float("-inf")):
+                best_plan = {
+                    "personId": person_id,
+                    "planIndex": idx,
+                    "clientScore": client_score,
+                    "matsimScore": pl.get("matsimScore"),
+                    "serverScore": pl.get("serverScore"),
+                    "steps": pl.get("steps"),
+                }
+
+            steps = pl.get("steps") or []
+            has_bus = any(
+                isinstance(s, dict)
+                and s.get("kind") == "leg"
+                and s.get("mode") in ("pt", "bus")
+                for s in steps
+            )
+            if has_bus:
+                if best_bus_plan is None or client_score > best_bus_plan.get("clientScore", float("-inf")):
+                    best_bus_plan = {
+                        "personId": person_id,
+                        "planIndex": idx,
+                        "clientScore": client_score,
+                        "matsimScore": pl.get("matsimScore"),
+                        "serverScore": pl.get("serverScore"),
+                        "steps": pl.get("steps"),
+                    }
+
+    avg_client_score = None
+    if selected_plan_count > 0:
+        avg_client_score = total_client_score / selected_plan_count
+
+    return {
+        "personCount": person_count,
+        "selectedPlanCount": selected_plan_count,
+        "avgClientScore": avg_client_score,
+        "bestPlan": best_plan,
+        "bestBusPlan": best_bus_plan,
+    }
 
 
 @public_bp.route("/")
@@ -38,7 +163,8 @@ def public_list():
             "uploaded_at": r["uploaded_at"],
             "size": r.get("size"),
             "has_blob": bool(r.get("blob_name")),
-            "has_cache": bool(r.get("cached_json_path"))
+            "has_cache": bool(r.get("cached_json_path")),
+            "has_aggregates": bool(r.get("cached_agg_path")),
         }
         for r in rows
     ])
@@ -49,13 +175,228 @@ def public_data(sim_id):
     sim = get_simulation(sim_id)
     if not sim or not sim.get("published"):
         return jsonify({"error": "Not found"}), 404
+
     # Prefer cached json if exists
     cache = sim.get("cached_json_path")
-    if cache and os.path.isfile(cache):
-        with gzip.open(cache, "rt", encoding="utf-8") as g:
-            persons = json.load(g)
-        return jsonify(persons)
+    if cache:
+        cache_path = cache
+        if not os.path.isabs(cache_path):
+            cache_path = os.path.abspath(cache_path)
+        if os.path.isfile(cache_path):
+            # Down-sample the persons array before returning to the browser
+            # to avoid loading hundreds of thousands of persons into JS.
+            try:
+                limit = int((request.args.get("limit") or os.getenv("PUBLIC_MAX_PERSONS", "1000")))
+            except Exception:
+                limit = 1000
+            limit = max(1, limit)
+
+            with gzip.open(cache_path, "rt", encoding="utf-8") as g:
+                persons = json.load(g)
+
+            if len(persons) > limit:
+                persons = persons[:limit]
+
+            return jsonify(persons)
+
     return jsonify({"error": "No cached data. Admin must parse this simulation first."}), 400
+
+
+@public_bp.route("/api/simulations/<sim_id>/summary", methods=["POST"])
+def public_summary(sim_id):
+    """Return aggregate stats and top plans computed over all persons."""
+    sim = get_simulation(sim_id)
+    if not sim or not sim.get("published"):
+        return jsonify({"error": "Not found"}), 404
+
+    cache = sim.get("cached_json_path")
+    if not cache:
+        return jsonify({"error": "No cached data. Admin must parse this simulation first."}), 400
+
+    cache_path = cache
+    if not os.path.isabs(cache_path):
+        cache_path = os.path.abspath(cache_path)
+    if not os.path.isfile(cache_path):
+        current_app.logger.warning("Cached JSON path missing for summary: %s", cache_path)
+        return jsonify({"error": "Cached data file missing"}), 500
+
+    payload = request.get_json(silent=True) or {}
+    weights_payload = payload.get("weights") or {}
+    weights = _normalize_weights(weights_payload if isinstance(weights_payload, dict) else {})
+
+    with gzip.open(cache_path, "rt", encoding="utf-8") as g:
+        persons = json.load(g)
+
+    if not isinstance(persons, list):
+        return jsonify({"error": "Cached data is invalid"}), 500
+
+    summary = _compute_summary(persons, weights)
+    return jsonify(summary)
+
+
+def _resolve_cache_path(path: str) -> str:
+    return path if os.path.isabs(path) else os.path.abspath(path)
+
+
+def _get_aggregates_for_sim(sim_id: str, *, top_routes_n: int) -> Tuple[Optional[Dict[str, Any]], Optional[Tuple[Dict[str, Any], int]]]:
+    sim = get_simulation(sim_id)
+    if not sim or not sim.get("published"):
+        return None, ({"error": "Not found"}, 404)
+
+    # Prefer precomputed aggregates from parse time
+    agg_path = sim.get("cached_agg_path")
+    if isinstance(agg_path, str) and agg_path:
+        agg_file = _resolve_cache_path(agg_path)
+        if os.path.isfile(agg_file):
+            with open(agg_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict) and isinstance(data.get("ptRoutesTop"), list):
+                data["ptRoutesTop"] = data["ptRoutesTop"][:top_routes_n]
+            return data if isinstance(data, dict) else {}, None
+
+    cache = sim.get("cached_json_path")
+    if not cache:
+        return None, ({"error": "No cached data. Admin must parse this simulation first."}, 400)
+    cache_path = _resolve_cache_path(cache)
+    if not os.path.isfile(cache_path):
+        return None, ({"error": "Cached data file missing"}, 500)
+
+    with gzip.open(cache_path, "rt", encoding="utf-8") as g:
+        persons = json.load(g)
+    if not isinstance(persons, list):
+        return None, ({"error": "Cached data is invalid"}, 500)
+
+    agg = compute_aggregates(persons, top_routes=top_routes_n)
+    try:
+        parsed_dir = os.path.dirname(cache_path)
+        out_path = os.path.join(parsed_dir, f"{sim_id}.aggregates.json")
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(agg, f)
+        from .models import update_simulation
+
+        update_simulation(sim_id, cached_agg_path=out_path)
+    except Exception:
+        current_app.logger.exception("Failed to persist aggregates for %s", sim_id)
+
+    return agg, None
+
+
+@public_bp.route("/api/simulations/<sim_id>/aggregates", methods=["GET"])
+def public_aggregates(sim_id: str):
+    """Return aggregate stats for charts computed over all persons (selected plan)."""
+    top_routes = request.args.get("top_routes", "12")
+    try:
+        top_routes_n = max(0, int(top_routes))
+    except Exception:
+        top_routes_n = 12
+
+    data, err = _get_aggregates_for_sim(sim_id, top_routes_n=top_routes_n)
+    if err:
+        body, code = err
+        return jsonify(body), code
+    return jsonify(data)
+
+
+@public_bp.route("/api/simulations/compare-aggregates", methods=["POST"])
+def public_compare_aggregates():
+    payload = request.get_json(silent=True) or {}
+    pre_id = (payload.get("pre_id") or "").strip()
+    post_id = (payload.get("post_id") or "").strip()
+    if not pre_id or not post_id:
+        return jsonify({"error": "pre_id and post_id required"}), 400
+
+    top_routes = payload.get("top_routes", 12)
+    try:
+        top_routes_n = max(0, int(top_routes))
+    except Exception:
+        top_routes_n = 12
+
+    pre, pre_err = _get_aggregates_for_sim(pre_id, top_routes_n=top_routes_n)
+    if pre_err:
+        body, code = pre_err
+        return jsonify(body), code
+    post, post_err = _get_aggregates_for_sim(post_id, top_routes_n=top_routes_n)
+    if post_err:
+        body, code = post_err
+        return jsonify(body), code
+
+    return jsonify({"pre_id": pre_id, "post_id": post_id, "pre": pre, "post": post})
+
+
+@public_bp.route("/api/simulations/<sim_id>/frequency-compare", methods=["POST"])
+def public_frequency_compare(sim_id: str):
+    """
+    Compare aggregates before/after changing 運航頻度 (frequency) for a specific route.
+    Uses the full cached dataset (all persons) but returns only compact aggregates.
+    """
+    sim = get_simulation(sim_id)
+    if not sim or not sim.get("published"):
+        return jsonify({"error": "Not found"}), 404
+
+    cache = sim.get("cached_json_path")
+    if not cache:
+        return jsonify({"error": "No cached data. Admin must parse this simulation first."}), 400
+    cache_path = _resolve_cache_path(cache)
+    if not os.path.isfile(cache_path):
+        return jsonify({"error": "Cached data file missing"}), 500
+
+    payload = request.get_json(silent=True) or {}
+    route_id = str(payload.get("routeId") or "")
+    old_f = payload.get("oldFrequency")
+    new_f = payload.get("newFrequency")
+    if old_f is None or new_f is None:
+        return jsonify({"error": "oldFrequency and newFrequency required"}), 400
+    include_most_steps = str(payload.get("includeMostImpactedSteps") or "").lower() in {"1", "true", "yes"}
+
+    # Prefer an explicit walk coefficient; else derive from weights (if provided).
+    walk_coeff = payload.get("walkCoeffPerSec")
+    if walk_coeff is None:
+        weights_payload = payload.get("weights") or {}
+        if isinstance(weights_payload, dict):
+            leg = weights_payload.get("leg") or {}
+            if isinstance(leg, dict):
+                walk_coeff = leg.get("walk")
+    try:
+        walk_coeff_per_sec = float(walk_coeff) if walk_coeff is not None else 0.5
+    except Exception:
+        walk_coeff_per_sec = 0.5
+
+    # Baseline aggregates can come from the precomputed cache (fast).
+    pre, pre_err = _get_aggregates_for_sim(sim_id, top_routes_n=12)
+    if pre_err:
+        body, code = pre_err
+        return jsonify(body), code
+
+    with gzip.open(cache_path, "rt", encoding="utf-8") as g:
+        persons = json.load(g)
+    if not isinstance(persons, list):
+        return jsonify({"error": "Cached data is invalid"}), 500
+
+    cmp = compute_frequency_compare_aggregates(
+        persons,
+        route_id=route_id,
+        old_frequency=float(old_f),
+        new_frequency=float(new_f),
+        top_routes=12,
+        walk_coeff_per_sec=walk_coeff_per_sec,
+        changed_sample_n=50,
+        include_most_impacted_steps=include_most_steps,
+    )
+
+    return jsonify({
+        "sim_id": sim_id,
+        "params": {
+            "routeId": route_id,
+            "oldFrequency": float(old_f),
+            "newFrequency": float(new_f),
+            "walkCoeffPerSec": walk_coeff_per_sec,
+        },
+        "changedPeople": int(cmp.get("changedPeople") or 0),
+        "changedSample": cmp.get("changedSample") or [],
+        "mostImpacted": cmp.get("mostImpacted"),
+        "pre": pre,
+        "post": cmp.get("postAggregates") or {},
+    })
 
 @public_bp.route("/api/simulations/<sim_id>/blob-url", methods=["GET"])
 def public_blob_url(sim_id):

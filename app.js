@@ -112,6 +112,7 @@ const colorMap = {
 };
 
 // === Map drawings ===
+const MAX_MAP_PERSONS = 1000;
 let drawnLayers = [];
 function clearMapGraphics() {
   drawnLayers.forEach(l => map.removeLayer(l));
@@ -160,7 +161,10 @@ function preferredSelectedIndex(person) {
 
 function redrawMapFromFiltered() {
   clearMapGraphics();
-  __FILTERED_PERSONS__.forEach(p => {
+  const subset = Array.isArray(__FILTERED_PERSONS__)
+    ? __FILTERED_PERSONS__.slice(0, MAX_MAP_PERSONS)
+    : [];
+  subset.forEach(p => {
     if (!p || !p.plans || p.plans.length === 0) return;
     const selectedIdx = preferredSelectedIndex(p);
     const plan = p.plans[selectedIdx] || p.plans[0];
@@ -215,15 +219,17 @@ function computeScoreClient(plan, weights) {
 }
 
 function findTopBusByClientScore() {
+  // Kept for backwards-compatibility; no longer used for global
+  // calculations now that the backend summary endpoint exists.
   const baseW = getWeights();
   baseW.leg.bus = baseW.leg.pt; // treat bus like PT
   let best = null;
-  __ALL_PERSONS__.forEach(p => (p.plans||[]).forEach((pl,i) => {
-    const hasBus = (pl.steps||[]).some(s => s.kind==='leg' && s.mode==='pt');
+  __ALL_PERSONS__.forEach(p => (p.plans || []).forEach((pl, i) => {
+    const hasBus = (pl.steps || []).some((s) => s.kind === "leg" && s.mode === "pt");
     if (!hasBus) return;
     const score = computeScoreClient(pl, baseW);
     if (!best || score > best.score) {
-      best = { person:p, planIndex:i, plan:pl, score };
+      best = { person: p, planIndex: i, plan: pl, score };
     }
   }));
   return best;
@@ -232,33 +238,135 @@ function findTopBusByClientScore() {
 document.addEventListener("DOMContentLoaded", () => {
   const busBtn = document.getElementById("topBusBtn");
   if (busBtn) {
-    busBtn.addEventListener("click", () => {
-      const best = findTopBusByClientScore();
+    busBtn.addEventListener("click", async () => {
       const out = document.getElementById("bus-result");
-      if (!best) {
-        out.textContent = "No bus users found.";
+      const sel = document.getElementById("simulationSelect");
+      const simId = sel && sel.value;
+      if (!simId) {
+        alert("シミュレーションを選択してください。"); // Please select a simulation.
         return;
       }
-
-      // Show summary
-      out.textContent =
-        `Person: ${best.person.personId}\n` +
-        `Plan Index: ${best.planIndex}\n` +
-        `Client Score: ${best.score.toFixed(2)}\n` +
-        `MATSim Score: ${best.plan.matsimScore}\n` +
-        `Server Score: ${best.plan.serverScore}\n\n` +
-        `Behavior:\n` +
-        best.plan.steps.map((s,idx) =>
-          s.kind === "activity"
-            ? `${idx}. [ACT] ${s.type} ${s.startTime||'-'} → ${s.endTime||'-'}`
-            : `${idx}. [LEG] ${s.mode} dep=${s.depTime||'-'} dur=${s.durationSec||'-'}`
-        ).join("\n");
-
-      // Optionally draw on the map
-      //try { drawPlanOnMap(best.person, best.plan); } catch {}
+      if (out) out.textContent = "全員分を集計中…"; // computing over all persons
+      try {
+        const res = await fetch(`/api/simulations/${simId}/summary`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ weights: getWeights() }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || "Summary failed");
+        const best = data?.bestBusPlan;
+        if (!best) {
+          if (out) out.textContent = "No bus users found.";
+          return;
+        }
+        const lines = [
+          `Person: ${best.personId}`,
+          `Plan Index: ${best.planIndex}`,
+          `Client Score: ${best.clientScore?.toFixed?.(2) ?? "-"}`,
+          `MATSim Score: ${best.matsimScore ?? "-"}`,
+          `Server Score: ${best.serverScore ?? "-"}`,
+          "",
+          "Behavior:",
+        ];
+        if (Array.isArray(best.steps)) {
+          best.steps.forEach((s, idx) => {
+            if (!s) return;
+            if (s.kind === "activity") {
+              lines.push(`${idx}. [ACT] ${s.type} ${s.startTime || "-"} → ${s.endTime || "-"}  dur=${formatSec(s.durationSec)}`);
+            } else {
+              lines.push(`${idx}. [LEG] ${s.mode} dep=${s.depTime || "-"} dur=${formatSec(s.durationSec)}`);
+            }
+          });
+        }
+        if (out) out.textContent = lines.join("\n");
+      } catch (e) {
+        console.error(e);
+        if (out) out.textContent = "集計に失敗しました。"; // failed to compute
+      }
     });
   }
 });
+
+async function fetchFullSummary(simId, weights) {
+  const res = await fetch(`/api/simulations/${simId}/summary`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ weights }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.error || "Summary failed");
+  return data;
+}
+
+function renderFullSummary(summary) {
+  const statusEl = document.getElementById("fullSummaryStatus");
+  const preEl = document.getElementById("fullSummaryPre");
+  if (!preEl) return;
+
+  if (!summary || typeof summary !== "object") {
+    if (statusEl) statusEl.textContent = "Full summary unavailable.";
+    preEl.textContent = "";
+    return;
+  }
+
+  const lines = [];
+  if (typeof summary.personCount === "number") lines.push(`Persons: ${summary.personCount}`);
+  if (typeof summary.selectedPlanCount === "number") lines.push(`Selected plans: ${summary.selectedPlanCount}`);
+  if (typeof summary.avgClientScore === "number") lines.push(`Avg client score (selected): ${summary.avgClientScore.toFixed(2)}`);
+
+  const best = summary.bestPlan;
+  if (best) {
+    lines.push("");
+    lines.push("Best plan (all persons):");
+    lines.push(`  Person: ${best.personId ?? "-"}`);
+    lines.push(`  Plan index: ${best.planIndex ?? "-"}`);
+    lines.push(`  Client score: ${best.clientScore?.toFixed?.(2) ?? "-"}`);
+    lines.push(`  MATSim score: ${best.matsimScore ?? "-"}`);
+    lines.push(`  Server score: ${best.serverScore ?? "-"}`);
+  }
+
+  const bestBus = summary.bestBusPlan;
+  if (bestBus) {
+    lines.push("");
+    lines.push("Best bus plan (all persons):");
+    lines.push(`  Person: ${bestBus.personId ?? "-"}`);
+    lines.push(`  Plan index: ${bestBus.planIndex ?? "-"}`);
+    lines.push(`  Client score: ${bestBus.clientScore?.toFixed?.(2) ?? "-"}`);
+    lines.push(`  MATSim score: ${bestBus.matsimScore ?? "-"}`);
+    lines.push(`  Server score: ${bestBus.serverScore ?? "-"}`);
+  }
+
+  if (statusEl) statusEl.textContent = "Full summary computed on backend.";
+  preEl.textContent = lines.join("\n");
+}
+
+async function computeAndShowFullSummary() {
+  const sel = document.getElementById("simulationSelect");
+  const simId = sel && sel.value;
+  const statusEl = document.getElementById("fullSummaryStatus");
+  const preEl = document.getElementById("fullSummaryPre");
+  if (!statusEl || !preEl) return;
+
+  if (!simId) {
+    statusEl.textContent = "Select a simulation first.";
+    preEl.textContent = "";
+    return;
+  }
+
+  statusEl.textContent = "Computing full summary on backend…";
+  preEl.textContent = "";
+  try {
+    const summary = await fetchFullSummary(simId, getWeights());
+    renderFullSummary(summary);
+  } catch (e) {
+    console.error(e);
+    statusEl.textContent = "Full summary failed.";
+    preEl.textContent = e?.message || "Error";
+  }
+}
+
+document.getElementById("fullSummaryBtn")?.addEventListener("click", computeAndShowFullSummary);
 
 
 // === UI <-> Persistence wiring (weights, filter, panel open) ===
@@ -566,6 +674,7 @@ document.getElementById("recomputeBtn").addEventListener("click", () => {
     td.textContent = computeScoreClient(plan, weights).toFixed(2);
   });
   if (window.reflowAnalysisPanel) window.reflowAnalysisPanel();
+  computeAndShowFullSummary();
 });
 
 // (Optional) expose for debugging
@@ -654,7 +763,7 @@ document.getElementById('loadSimulationBtn')?.addEventListener('click', async ()
   spinner && (spinner.style.display = 'inline');
   statusMsg.textContent = '';
   try {
-    const res = await fetch(`/api/simulations/${id}/data`);
+    const res = await fetch(`/api/simulations/${id}/data?limit=1000`);
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
@@ -677,6 +786,7 @@ document.getElementById('loadSimulationBtn')?.addEventListener('click', async ()
     applyFilterAndRender();
     statusMsg.textContent = `Loaded ${__FILTERED_PERSONS__.length} of ${__ALL_PERSONS__.length} persons (filtered)`;
     redrawMapFromFiltered();
+    computeAndShowFullSummary();
   } catch (err) {
     console.error(err);
     alert('Load failed.');
@@ -717,46 +827,101 @@ showCachedSimulationBtn?.addEventListener("click", () => {
     applyFilterAndRender();
   }
   redrawMapFromFiltered();
-  statusMsg.textContent = `Displayed ${__FILTERED_PERSONS__.length} of ${__ALL_PERSONS__.length} persons on the map.`;
+  const shown = Math.min(
+    Array.isArray(__FILTERED_PERSONS__) ? __FILTERED_PERSONS__.length : 0,
+    MAX_MAP_PERSONS,
+  );
+  statusMsg.textContent = `Displayed ${shown} of ${__ALL_PERSONS__.length} persons on the map.`;
 });
-
-function findTopByClientScore() {
-  const weights = getWeights();
-  let best = null; // { person, planIndex, plan, score }
-  __ALL_PERSONS__.forEach(p => {
-    if (!p?.plans?.length) return;
-    p.plans.forEach((pl, i) => {
-      const s = computeScoreClient(pl, weights);
-      if (!best || s > best.score) best = { person: p, planIndex: i, plan: pl, score: s };
-    });
-  });
-  return { best, weights };
-}
 
 // button to call the Flask /story endpoint and persist the result for results.html
 document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
-  const { best, weights } = findTopByClientScore();
-  if (!best) return alert("No plans available.");
+  const sel = document.getElementById("simulationSelect");
+  const simId = sel && sel.value;
+  if (!simId) {
+    alert("シミュレーションを選択してください。");
+    return;
+  }
+  const weights = getWeights();
 
   try {
+    function loadRouteParams() {
+      try { return JSON.parse(localStorage.getItem("routeParams") || "null"); } catch { return null; }
+    }
+
+    // Prefer the "most impacted" person from the saved frequency-change params (if available).
+    let picked = null;
+    const routeParams = loadRouteParams();
+    if (routeParams && routeParams.oldFrequency != null && routeParams.newFrequency != null) {
+      try {
+        const resCmp = await fetch(`/api/simulations/${simId}/frequency-compare`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            routeId: routeParams.routeId,
+            oldFrequency: routeParams.oldFrequency,
+            newFrequency: routeParams.newFrequency,
+            weights,
+            includeMostImpactedSteps: true,
+          }),
+        });
+        const cmp = await resCmp.json().catch(() => ({}));
+        if (resCmp.ok) {
+          const mi = cmp?.mostImpacted;
+          if (mi && mi.personId && Array.isArray(mi.afterPlanSteps) && mi.afterPlanSteps.length) {
+            picked = {
+              personId: mi.personId,
+              planIndex: mi.afterPlanIndex,
+              planSteps: mi.afterPlanSteps,
+              meta: { kind: "mostImpacted", deltaScore: mi.deltaScore, routeId: routeParams.routeId },
+            };
+          }
+        }
+      } catch (e) {
+        console.warn("frequency-compare failed; falling back to bestPlan", e);
+      }
+    }
+
+    if (!picked) {
+      // Fallback: ask backend to find the best plan over all persons
+      const resSummary = await fetch(`/api/simulations/${simId}/summary`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weights }),
+      });
+      const summary = await resSummary.json().catch(() => ({}));
+      if (!resSummary.ok) throw new Error(summary?.error || "Summary failed");
+      const best = summary?.bestPlan;
+      if (!best || !Array.isArray(best.steps)) {
+        alert("No plans available.");
+        return;
+      }
+      picked = {
+        personId: best.personId,
+        planIndex: best.planIndex,
+        planSteps: best.steps,
+        meta: { kind: "bestPlan" },
+      };
+    }
+
     const res = await fetch("http://127.0.0.1:3000/story", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        personId: best.person.personId,
-        plan: { steps: best.plan.steps },
+        personId: picked.personId,
+        plan: { steps: picked.planSteps },
         weights,
-        lang: "ja" // set to "en" if you add a language toggle later
-      })
+        lang: "ja", // set to "en" if you add a language toggle later
+      }),
     });
     const story = await res.json();
 
     const payload = {
-      personId: best.person.personId,
-      planIndex: best.planIndex,
-      score: best.score,
+      personId: picked.personId,
+      planIndex: picked.planIndex,
+      meta: picked.meta,
       story,
-      ts: Date.now()
+      ts: Date.now(),
     };
     localStorage.setItem("matsim-ai-story", JSON.stringify(payload));
     alert("AIストーリーを保存しました。results.html を開いてください。");

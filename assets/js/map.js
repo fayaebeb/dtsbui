@@ -77,24 +77,103 @@ routeCheckbox?.addEventListener('change', routeCheckboxChange);
 // ================================
 // Dynamic panel
 // ================================
+let selectedRouteInfo = null;
+
 function ensureDynRoutePanel() {
-  const container = document.querySelector('.c-box__route-wrap .c-box__route-content.js-parameter-content.current');
-  if (!container) return;
-  if (!document.getElementById('dynRouteContainer')) {
-    container.innerHTML = `
-      <div id="dynRouteContainer" class="c-route" style="padding:8px 0;">
-        <p class="muted" style="margin:0 0 8px;">地図上のバス路線をクリックすると詳細を表示します。</p>
-        <div id="dynRouteDetails" class="c-route__setting"></div>
-        <div style="margin-top:8px; display:flex; gap:8px;">
-          <button id="clearRouteBtn" type="button" class="c-btn__small" style="display:inline-flex;align-items:center;justify-content:center;line-height:1;height:32px;padding:0 12px;">
-            クリア
-          </button>
-        </div>
-      </div>
-    `;
+  return document.getElementById('dynRouteContainer');
+}
+
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function setDynSaveStatus(show) {
+  const el = document.getElementById('dynSaveStatus');
+  if (!el) return;
+  el.hidden = !show;
+  if (show) setTimeout(() => { el.hidden = true; }, 1200);
+}
+
+function dynRouteStorageKey(info) {
+  const routeId = info?.routeId ? String(info.routeId) : '';
+  return routeId ? `dtsb.routeParams.${routeId}` : 'routeParams';
+}
+
+function readDynSavedParams(info) {
+  try {
+    const key = dynRouteStorageKey(info);
+    const txt = localStorage.getItem(key) || localStorage.getItem('routeParams');
+    return txt ? JSON.parse(txt) : null;
+  } catch {
+    return null;
   }
 }
+
+function writeDynSavedParams(info, payload) {
+  try {
+    localStorage.setItem(dynRouteStorageKey(info), JSON.stringify(payload));
+    // Compatibility: also store the latest route params under a stable key so
+    // results pages can read it without knowing the selected routeId.
+    localStorage.setItem('routeParams', JSON.stringify(payload));
+  } catch { }
+}
+
+function updateDynFreqUi() {
+  const slider = document.querySelector('#dynFreqRange .js-range-slider');
+  if (!slider) return;
+  const v = Number(slider.value || 0);
+  const def = Number(slider.dataset.default || 0);
+  const val = document.querySelector('#dynFreqRange .js-range-value');
+  const diff = document.querySelector('#dynFreqRange .js-range-diff');
+  if (val) val.textContent = String(v);
+  if (diff) diff.textContent = `(${v - def >= 0 ? '+' : ''}${v - def})`;
+  const view = document.getElementById('dynRouteFreqView');
+  if (view) view.textContent = `${v} 本`;
+}
+
+function bindDynRoutePanel() {
+  if (window.__dynRoutePanelBound) return;
+  window.__dynRoutePanelBound = true;
+
+  document.getElementById('clearRouteBtn')?.addEventListener('click', () => clearSelection());
+
+  document.getElementById('dynToggleParamsBtn')?.addEventListener('click', () => {
+    const controls = document.getElementById('dynRouteControls');
+    if (!controls) return;
+    if (!selectedRouteInfo) return;
+    controls.hidden = !controls.hidden;
+  });
+
+  const slider = document.querySelector('#dynFreqRange .js-range-slider');
+  if (slider) slider.addEventListener('input', updateDynFreqUi);
+
+  document.getElementById('applyDynParamsBtn')?.addEventListener('click', () => {
+    if (!selectedRouteInfo) return;
+    const newFreq = Number(document.querySelector('#dynFreqRange .js-range-slider')?.value || 0);
+    const brt = !!document.getElementById('dynBrtToggle')?.checked;
+    const payload = {
+      routeId: selectedRouteInfo.routeId,
+      lineId: selectedRouteInfo.lineId,
+      systemId: selectedRouteInfo.systemId,
+      timeMode: getBusTimeMode(),
+      oldFrequency: getBusFreq(selectedRouteInfo),
+      newFrequency: newFreq,
+      brtExclusive: brt,
+      ts: Date.now()
+    };
+    writeDynSavedParams(selectedRouteInfo, payload);
+    setDynSaveStatus(true);
+  });
+}
+
 ensureDynRoutePanel();
+bindDynRoutePanel();
+renderRouteDetails(null);
 
 // ================================
 // Bus routes derived from transitSchedule
@@ -114,6 +193,59 @@ function mod24s(sec) { return ((sec % 86400) + 86400) % 86400; }
 function inMorningWindow(sec) {
   const t = mod24s(sec);
   return t >= 6 * 3600 && t <= (9 * 3600 + 59 * 60 + 59);
+}
+
+function getBusTimeMode() {
+  return '0609';
+}
+
+function getBusFreq(info) {
+  const mode = getBusTimeMode();
+  if (mode === 'all') return info.countAll ?? info.count0609 ?? 0;
+  return info.count0609 ?? info.countAll ?? 0;
+}
+
+function getBusSamples(info) {
+  const mode = getBusTimeMode();
+  if (mode === 'all') return (info.samplesAll || info.samples || []);
+  return (info.samples0609 || info.samples || []);
+}
+
+function getBusFreqLabel() {
+  return getBusTimeMode() === 'all' ? '運行頻度（終日）' : '運行頻度（06:00–09:59）';
+}
+
+function getBusHourRangeLabel() {
+  return getBusTimeMode() === 'all' ? '終日' : '6～9時台';
+}
+
+function getBusTooltip(props) {
+  const title = props.systemId ? `系統${props.systemId}` : (props.routeId || 'route');
+  const label = getBusTimeMode() === 'all' ? '終日' : '06–09';
+  const freq = getBusFreq(props);
+  return `${title}<br>${label}: ${freq}本`;
+}
+
+function getBusLineWeight(info) {
+  const freq = info.countAll ?? info.count0609 ?? 0;
+  if (freq >= 100) return 16;      // very frequent
+  if (freq >= 50) return 9;       // frequent
+  if (freq >= 20) return 4;       // moderate
+  return 1.5;                     // low frequency
+}
+
+function updateBusRouteViewForTimeMode() {
+  if (busRoutesLayer) {
+    busRoutesLayer.eachLayer(layer => {
+      const p = layer.feature?.properties || {};
+      const tip = getBusTooltip(p);
+      layer.unbindTooltip();
+      layer.bindTooltip(tip, { permanent: false, direction: 'top', className: 'l-contents__map-route' });
+    });
+  }
+  if (selectedRouteLayer && selectedRouteLayer.feature) {
+    renderRouteDetails(selectedRouteLayer.feature.properties);
+  }
 }
 
 function km2deg(xy) {
@@ -199,15 +331,21 @@ async function buildBusRoutesLayer() {
       const depEls = depParent ? Array.from(depParent.getElementsByTagName('departure')) : [];
       const depTimes = depEls.map(d => d.getAttribute('departureTime')).filter(Boolean);
 
-      const depInWindow = depTimes
+      const depAll = depTimes
         .map(t => ({ t, s: parseTimeHHMMSS(t) }))
-        .filter(o => o.s != null && inMorningWindow(o.s))
+        .filter(o => o.s != null)
         .sort((a, b) => mod24s(a.s) - mod24s(b.s));
 
-      const count0609 = depInWindow.length;
-      const samples = depInWindow.slice(0, 4).map(o => o.t);
+      const depMorning = depAll.filter(o => inMorningWindow(o.s));
 
-      routeStatsMap.set(routeId, { lineId, routeId, systemId, count0609, samples });
+      const countAll = depAll.length;
+      const count0609 = depMorning.length;
+      const samplesAll = depAll.slice(0, 4).map(o => o.t);
+      const samples0609 = depMorning.slice(0, 4).map(o => o.t);
+
+      const stats = { lineId, routeId, systemId, countAll, count0609, samplesAll, samples0609 };
+
+      routeStatsMap.set(routeId, stats);
 
       let latlngs = latlngsFromLinks(rn);
       if (!latlngs.length) latlngs = latlngsFromStops(rn);
@@ -215,7 +353,7 @@ async function buildBusRoutesLayer() {
       if (latlngs.length >= 2) {
         features.push({
           type: 'Feature',
-          properties: { lineId, routeId, systemId, count0609, samples },
+          properties: stats,
           geometry: { type: 'LineString', coordinates: latlngs.map(([lat, lng]) => [lng, lat]) }
         });
       }
@@ -227,15 +365,31 @@ async function buildBusRoutesLayer() {
   const fc = { type: 'FeatureCollection', features };
   busRoutesLayer = L.geoJSON(fc, {
     pane: 'linePane', // ← draw in the visible base pane
-    style: { color: '#FF6600', weight: 4, opacity: 1 },
+    style: feature => {
+      const p = feature?.properties || {};
+      return {
+        color: '#FF6600',
+        weight: getBusLineWeight(p),
+        opacity: 1
+      };
+    },
     onEachFeature: (feature, layer) => {
       const p = feature.properties || {};
-      const title = p.systemId ? `系統${p.systemId}` : (p.routeId || 'route');
-      const tip = `${title}<br>06–09: ${p.count0609}本`;
+      const tip = getBusTooltip(p);
       layer.bindTooltip(tip, { permanent: false, direction: 'top', className: 'l-contents__map-route' });
       layer.on('click', () => selectRoute(layer, p));
-      layer.on('mouseover', () => { if (layer !== selectedRouteLayer) layer.setStyle({ weight: 6, opacity: 1 }); });
-      layer.on('mouseout', () => { if (layer !== selectedRouteLayer) layer.setStyle({ weight: 4, opacity: 1 }); });
+      layer.on('mouseover', () => {
+        if (layer !== selectedRouteLayer) {
+          const w = getBusLineWeight(p);
+          layer.setStyle({ weight: w + 2, opacity: 1 });
+        }
+      });
+      layer.on('mouseout', () => {
+        if (layer !== selectedRouteLayer) {
+          const w = getBusLineWeight(p);
+          layer.setStyle({ weight: w, opacity: 1 });
+        }
+      });
     }
   });
 
@@ -267,44 +421,102 @@ function addBusLayerToMap(layer) {
 
 function renderRouteDetails(info) {
   ensureDynRoutePanel();
-  const wrap = document.getElementById('dynRouteDetails');
-  if (!wrap) return;
-  if (!info) { wrap.innerHTML = ''; return; }
-  const lineName = info.lineId || '(不明)';
-  const routeName = info.routeId || '(不明)';
-  const freq = info.count0609 ?? 0;
-  const samples = (info.samples || []).join(', ');
-  wrap.innerHTML = `
-    <dl class="c-route__setting">
-      <dt>路線名</dt><dd>${lineName}</dd>
-      <dt>ルートID</dt><dd>${routeName}</dd>
-      <dt>運行頻度（06:00–09:59）</dt><dd>${freq} 本</dd>
-      <dt>出発時刻サンプル</dt><dd>${samples || '—'}</dd>
-    </dl>
+  bindDynRoutePanel();
+
+  const badge = document.getElementById('dynRouteSummaryBadge');
+  const empty = document.getElementById('dynRouteEmpty');
+  const details = document.getElementById('dynRouteDetails');
+  const controls = document.getElementById('dynRouteControls');
+  const toggleBtn = document.getElementById('dynToggleParamsBtn');
+  const applyBtn = document.getElementById('applyDynParamsBtn');
+
+  if (!details) return;
+
+  if (!info) {
+    selectedRouteInfo = null;
+    if (badge) {
+      badge.dataset.state = 'empty';
+      badge.textContent = '未選択';
+    }
+    if (empty) empty.hidden = false;
+    details.hidden = true;
+    details.innerHTML = '';
+    if (controls) controls.hidden = true;
+    if (toggleBtn) toggleBtn.disabled = true;
+    if (applyBtn) applyBtn.disabled = true;
+    return;
+  }
+
+  selectedRouteInfo = info;
+
+  const systemId = info.systemId ? `系統${escapeHtml(info.systemId)}` : '';
+  const lineName = escapeHtml(info.lineId || '(不明)');
+  const routeName = escapeHtml(info.routeId || '(不明)');
+  const freqAll = info.countAll ?? info.count0609 ?? 0;
+  const freqSelected = getBusFreq(info);
+  const samples = escapeHtml((getBusSamples(info) || []).join(', ') || '—');
+
+  if (badge) {
+    badge.dataset.state = 'selected';
+    badge.textContent = systemId || '選択中';
+  }
+  if (empty) empty.hidden = true;
+  details.hidden = false;
+  details.innerHTML = `
+    <dt>路線ID</dt><dd>${lineName}</dd>
+    <dt>経路ID</dt><dd>${routeName}</dd>
+    <dt>運行頻度（06:00–09:59）</dt><dd id="dynRouteFreqView">${freqSelected} 本</dd>
+    <dt>運行頻度（終日）</dt><dd>${freqAll} 本</dd>
+    <dt>出発サンプル</dt><dd>${samples}</dd>
   `;
+
+  const slider = document.querySelector('#dynFreqRange .js-range-slider');
+  if (slider) {
+    slider.value = String(freqSelected);
+    slider.dataset.default = String(freqSelected);
+    slider.dataset.saved = String(freqSelected);
+  }
+
+  const saved = readDynSavedParams(info);
+  const brtToggle = document.getElementById('dynBrtToggle');
+  if (brtToggle) brtToggle.checked = !!saved?.brtExclusive;
+  if (toggleBtn) toggleBtn.disabled = false;
+  if (applyBtn) applyBtn.disabled = false;
+  setDynSaveStatus(false);
+  updateDynFreqUi();
+
   document.getElementById('dynRouteContainer')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function clearSelection() {
   if (selectedRouteLayer) {
-    try { selectedRouteLayer.setStyle({ color: '#FF6600', weight: 4, opacity: 1 }); } catch { }
+    try {
+      const p = selectedRouteLayer.feature?.properties || {};
+      const w = getBusLineWeight(p);
+      selectedRouteLayer.setStyle({ color: '#FF6600', weight: w, opacity: 1 });
+    } catch { }
     selectedRouteLayer = null;
   }
+  selectedRouteInfo = null;
   renderRouteDetails(null);
 }
 
 function selectRoute(layer, props) {
   if (selectedRouteLayer && selectedRouteLayer !== layer) {
-    try { selectedRouteLayer.setStyle({ color: '#FF6600', weight: 4, opacity: 1 }); } catch { }
+    try {
+      const pPrev = selectedRouteLayer.feature?.properties || {};
+      const wPrev = getBusLineWeight(pPrev);
+      selectedRouteLayer.setStyle({ color: '#FF6600', weight: wPrev, opacity: 1 });
+    } catch { }
   }
   selectedRouteLayer = layer;
-  try { layer.setStyle({ color: '#00B3FF', weight: 6, opacity: 1 }); } catch { }
+  selectedRouteInfo = props || null;
+  try {
+    const w = getBusLineWeight(props || {});
+    layer.setStyle({ color: '#00B3FF', weight: w + 2, opacity: 1 });
+  } catch { }
   renderRouteDetails(props);
 }
-
-document.addEventListener('click', (e) => {
-  if (e.target && e.target.id === 'clearRouteBtn') clearSelection();
-});
 
 map.on('click', (e) => {
   const hitShape = e.originalEvent.target.closest?.('.leaflet-interactive');
@@ -318,6 +530,7 @@ if (busToggle) {
     if (e.target.checked) {
       const layer = await buildBusRoutesLayer();
       addBusLayerToMap(layer);
+      updateBusRouteViewForTimeMode();
     } else {
       if (busRoutesLayer) map.removeLayer(busRoutesLayer);
       clearSelection();
@@ -410,146 +623,6 @@ rangeYearInput.addEventListener('input', () => {
   if (populationCheckbox?.checked) showPopulationData();
 });
 yearRange(parseInt(rangeYearInput.value));
-
-// --- Override: richer route details with slider + BRT toggle and persistence ---
-try {
-  const originalRender = renderRouteDetails;
-  renderRouteDetails = function (info) {
-    ensureDynRoutePanel();
-    const wrap = document.getElementById('dynRouteDetails');
-    if (!wrap) return;
-    if (!info) { wrap.innerHTML = ''; return; }
-    const lineName = info.lineId || '(不明)';
-    const routeName = info.routeId || '(不明)';
-    const freq = info.count0609 ?? 0;
-    const samples = (info.samples || []).join(', ');
-    wrap.innerHTML = `
-      <dl class="c-route__setting">
-        <dt>路線ID</dt><dd>${lineName}</dd>
-        <dt>経路ID</dt><dd>${routeName}</dd>
-        <dt>運行頻度（06:00-09:59）</dt><dd id="dynRouteFreqView">${freq} 本</dd>
-        <dt>出発サンプル</dt><dd>${samples || '?'}</dd>
-      </dl>
-    `;
-
-    // Ensure control host exists
-    let controls = document.getElementById('dynRouteControls');
-    if (!controls) {
-      controls = document.createElement('div');
-      controls.id = 'dynRouteControls';
-      controls.className = 'c-route__setting';
-      controls.style.marginTop = '8px';
-      controls.style.display = 'none';
-      controls.innerHTML = `
-      <dl class="c-route__setting">
-  <dt>運航頻度
-    <span class="c-btn__small c-btn__small-white reset js-reset" data-reset="dyn_frequency">
-      まとめてリセット
-    </span>
-  </dt>
-  <dd id="dyn_frequency">
-    <dl class="c-frequency">
-      <dt class="c-frequency__hours">6～9時台
-        <span class="c-btn__small c-btn__small-white reset js-reset" data-reset="dyn_frequency_0609">
-          リセット
-        </span>
-      </dt>
-      <dd class="c-frequency__number c-input__range" id="dyn_frequency_0609">
-        <span class="c-input__range-unit">台数(台)</span>
-        <div class="c-input__range-container js-range" id="dynFreqRange">
-          <span class="c-input__change c-input__range-change current-value u-en js-range-change">
-            <span class="js-range-value" data-saved="${freq}">${freq}</span>
-            <small class="js-range-diff" data-saved="(+0)">(+0)</small>
-          </span>
-          <div class="c-input__range-minmax u-en">
-            <span class="js-range-min">0</span>
-            <span class="js-range-max">60</span>
-          </div>
-          <div class="c-input__range-wrap">
-            <input type="range" name="dyn_frequency_0609"
-              value="${freq}" data-saved="${freq}" data-default="${freq}"
-              min="0" max="60" class="c-input__range-slider js-range-slider" />
-            <i class="c-input__range-mark js-range-mark equal"></i>
-          </div>
-          <span class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-        </div>
-      </dd>
-    </dl>
-  <dt>BRT専用レーン</dt>
-  <dd>
-    <label class="l-contents__map-btn">
-      <input type="checkbox" id="dynBrtToggle" />
-      <span class="btn">専用レーンを付与</span>
-    </label>
-  
-    <div class="c-area__btns" style="gap:8px; display:flex; flex-wrap:wrap;">
-      <button id="applyDynParamsBtn" type="button" class="c-btn__small">変更を保存</button>
-      <button id="toggleParamsBtn" type="button" class="c-btn__small">パラメータを変更</button>
-      <small id="dynSaveStatus" class="muted" style="display:none;">保存しました</small>
-    </div>
-  </dd>
-  </dl>
-`;
-
-      const container = document.getElementById('dynRouteContainer') || wrap.parentElement;
-      container && container.appendChild(controls);
-    }
-    // Make sure the controls are visible when a route is selected
-    if (controls) controls.style.display = 'block';
-
-    // Initialize slider and bind UI sync
-    const freqRange = document.querySelector('#dynFreqRange .js-range-slider');
-    if (freqRange) {
-      freqRange.value = String(freq);
-      freqRange.setAttribute('data-saved', String(freq));
-      freqRange.setAttribute('data-default', String(freq));
-      const valEl = document.querySelector('#dynFreqRange .js-range-value');
-      const diffEl = document.querySelector('#dynFreqRange .js-range-diff');
-      if (valEl) valEl.textContent = String(freq);
-      if (diffEl) diffEl.textContent = '(+0)';
-      freqRange.oninput = () => {
-        const v = Number(freqRange.value || 0);
-        const def = Number(freqRange.dataset.default || 0);
-        const val = document.querySelector('#dynFreqRange .js-range-value');
-        const diff = document.querySelector('#dynFreqRange .js-range-diff');
-        if (val) val.textContent = String(v);
-        if (diff) diff.textContent = `(${v - def >= 0 ? '+' : ''}${v - def})`;
-        const view = document.getElementById('dynRouteFreqView');
-        if (view) view.textContent = `${v} 本`;
-      };
-    }
-
-    // Control buttons
-    const toggleBtn = document.getElementById('toggleParamsBtn');
-    if (toggleBtn && controls) {
-      toggleBtn.onclick = () => {
-        controls.style.display = (controls.style.display === 'none' || !controls.style.display) ? 'block' : 'none';
-      };
-    }
-    const applyBtn = document.getElementById('applyDynParamsBtn');
-    const saveMsg = document.getElementById('dynSaveStatus');
-    if (applyBtn) {
-      applyBtn.onclick = () => {
-        const newFreq = Number(document.querySelector('#dynFreqRange .js-range-slider')?.value || freq || 0);
-        const brt = !!document.getElementById('dynBrtToggle')?.checked;
-        const payload = {
-          routeId: info.routeId,
-          lineId: info.lineId,
-          systemId: info.systemId,
-          oldFrequency: freq,
-          newFrequency: newFreq,
-          brtExclusive: brt,
-          ts: Date.now()
-        };
-        try {
-          localStorage.setItem('routeParams', JSON.stringify(payload));
-          if (saveMsg) { saveMsg.style.display = 'inline'; setTimeout(() => saveMsg.style.display = 'none', 1200); }
-        } catch { }
-      };
-    }
-    document.getElementById('dynRouteContainer')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  };
-} catch { }
 
 // Add this near the bottom of map.js (only once)
 // ========== Bind reset handler for dynamic panel ==========

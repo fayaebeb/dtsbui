@@ -31,7 +31,13 @@ def upload_sas():
     prefix = secure_filename((payload.get("prefix") or "simulations").strip()) or "simulations"
     blob_name = f"{prefix}/{uuid.uuid4().hex}_{filename}"
 
-    bsc, account, container, account_key = get_storage_context(require_account_key=True)
+    # In local development we may not have Azure configured; surface a clean
+    # JSON error instead of a 500 so the frontend can fall back to direct upload.
+    try:
+        bsc, account, container, account_key = get_storage_context(require_account_key=True)
+    except RuntimeError as exc:
+        current_app.logger.error("Azure storage not configured for upload_sas: %s", exc)
+        return jsonify({"error": "blob_storage_not_configured"}), 400
     container_client = bsc.get_container_client(container)
     try:
         container_client.create_container()

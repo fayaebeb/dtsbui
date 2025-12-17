@@ -10,6 +10,128 @@
 	<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;700&display=swap" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="assets/css/indexcss.css" />
+	<style>
+		/* Dynamic route panel (bus routes) */
+		details.c-route.dtsb-dynroute {
+			--dyn-border: rgba(0, 0, 0, 0.06);
+		}
+
+		details.c-route.dtsb-dynroute>summary.c-details__summary {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+		}
+
+		.dtsb-pill {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			padding: 4px 10px;
+			border-radius: 999px;
+			font-size: 1.2rem;
+			font-weight: 700;
+			letter-spacing: 0;
+			border: 1px solid rgba(var(--colorMainRgb), 0.22);
+			background: rgba(var(--colorMainRgb), 0.08);
+			color: var(--commonBlack);
+			white-space: nowrap;
+		}
+
+		.dtsb-pill[data-state="selected"] {
+			border-color: rgba(0, 179, 255, 0.35);
+			background: rgba(0, 179, 255, 0.12);
+		}
+
+		.dtsb-dynroute__container {
+			display: grid;
+			gap: 10px;
+		}
+
+		.dtsb-dynroute__top {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+			flex-wrap: wrap;
+			padding: 10px 16px;
+			border-bottom: 1px solid var(--commonGray);
+			background: rgba(255, 255, 255, 0.65);
+			backdrop-filter: blur(8px);
+		}
+
+		.dtsb-dynroute__mode {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			flex: 1 1 auto;
+			min-width: 220px;
+		}
+
+		.dtsb-dynroute__label {
+			font-weight: 700;
+			color: var(--commonBlack);
+			white-space: nowrap;
+		}
+
+		.dtsb-select {
+			border: 1px solid var(--commonGray);
+			border-radius: 10px;
+			padding: 6px 10px;
+			background: rgba(255, 255, 255, 0.9);
+			box-shadow: var(--shadow-sm);
+			min-width: 190px;
+		}
+
+		.dtsb-dynroute__actions {
+			display: inline-flex;
+			gap: 8px;
+			align-items: center;
+			flex: 0 0 auto;
+		}
+
+		.dtsb-dynroute__empty {
+			padding: 12px 16px;
+			border: 1px dashed var(--commonGray);
+			border-radius: 12px;
+			background: rgba(255, 255, 255, 0.55);
+		}
+
+		.dtsb-dynroute__meta.c-route__setting {
+			border-radius: 12px;
+			overflow: hidden;
+			box-shadow: var(--shadow-sm);
+			background: rgba(255, 255, 255, 0.75);
+		}
+
+		.dtsb-dynroute__controls {
+			border-radius: 12px;
+			overflow: hidden;
+			box-shadow: var(--shadow-sm);
+			background: rgba(255, 255, 255, 0.75);
+		}
+
+		.dtsb-dynroute__footer {
+			display: flex;
+			align-items: center;
+			justify-content: flex-end;
+			gap: 10px;
+			padding: 10px 16px 14px;
+		}
+
+		/* Make reset/pills read nicely on small widths */
+		@media (max-width: 720px) {
+			.dtsb-select {
+				min-width: 0;
+				width: 100%;
+			}
+
+			.dtsb-dynroute__actions {
+				width: 100%;
+				justify-content: flex-end;
+			}
+		}
+	</style>
 </head>
 
 <body>
@@ -141,51 +263,89 @@
 					<div class="c-box c-box__route c-area__scroll">
 						<div class="c-box__route-wrap">
 							<!--現状-->
-							<div class="c-box__route-content js-parameter-content current">
-								<!--現状：路線-->
-								<details class="c-route c-details js-route" data-route="current_route_a" open>
-									<summary class="c-details__summary">路線A</summary>
-									<dl class="c-route__setting">
-										<dt>運航頻度<span class="c-btn__small c-btn__small-white reset js-reset"
-												data-reset="current_a_frequency">まとめてリセット</span></dt>
-										<dd id="current_a_frequency">
-											<dl class="c-frequency">
-												<dt class="c-frequency__hours">6～9時台<span
-														class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="current_a_frequency_0609">リセット</span></dt>
-												<dd class="c-frequency__number c-input__range"
-													id="current_a_frequency_0609">
-													<span class="c-input__range-unit">台数(台)</span>
-													<div class="c-input__range-container js-range">
-														<span
-															class="c-input__change c-input__range-change current-value u-en js-range-change">
-															<span class="js-range-value" data-saved="2">2</span>
-															<small class="js-range-diff" data-saved="(+0)">(+0)</small>
-														</span>
-														<div class="c-input__range-minmax u-en">
-															<span class="js-range-min">0</span>
-															<span class="js-range-max">10</span>
-														</div>
-														<div class="c-input__range-wrap">
-															<input type="range" name="current_a_frequency_0609"
-																value="2" data-saved="2" data-default="2" min="0"
-																max="10"
-																class="c-input__range-slider js-range-slider" />
-															<i class="c-input__range-mark js-range-mark equal"></i>
-														</div>
-														<span
-															class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
-													</div>
-												</dd>
-											</dl>
-										</dd>
-									</dl>
-								</details>
-								<!--//現状：路線-->
+								<div class="c-box__route-content js-parameter-content current">
+									<details class="c-route c-details js-route dtsb-dynroute" data-route="current_route_a" open>
+										<summary class="c-details__summary">
+											<span>路線</span>
+											<span id="dynRouteSummaryBadge" class="dtsb-pill" data-state="empty">未選択</span>
+										</summary>
+
+											<div id="dynRouteContainer" class="dtsb-dynroute__container">
+											<div class="dtsb-dynroute__top">
+												<div class="dtsb-dynroute__mode">
+													<span class="dtsb-dynroute__label">運行頻度（06:00–09:59）</span>
+												</div>
+												<div class="dtsb-dynroute__actions">
+													<button id="dynToggleParamsBtn" type="button"
+														class="c-btn__small c-btn__small-white">パラメータ</button>
+													<button id="clearRouteBtn" type="button"
+														class="c-btn__small c-btn__small-white">クリア</button>
+												</div>
+											</div>
+
+											<p id="dynRouteEmpty" class="dtsb-dynroute__empty muted">
+												地図上のバス路線をクリックすると詳細を表示します。
+											</p>
+
+											<dl id="dynRouteDetails" class="c-route__setting dtsb-dynroute__meta" aria-live="polite"></dl>
+
+											<div id="dynRouteControls" class="dtsb-dynroute__controls" hidden>
+												<dl class="c-route__setting">
+													<dt>運航頻度
+														<span class="c-btn__small c-btn__small-white reset js-reset"
+															data-reset="dyn_frequency">まとめてリセット</span>
+													</dt>
+													<dd id="dyn_frequency">
+														<dl class="c-frequency">
+															<dt class="c-frequency__hours">6～9時台
+																<span class="c-btn__small c-btn__small-white reset js-reset"
+																	data-reset="dyn_frequency_0609">リセット</span>
+															</dt>
+															<dd class="c-frequency__number c-input__range" id="dyn_frequency_0609">
+																<span class="c-input__range-unit">台数(台)</span>
+																<div class="c-input__range-container js-range" id="dynFreqRange">
+																	<span
+																		class="c-input__change c-input__range-change current-value u-en js-range-change">
+																		<span class="js-range-value" data-saved="0">0</span>
+																		<small class="js-range-diff" data-saved="(+0)">(+0)</small>
+																	</span>
+																	<div class="c-input__range-minmax u-en">
+																		<span class="js-range-min">0</span>
+																		<span class="js-range-max">60</span>
+																	</div>
+																	<div class="c-input__range-wrap">
+																		<input type="range" name="dyn_frequency_0609" value="0" data-saved="0"
+																			data-default="0" min="0" max="60"
+																			class="c-input__range-slider js-range-slider" />
+																		<i class="c-input__range-mark js-range-mark equal"></i>
+																	</div>
+																	<span
+																		class="c-input__saved c-input__range-saved u-en js-range-saved"></span>
+																</div>
+															</dd>
+														</dl>
+													</dd>
+
+													<dt>BRT専用レーン</dt>
+													<dd>
+														<label class="l-contents__map-btn">
+															<input type="checkbox" id="dynBrtToggle" />
+															<span class="btn">専用レーンを付与</span>
+														</label>
+													</dd>
+												</dl>
+
+												<div class="dtsb-dynroute__footer">
+													<button id="applyDynParamsBtn" type="button" class="c-btn__small">変更を保存</button>
+													<small id="dynSaveStatus" class="muted" role="status" aria-live="polite" hidden>保存しました</small>
+												</div>
+											</div>
+										</div>
+									</details>
+								</div>
+								<!--//現状-->
 							</div>
-							<!--//現状-->
 						</div>
-					</div>
 
 					<div class="c-area__btns" style="display:flex; flex-direction:column; gap:12px;">
 						<div style="display:flex; gap:8px; align-items:flex-start;">
@@ -277,7 +437,11 @@
 									<button id="recomputeBtn" type="button" class="btn">Recompute Scores</button>
 									<button id="clearMapBtn" type="button" class="btn secondary">Clear Map</button>
 									<button id="topBusBtn" type="button" class="btn">Find Top Bus User</button>
+									<button id="fullSummaryBtn" type="button" class="btn secondary">Full Summary</button>
 								</div>
+								<div id="fullSummaryStatus" class="muted" style="margin-top:8px;"></div>
+								<pre id="fullSummaryPre"
+									style="margin-top:8px; font-size:12px; background:#f8f8f8; padding:6px; border-radius:6px; max-height:180px; overflow:auto;"></pre>
 								<pre id="bus-result"
 									style="margin-top:8px; font-size:12px; background:#f8f8f8; padding:6px; border-radius:6px; max-height:180px; overflow:auto;"></pre>
 

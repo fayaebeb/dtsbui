@@ -233,7 +233,9 @@
           parseBtn.disabled = true;
           parseBtn.textContent = 'Starting...';
           try {
-            const resp = await fetch(`/admin/api/simulations/${r.id}/parse`, {
+            // Always force a fresh parse so updated limits
+            // (e.g., 1,000,000 persons) take effect.
+            const resp = await fetch(`/admin/api/simulations/${r.id}/parse?force=1`, {
               method: 'POST',
               headers: { ...(csrf ? { 'X-CSRFToken': csrf } : {}) },
               credentials: 'same-origin'
@@ -290,6 +292,33 @@
       });
     }
 
+    async function uploadDirectToServer(file, csrf) {
+      const prog = document.getElementById('prog');
+      if (prog) {
+        prog.max = 100;
+        prog.value = 0;
+      }
+      const formData = new FormData();
+      formData.append('file', file);
+      const headers = csrf ? { 'X-CSRFToken': csrf } : {};
+      const resp = await fetch('/admin/api/simulations', {
+        method: 'POST',
+        headers,
+        body: formData,
+        credentials: 'same-origin'
+      });
+      if (!resp.ok) {
+        let msg = 'Upload failed';
+        try {
+          const data = await resp.json();
+          if (data?.error) msg = data.error;
+        } catch (_) {}
+        throw new Error(msg);
+      }
+      if (prog) prog.value = 100;
+      return resp.json();
+    }
+
     async function uploadWithProgress(file, csrf) {
       const prog = document.getElementById('prog');
       if (prog) {
@@ -297,21 +326,38 @@
         prog.value = 0;
       }
       const baseHeaders = csrf ? { 'X-CSRFToken': csrf } : {};
-      const sasRes = await fetch('/admin/api/upload-sas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...baseHeaders },
-        body: JSON.stringify({ filename: file.name }),
-        credentials: 'same-origin'
-      });
-      if (!sasRes.ok) {
-        let msg = 'SAS request failed';
-        try {
-          const data = await sasRes.json();
-          if (data?.error) msg = data.error;
-        } catch (_) {}
-        throw new Error(msg);
+      let sasUrl = null;
+      let blobName = null;
+      try {
+        const sasRes = await fetch('/admin/api/upload-sas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...baseHeaders },
+          body: JSON.stringify({ filename: file.name }),
+          credentials: 'same-origin'
+        });
+        if (!sasRes.ok) {
+          let errMsg = 'SAS request failed';
+          try {
+            const data = await sasRes.json();
+            if (data?.error === 'blob_storage_not_configured') {
+              // Fall back to direct upload to the Flask server (local dev).
+              return uploadDirectToServer(file, csrf);
+            }
+            if (data?.error) errMsg = data.error;
+          } catch (_) {}
+          throw new Error(errMsg);
+        }
+        const sasPayload = await sasRes.json();
+        sasUrl = sasPayload.sasUrl;
+        blobName = sasPayload.blobName;
+      } catch (err) {
+        // If Azure is not configured, err.message may propagate here; let it bubble.
+        if (err?.message === 'blob_storage_not_configured') {
+          return uploadDirectToServer(file, csrf);
+        }
+        throw err;
       }
-      const { sasUrl, blobName } = await sasRes.json();
+
       if (!sasUrl || !blobName) throw new Error('Invalid SAS response');
 
       // Upload the file in blocks directly to the SAS URL using XHR so we can
@@ -433,8 +479,11 @@
       }
       st.textContent = 'Preparing upload...';
       uploading = true;
+      const isLocalHost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
       try {
-        const resp = await uploadWithProgress(f, csrf, st);
+        const resp = isLocalHost
+          ? await uploadDirectToServer(f, csrf)
+          : await uploadWithProgress(f, csrf, st);
         st.textContent = resp?.simulation?.name ? `Imported ${resp.simulation.name}` : 'Upload complete';
         if (fileEl) fileEl.value = '';
         refresh();

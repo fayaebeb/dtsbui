@@ -12,6 +12,7 @@ from azure.storage.blob import BlobClient
 from .azure_utils import get_storage_context
 from .models import get_simulation, update_simulation
 from .parsing import parse_plans_to_json
+from .aggregates import compute_aggregates
 
 
 class ParseError(Exception):
@@ -66,9 +67,20 @@ def _parse_and_cache(sim_id: str, plans_path: str, facilities_path: Optional[str
     with gzip.open(out_path, "wt", encoding="utf-8") as handle:
         json.dump(persons, handle)
 
+    # Precompute aggregates for charts so the browser doesn't need all persons.
+    agg_path = os.path.join(parsed_dir, f"{sim_id}.aggregates.json")
+    try:
+        agg = compute_aggregates(persons, top_routes=12)
+        with open(agg_path, "w", encoding="utf-8") as ah:
+            json.dump(agg, ah)
+    except Exception:
+        current_app.logger.exception("[parse] failed to compute aggregates for %s", sim_id)
+        agg_path = None
+
     updated = update_simulation(
         sim_id,
         cached_json_path=out_path,
+        cached_agg_path=agg_path,
         parsed_person_count=len(persons),
     )
     return {

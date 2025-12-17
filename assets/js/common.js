@@ -1,3 +1,13 @@
+document.addEventListener("DOMContentLoaded", () => {
+  const title = document.querySelector(".l-header__title");
+  if (title) {
+    title.addEventListener("click", () => {
+      window.location.href = "index.html"; // or "./"
+    });
+  }
+});
+
+
 //【共通】メニュー開閉
 const menuToToggle = document.querySelectorAll('.js-menu-toggle');
 let menu = localStorage.getItem('menuClose');

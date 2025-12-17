@@ -30,6 +30,7 @@ def list_all():
 def _safe_extractall(zf: zipfile.ZipFile, dest: str):
     """Safely extract files from zip to dest, flattening top-level dir if present."""
     names = [zi.filename for zi in zf.infolist() if not zi.is_dir()]
+    dest_abs = os.path.abspath(dest)
     common_prefix = None
     if names:
         parts = [n.split("/") for n in names if "/" in n]
@@ -45,8 +46,8 @@ def _safe_extractall(zf: zipfile.ZipFile, dest: str):
         if common_prefix and fn.startswith(common_prefix):
             fn = fn[len(common_prefix):]
         fn = fn.replace("\\", "/")
-        out_path = os.path.normpath(os.path.join(dest, fn))
-        if not out_path.startswith(os.path.abspath(dest)):
+        out_path = os.path.abspath(os.path.normpath(os.path.join(dest, fn)))
+        if not out_path.startswith(dest_abs):
             continue
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         with zf.open(info) as src, open(out_path, "wb") as dst:
@@ -163,7 +164,10 @@ def delete_sim(sim_id):
 @login_required
 def parse_and_cache(sim_id):
     """Kick off or inspect a parse job for the given simulation."""
-    limit = int(request.args.get("limit", 1000))
+    # Default to a high server-side parse limit so calculations can
+    # see many persons, while the frontend can still downsample for
+    # visualization.
+    limit = int(request.args.get("limit", 1_000_000))
     force_flag = request.args.get("force", "0").lower() in {"1", "true", "yes"}
     try:
         payload = enqueue_parse_job(sim_id, limit, force=force_flag)

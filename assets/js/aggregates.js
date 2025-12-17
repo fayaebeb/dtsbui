@@ -1,90 +1,70 @@
-// Aggregations and charts for persons dataset (parsed from plans.xml)
+// Aggregations and charts for simulations (computed on backend from full dataset)
 (function () {
   function onReady(fn) { if (document.readyState !== 'loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+  const CACHE_KEY = 'dtsb.aggCompareCache.v1';
 
-  async function loadPersonsFallback() {
-    try {
-      if (Array.isArray(window.__PARSED__) && window.__PARSED__.length) return window.__PARSED__;
-      const res = await fetch('/api/simulations');
-      const sims = await res.json();
-      const sel = Array.isArray(sims) ? (sims.find(s => s.has_cache) || sims[0]) : null;
-      if (!sel) return [];
-      const res2 = await fetch(`/api/simulations/${sel.id}/data`);
-      if (!res2.ok) return [];
-      return await res2.json();
-    } catch { return []; }
+  async function fetchSimulations() {
+    const res = await fetch('/api/simulations');
+    const sims = await res.json();
+    return Array.isArray(sims) ? sims : [];
   }
 
-  function pickSelectedPlan(p) {
-    if (!p || !Array.isArray(p.plans) || p.plans.length === 0) return null;
-    const idx = Number.isInteger(p.selectedPlanIndex) ? p.selectedPlanIndex : 0;
-    return p.plans[idx] || p.plans[0] || null;
-  }
-
-  function aggregate(persons) {
-    const out = {
-      totalPeople: persons.length,
-      totalTravelSec: 0,
-      avgTravelSec: 0,
-      totalUtility: 0,
-      avgUtility: 0,
-      ptUsers: 0,
-      // ptRoutes: { routeId: { users:Set<string>, trips:number } }
-      ptRoutes: {},
-      // actStats: { type: { people:Set<string>, time:sec } }
-      actStats: {},
-      // modeStats: { mode: { time:sec, people:Set<string> } }
-      modeStats: {}
-    };
-
-    persons.forEach(p => {
-      const pl = pickSelectedPlan(p);
-      if (!pl) return;
-      out.totalUtility += (pl.serverScore || 0);
-      let personTravel = 0;
-      let usedPt = false;
-      const seenActs = new Set();
-      const seenModes = new Set();
-      (pl.steps || []).forEach(s => {
-        if (!s) return;
-        if (s.kind === 'leg') {
-          const d = s.durationSec || 0;
-          personTravel += d;
-          const m = s.mode || '__other__';
-          if (!out.modeStats[m]) out.modeStats[m] = { time: 0, people: new Set() };
-          out.modeStats[m].time += d;
-          seenModes.add(m);
-          if (m === 'pt') {
-            usedPt = true;
-            const rid = s.transitRouteId || s.transitLineId || s.ptStartLink || null;
-            if (rid) {
-              if (!out.ptRoutes[rid]) out.ptRoutes[rid] = { users: new Set(), trips: 0 };
-              out.ptRoutes[rid].trips += 1;
-              out.ptRoutes[rid].users.add(p.personId);
-            }
-          }
-        } else if (s.kind === 'activity') {
-          const d = s.durationSec || 0;
-          const t = s.type || '__other__';
-          if (!out.actStats[t]) out.actStats[t] = { people: new Set(), time: 0 };
-          out.actStats[t].time += d;
-          seenActs.add(t);
-        }
-      });
-      out.totalTravelSec += personTravel;
-      if (usedPt) out.ptUsers += 1;
-      // mark distinct person in sets once
-      seenActs.forEach(t => out.actStats[t].people.add(p.personId));
-      seenModes.forEach(m => out.modeStats[m].people.add(p.personId));
+  async function fetchCompare(preId, postId) {
+    const res = await fetch('/api/simulations/compare-aggregates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pre_id: preId, post_id: postId, top_routes: 12 })
     });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || 'compare failed');
+    return data;
+  }
 
-    out.avgTravelSec = out.totalPeople ? out.totalTravelSec / out.totalPeople : 0;
-    out.avgUtility = out.totalPeople ? out.totalUtility / out.totalPeople : 0;
-    return out;
+  async function fetchFrequencyCompare(simId, params) {
+    const res = await fetch(`/api/simulations/${simId}/frequency-compare`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params || {})
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || 'frequency compare failed');
+    return data;
+  }
+
+  function loadRouteParams() {
+    try { return JSON.parse(localStorage.getItem('routeParams') || 'null'); } catch { return null; }
+  }
+
+  function safeJsonParse(text) {
+    try { return JSON.parse(text); } catch { return null; }
+  }
+
+  function getCachedCompare() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      return safeJsonParse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  function setCachedCompare(entry) {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(entry)); } catch { }
+  }
+
+  function routeSignature(params) {
+    if (!params) return '';
+    const rid = params.routeId || '';
+    const oldF = params.oldFrequency ?? '';
+    const newF = params.newFrequency ?? '';
+    const ts = params.ts ?? '';
+    const mode = params.timeMode ?? '';
+    return `${rid}|${oldF}|${newF}|${mode}|${ts}`;
   }
 
   function hhmmss(totalSec) {
-    const s = Math.max(0, Math.round(totalSec));
+    const s = Math.max(0, Math.round(totalSec || 0));
     const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
   }
@@ -100,7 +80,27 @@
     host.innerHTML = `
     <div class="c-box">
       <details id="aggDetails" class="c-details" open>
-        <summary class="c-details__summary">Aggregations (plans.xml)</summary>
+        <summary class="c-details__summary">Aggregations (all persons, backend)</summary>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:8px 0;">
+          <label style="display:flex; gap:6px; align-items:center;">
+            <input type="radio" name="aggMode" value="frequency" checked>
+            <span class="muted">運航頻度変更前後</span>
+          </label>
+          <label style="display:flex; gap:6px; align-items:center;">
+            <input type="radio" name="aggMode" value="sim">
+            <span class="muted">シミュレーション2本を比較</span>
+          </label>
+        </div>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0;">
+          <label class="muted">Pre</label>
+          <select id="aggPreSelect" class="c-input" style="min-width:260px;"></select>
+          <label class="muted">Post</label>
+          <select id="aggPostSelect" class="c-input" style="min-width:260px;"></select>
+          <button id="aggCompareBtn" type="button" class="btn">Compare</button>
+          <span id="aggStatus" class="muted"></span>
+        </div>
 
         <div id="aggCards"
              style="display:flex; gap:12px; flex-wrap:wrap; margin:8px 0;"></div>
@@ -131,98 +131,167 @@
     const KEY = 'aggDetailsOpen';
 
     const saved = localStorage.getItem(KEY);
-    if (saved === '0') {
-      details.removeAttribute('open');
-    } else if (saved === null && window.matchMedia('(max-height: 800px)').matches) {
-      details.removeAttribute('open');
-    }
-
-    details.addEventListener('toggle', () => {
-      localStorage.setItem(KEY, details.open ? '1' : '0');
-    });
+    if (saved != null) details.open = saved === '1';
+    details.addEventListener('toggle', () => localStorage.setItem(KEY, details.open ? '1' : '0'));
 
     return host;
   }
 
-
   function card(label, value) {
     const div = document.createElement('div');
-    div.style.cssText = 'flex:0 0 auto; min-width:180px; padding:10px 12px; background:#fff; border:1px solid #e5e7f3; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,0.04);';
+    div.style.cssText =
+      'min-width:180px; padding:10px 12px; background:#fff; border:1px solid #e5e7f3; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,0.04);';
     div.innerHTML = `<div style="font-size:12px; color:#666;">${label}</div><div class="u-en" style="font-size:18px; font-weight:700;">${value}</div>`;
     return div;
   }
 
-  function renderCharts(data) {
+  function upsertChart(canvasId, config) {
+    const el = document.getElementById(canvasId);
+    if (!el) return null;
+    const existing = window.Chart && window.Chart.getChart ? window.Chart.getChart(el) : null;
+    if (existing) existing.destroy();
+    // eslint-disable-next-line no-undef
+    return new Chart(el, config);
+  }
+
+  function unionKeys(a, b) {
+    const out = new Set();
+    Object.keys(a || {}).forEach(k => out.add(k));
+    Object.keys(b || {}).forEach(k => out.add(k));
+    return Array.from(out);
+  }
+
+  function renderCharts(pre, post, meta) {
     const cards = document.getElementById('aggCards');
     cards.innerHTML = '';
-    cards.appendChild(card('Total people', data.totalPeople));
-    cards.appendChild(card('Total travel time', hhmmss(data.totalTravelSec)));
-    cards.appendChild(card('Avg travel time / person', hhmmss(data.avgTravelSec)));
-    cards.appendChild(card('Total utility', data.totalUtility.toFixed(2)));
-    cards.appendChild(card('Avg utility / person', data.avgUtility.toFixed(2)));
-    cards.appendChild(card('PT users (people)', data.ptUsers));
 
-    const actLabels = Object.keys(data.actStats);
-    const actPeople = actLabels.map(k => data.actStats[k].people.size);
-    const actTime = actLabels.map(k => Math.round((data.actStats[k].time || 0) / 3600 * 10) / 10); // hours
-    const actAvg = actLabels.map(k => {
-      const ppl = data.actStats[k].people.size || 1;
-      const hours = (data.actStats[k].time || 0) / 3600;
+    const preName = meta?.preName || 'Pre';
+    const postName = meta?.postName || 'Post';
+    const fmt = (n) => (typeof n === 'number' ? n : 0);
+
+    cards.appendChild(card('People', `${fmt(pre.totalPeople)} → ${fmt(post.totalPeople)}`));
+    cards.appendChild(card('Avg travel / person', `${hhmmss(fmt(pre.avgTravelSec))} → ${hhmmss(fmt(post.avgTravelSec))}`));
+    cards.appendChild(card('Avg utility / person', `${fmt(pre.avgUtility).toFixed(2)} → ${fmt(post.avgUtility).toFixed(2)}`));
+    cards.appendChild(card('PT users', `${fmt(pre.ptUsers)} → ${fmt(post.ptUsers)}`));
+
+    const actLabels = unionKeys(pre.actStats, post.actStats);
+    const actPeoplePre = actLabels.map(k => fmt(pre.actStats?.[k]?.people));
+    const actPeoplePost = actLabels.map(k => fmt(post.actStats?.[k]?.people));
+    const actTimePre = actLabels.map(k => Math.round((fmt(pre.actStats?.[k]?.timeSec) / 3600) * 10) / 10);
+    const actTimePost = actLabels.map(k => Math.round((fmt(post.actStats?.[k]?.timeSec) / 3600) * 10) / 10);
+    const actAvgPre = actLabels.map(k => {
+      const ppl = Math.max(1, fmt(pre.actStats?.[k]?.people));
+      const hours = fmt(pre.actStats?.[k]?.timeSec) / 3600;
       return Math.round((hours / ppl) * 10) / 10;
     });
-    const modeLabels = Object.keys(data.modeStats);
-    const modeTime = modeLabels.map(k => Math.round((data.modeStats[k].time || 0) / 3600 * 10) / 10); // hours
-    const modeAvg = modeLabels.map(k => {
-      const ppl = data.modeStats[k].people.size || 1;
-      const hours = (data.modeStats[k].time || 0) / 3600;
+    const actAvgPost = actLabels.map(k => {
+      const ppl = Math.max(1, fmt(post.actStats?.[k]?.people));
+      const hours = fmt(post.actStats?.[k]?.timeSec) / 3600;
+      return Math.round((hours / ppl) * 10) / 10;
+    });
+
+    const modeLabels = unionKeys(pre.modeStats, post.modeStats);
+    const modeTimePre = modeLabels.map(k => Math.round((fmt(pre.modeStats?.[k]?.timeSec) / 3600) * 10) / 10);
+    const modeTimePost = modeLabels.map(k => Math.round((fmt(post.modeStats?.[k]?.timeSec) / 3600) * 10) / 10);
+    const modeAvgPre = modeLabels.map(k => {
+      const ppl = Math.max(1, fmt(pre.modeStats?.[k]?.people));
+      const hours = fmt(pre.modeStats?.[k]?.timeSec) / 3600;
+      return Math.round((hours / ppl) * 10) / 10;
+    });
+    const modeAvgPost = modeLabels.map(k => {
+      const ppl = Math.max(1, fmt(post.modeStats?.[k]?.people));
+      const hours = fmt(post.modeStats?.[k]?.timeSec) / 3600;
       return Math.round((hours / ppl) * 10) / 10;
     });
 
     const commonBar = {
       type: 'bar',
-      options: { responsive: true, plugins: { legend: { display: false } } }
+      options: { responsive: true, plugins: { legend: { display: true } } }
     };
-    new Chart(document.getElementById('chartActPeople'), {
+
+    upsertChart('chartActPeople', {
       ...commonBar,
-      data: { labels: actLabels, datasets: [{ label: 'People per activity', data: actPeople, backgroundColor: '#31599E' }] }
+      data: { labels: actLabels, datasets: [
+        { label: `${preName}: People`, data: actPeoplePre, backgroundColor: '#31599E' },
+        { label: `${postName}: People`, data: actPeoplePost, backgroundColor: '#F5813C' },
+      ] }
     });
-    new Chart(document.getElementById('chartActTime'), {
+    upsertChart('chartActTime', {
       ...commonBar,
-      data: { labels: actLabels, datasets: [{ label: 'Activity time (hours)', data: actTime, backgroundColor: '#F5813C' }] }
+      data: { labels: actLabels, datasets: [
+        { label: `${preName}: Activity time (h)`, data: actTimePre, backgroundColor: '#31599E' },
+        { label: `${postName}: Activity time (h)`, data: actTimePost, backgroundColor: '#F5813C' },
+      ] }
     });
-    new Chart(document.getElementById('chartActAvg'), {
+    upsertChart('chartActAvg', {
       ...commonBar,
-      data: { labels: actLabels, datasets: [{ label: 'Avg activity time per person (hours)', data: actAvg, backgroundColor: '#f39c12' }] }
+      data: { labels: actLabels, datasets: [
+        { label: `${preName}: Avg act time/person (h)`, data: actAvgPre, backgroundColor: '#31599E' },
+        { label: `${postName}: Avg act time/person (h)`, data: actAvgPost, backgroundColor: '#F5813C' },
+      ] }
     });
-    new Chart(document.getElementById('chartModeTime'), {
+    upsertChart('chartModeTime', {
       ...commonBar,
-      data: { labels: modeLabels, datasets: [{ label: 'Travel time by mode (hours)', data: modeTime, backgroundColor: '#8E44AD' }] }
+      data: { labels: modeLabels, datasets: [
+        { label: `${preName}: Travel time (h)`, data: modeTimePre, backgroundColor: '#8E44AD' },
+        { label: `${postName}: Travel time (h)`, data: modeTimePost, backgroundColor: '#27ae60' },
+      ] }
     });
-    new Chart(document.getElementById('chartModeAvg'), {
+    upsertChart('chartModeAvg', {
       ...commonBar,
-      data: { labels: modeLabels, datasets: [{ label: 'Avg travel time per person by mode (hours)', data: modeAvg, backgroundColor: '#27ae60' }] }
+      data: { labels: modeLabels, datasets: [
+        { label: `${preName}: Avg time/person (h)`, data: modeAvgPre, backgroundColor: '#8E44AD' },
+        { label: `${postName}: Avg time/person (h)`, data: modeAvgPost, backgroundColor: '#27ae60' },
+      ] }
     });
-    new Chart(document.getElementById('chartPt'), {
+    upsertChart('chartPt', {
       type: 'bar',
-      data: { labels: ['PT users', 'Non-PT'], datasets: [{ label: 'PT usage', data: [data.ptUsers, Math.max(0, data.totalPeople - data.ptUsers)], backgroundColor: ['#2ECC71', '#BDC3C7'] }] },
-      options: { responsive: true, plugins: { legend: { display: false } } }
+      data: {
+        labels: ['PT users', 'Non-PT'],
+        datasets: [
+          { label: preName, data: [fmt(pre.ptUsers), Math.max(0, fmt(pre.totalPeople) - fmt(pre.ptUsers))], backgroundColor: '#31599E' },
+          { label: postName, data: [fmt(post.ptUsers), Math.max(0, fmt(post.totalPeople) - fmt(post.ptUsers))], backgroundColor: '#F5813C' },
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { display: true } } }
     });
 
-    // PT per-route top list
+    // PT per-route top list (merge pre/post by route id)
     const ptHost = document.getElementById('ptRouteTable');
     if (ptHost) {
-      const rows = Object.entries(data.ptRoutes || {})
-        .map(([rid, rec]) => ({ rid, users: rec.users?.size || 0, trips: rec.trips || 0 }))
-        .filter(r => r.users > 0 || r.trips > 0)
-        .sort((a, b) => (b.users - a.users) || (b.trips - a.trips))
+      const preRows = Array.isArray(pre.ptRoutesTop) ? pre.ptRoutesTop : [];
+      const postRows = Array.isArray(post.ptRoutesTop) ? post.ptRoutesTop : [];
+      const map = new Map();
+      preRows.forEach(r => map.set(r.rid, { rid: r.rid, preUsers: r.users || 0, preTrips: r.trips || 0, postUsers: 0, postTrips: 0 }));
+      postRows.forEach(r => {
+        const cur = map.get(r.rid) || { rid: r.rid, preUsers: 0, preTrips: 0, postUsers: 0, postTrips: 0 };
+        cur.postUsers = r.users || 0;
+        cur.postTrips = r.trips || 0;
+        map.set(r.rid, cur);
+      });
+      const rows = Array.from(map.values())
+        .sort((a, b) => ((b.preUsers + b.postUsers) - (a.preUsers + a.postUsers)) || ((b.preTrips + b.postTrips) - (a.preTrips + a.postTrips)))
         .slice(0, 12);
+
       if (!rows.length) {
-        ptHost.innerHTML = '<div style="color:#666; padding:8px;">PT per-route counts unavailable (no route IDs in dataset).</div>';
+        ptHost.innerHTML = '<div style="color:#666; padding:8px;">PT per-route counts unavailable.</div>';
       } else {
         const html = [
           '<table class="u-en" style="width:100%; border-collapse:collapse; font-size:12px;">',
-          '<thead><tr><th style="text-align:left; padding:6px; border-bottom:1px solid #eee;">PT Route</th><th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">Users</th><th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">Trips</th></tr></thead>',
-          '<tbody>' + rows.map(r => `<tr><td style="padding:6px; border-bottom:1px solid #f5f5f5;">${r.rid}</td><td style="padding:6px; text-align:right; border-bottom:1px solid #f5f5f5;">${r.users}</td><td style="padding:6px; text-align:right; border-bottom:1px solid #f5f5f5;">${r.trips}</td></tr>`).join('') + '</tbody>',
+          `<thead><tr>
+            <th style="text-align:left; padding:6px; border-bottom:1px solid #eee;">PT Route</th>
+            <th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">${preName} Users</th>
+            <th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">${postName} Users</th>
+            <th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">${preName} Trips</th>
+            <th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">${postName} Trips</th>
+          </tr></thead>`,
+          '<tbody>' + rows.map(r => `<tr>
+            <td style="padding:6px; border-bottom:1px solid #f5f5f5;">${r.rid}</td>
+            <td style="padding:6px; text-align:right; border-bottom:1px solid #f5f5f5;">${r.preUsers}</td>
+            <td style="padding:6px; text-align:right; border-bottom:1px solid #f5f5f5;">${r.postUsers}</td>
+            <td style="padding:6px; text-align:right; border-bottom:1px solid #f5f5f5;">${r.preTrips}</td>
+            <td style="padding:6px; text-align:right; border-bottom:1px solid #f5f5f5;">${r.postTrips}</td>
+          </tr>`).join('') + '</tbody>',
           '</table>'
         ].join('');
         ptHost.innerHTML = html;
@@ -232,12 +301,161 @@
 
   onReady(async () => {
     const host = ensurePanel();
-    const persons = await loadPersonsFallback();
-    if (!Array.isArray(persons) || !persons.length) {
-      host.querySelector('#aggCards').innerHTML = '<div style="color:#666;">No dataset loaded.</div>';
+    const status = document.getElementById('aggStatus');
+    const preSel = document.getElementById('aggPreSelect');
+    const postSel = document.getElementById('aggPostSelect');
+    const btn = document.getElementById('aggCompareBtn');
+    const modeEls = Array.from(document.querySelectorAll('input[name="aggMode"]'));
+
+    let sims = [];
+    try {
+      sims = await fetchSimulations();
+    } catch (e) {
+      console.error(e);
+      host.querySelector('#aggCards').innerHTML = '<div style="color:#666;">Failed to load simulations list.</div>';
       return;
     }
-    const agg = aggregate(persons);
-    renderCharts(agg);
+
+    const eligible = sims.filter(s => s.has_cache);
+    if (!eligible.length) {
+      host.querySelector('#aggCards').innerHTML = '<div style="color:#666;">No parsed simulations available.</div>';
+      return;
+    }
+
+    function fillSelect(sel, items) {
+      sel.innerHTML = '';
+      items.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.name} — ${s.id.slice(0, 8)}`;
+        sel.appendChild(opt);
+      });
+    }
+
+    fillSelect(preSel, eligible);
+    fillSelect(postSel, eligible);
+    if (eligible.length >= 2) postSel.value = eligible[1].id;
+    if (status) status.textContent = 'Ready. Choose options and click Compare.';
+
+    function getMode() {
+      const picked = modeEls.find((r) => r.checked);
+      return picked ? picked.value : 'frequency';
+    }
+
+    function setControlsForMode(mode) {
+      if (mode === 'frequency') {
+        // Only need one simulation; keep post select visible but disabled for clarity.
+        postSel.disabled = true;
+      } else {
+        postSel.disabled = false;
+      }
+    }
+
+    function setMode(mode) {
+      modeEls.forEach((r) => { r.checked = (r.value === mode); });
+      setControlsForMode(mode);
+    }
+
+    // Restore cached results (no recompute) so navigating between results.html
+    // and results_graph.html doesn't "lose" the last computed graphs.
+    (function restoreCachedView() {
+      const cached = getCachedCompare();
+      if (!cached || !cached.data?.pre || !cached.data?.post) return;
+
+      if (cached.mode === 'frequency') {
+        const params = loadRouteParams();
+        const sigNow = routeSignature(params);
+        if (!cached.simId || !eligible.some(s => s.id === cached.simId)) return;
+        if (!cached.sig || cached.sig !== sigNow) return;
+
+        setMode('frequency');
+        preSel.value = cached.simId;
+
+        const name = eligible.find(s => s.id === cached.simId)?.name || 'Simulation';
+        renderCharts(cached.data.pre, cached.data.post, {
+          preName: `${name} (before)`,
+          postName: `${name} (after)`,
+        });
+        if (status) status.textContent = `Cached (changed people: ${cached.data.changedPeople ?? 0})`;
+        return;
+      }
+
+      if (cached.mode === 'sim') {
+        if (!cached.preId || !cached.postId) return;
+        if (!eligible.some(s => s.id === cached.preId) || !eligible.some(s => s.id === cached.postId)) return;
+
+        setMode('sim');
+        preSel.value = cached.preId;
+        postSel.value = cached.postId;
+
+        const preName = eligible.find(s => s.id === cached.preId)?.name || 'Pre';
+        const postName = eligible.find(s => s.id === cached.postId)?.name || 'Post';
+        renderCharts(cached.data.pre, cached.data.post, { preName, postName });
+        if (status) status.textContent = 'Cached';
+      }
+    })();
+
+    async function run() {
+      const preId = preSel.value;
+      const postId = postSel.value;
+      const preName = eligible.find(s => s.id === preId)?.name || 'Pre';
+      const postName = eligible.find(s => s.id === postId)?.name || 'Post';
+      if (status) status.textContent = 'Computing…';
+      try {
+        const mode = getMode();
+        setControlsForMode(mode);
+        if (mode === 'frequency') {
+          const params = loadRouteParams();
+          if (!params || params.oldFrequency == null || params.newFrequency == null) {
+            throw new Error('routeParams not found. Save 運航頻度 in index.html first.');
+          }
+          // Avoid recomputing when navigating between results.html and results_graph.html
+          // by using a localStorage cache keyed on simulation + routeParams.
+          const sig = routeSignature(params);
+          const cached = getCachedCompare();
+          if (cached && cached.mode === 'frequency' && cached.simId === preId && cached.sig === sig && cached.data?.pre && cached.data?.post) {
+            const name = eligible.find(s => s.id === preId)?.name || 'Simulation';
+            renderCharts(cached.data.pre, cached.data.post, {
+              preName: `${name} (before)`,
+              postName: `${name} (after)`,
+            });
+            if (status) status.textContent = `Cached (changed people: ${cached.data.changedPeople ?? 0})`;
+            return;
+          }
+          const resp = await fetchFrequencyCompare(preId, {
+            routeId: params.routeId,
+            oldFrequency: params.oldFrequency,
+            newFrequency: params.newFrequency,
+          });
+          const name = eligible.find(s => s.id === preId)?.name || 'Simulation';
+          renderCharts(resp.pre, resp.post, {
+            preName: `${name} (before)`,
+            postName: `${name} (after)`,
+          });
+          if (status) status.textContent = `OK (changed people: ${resp.changedPeople ?? 0})`;
+          setCachedCompare({ mode: 'frequency', simId: preId, sig, data: resp, savedAt: Date.now() });
+          return;
+        }
+
+        // Sim-vs-sim compare cache to avoid duplicate fetch when moving between pages.
+        const cached = getCachedCompare();
+        if (cached && cached.mode === 'sim' && cached.preId === preId && cached.postId === postId && cached.data?.pre && cached.data?.post) {
+          renderCharts(cached.data.pre, cached.data.post, { preName, postName });
+          if (status) status.textContent = 'Cached';
+          return;
+        }
+        const cmp = await fetchCompare(preId, postId);
+        renderCharts(cmp.pre, cmp.post, { preName, postName });
+        if (status) status.textContent = 'OK';
+        setCachedCompare({ mode: 'sim', preId, postId, data: cmp, savedAt: Date.now() });
+      } catch (e) {
+        console.error(e);
+        if (status) status.textContent = e?.message || 'Failed';
+      }
+    }
+
+    btn.addEventListener('click', run);
+    // Do not auto-run on page load or selection changes; let the user decide
+    // when to compute since this can be expensive for large datasets.
   });
 })();
