@@ -6,3 +6,5 @@ python-dotenv==1.0.1
 openai
 gunicorn
 azure-storage-blob
+azure-identity
+azure-ai-projects

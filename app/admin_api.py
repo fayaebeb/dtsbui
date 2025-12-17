@@ -39,6 +39,7 @@ def _safe_extractall(zf: zipfile.ZipFile, dest: str):
             if all(p[0] == first_parts for p in parts):
                 common_prefix = first_parts + "/"
 
+    skipped: list[dict[str, str]] = []
     for info in zf.infolist():
         fn = info.filename
         if fn.endswith("/") or fn.endswith("\\"):
@@ -50,8 +51,23 @@ def _safe_extractall(zf: zipfile.ZipFile, dest: str):
         if not out_path.startswith(dest_abs):
             continue
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        with zf.open(info) as src, open(out_path, "wb") as dst:
-            shutil.copyfileobj(src, dst, length=1024 * 1024)
+        try:
+            with zf.open(info) as src, open(out_path, "wb") as dst:
+                shutil.copyfileobj(src, dst, length=1024 * 1024)
+        except (zipfile.BadZipFile, RuntimeError, NotImplementedError, OSError) as exc:
+            # BadZipFile: corrupt entry (common when upload is truncated/corrupt)
+            # RuntimeError/NotImplementedError: encrypted/unsupported
+            # OSError: filesystem issues
+            current_app.logger.warning("Skipping zip member %s due to error: %s", info.filename, exc)
+            skipped.append({"member": info.filename, "error": str(exc)})
+            try:
+                if os.path.isfile(out_path):
+                    os.remove(out_path)
+            except Exception:
+                pass
+            continue
+
+    return skipped
 
 
 @admin_api_bp.route("/simulations", methods=["POST"])
@@ -82,7 +98,19 @@ def upload_simulation():
 
         os.makedirs(dest_folder, exist_ok=True)
         with zipfile.ZipFile(temp_zip, allowZip64=True) as zf:
-            _safe_extractall(zf, dest_folder)
+            skipped = _safe_extractall(zf, dest_folder)
+
+        # Validate required MATSim outputs exist after extraction.
+        # If extraction skipped corrupt entries, we might still have enough to proceed.
+        plan_exists = any(
+            os.path.isfile(os.path.join(dest_folder, name))
+            for name in ("output_plans.xml.gz", "output_plans.xml")
+        )
+        if not plan_exists:
+            msg = "zip missing output_plans.xml(.gz) after extraction"
+            if skipped:
+                msg += f" (skipped {len(skipped)} broken members; zip may be corrupt or truncated)"
+            return jsonify({"error": msg, "skipped": skipped[:10]}), 400
 
         total_size = 0
         for root, _, files in os.walk(dest_folder):

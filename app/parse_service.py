@@ -21,6 +21,7 @@ class ParseError(Exception):
 
 
 _PLAN_CANDIDATES = ("output_plans.xml.gz", "output_plans.xml")
+_EVENT_CANDIDATES = ("output_events.xml.gz", "output_events.xml", "events.xml.gz", "events.xml")
 _FACILITY_CANDIDATES = (
     "output_facilities.xml.gz",
     "facilities.xml.gz",
@@ -131,7 +132,16 @@ def run_parse(sim_id: str, limit: int, selected_only: bool = True) -> Dict[str, 
         if not plans_path:
             raise ParseError("plans file not found in local folder")
         facilities_path = _find_first_existing(folder, tuple(_FACILITY_CANDIDATES))
+        events_path = _find_first_existing(folder, tuple(_EVENT_CANDIDATES))
         result = _parse_and_cache(sim_id, plans_path, facilities_path, limit, selected_only)
+
+        # If events are present, record their path so station-count queries can avoid zip access.
+        if events_path:
+            try:
+                update_simulation(sim_id, cached_events_path=events_path)
+            except Exception:
+                current_app.logger.exception("[parse] failed to record cached_events_path for %s", sim_id)
+
         logger.info("[parse] cached %s persons from local folder", result["count"])
         return result
 
@@ -153,11 +163,28 @@ def run_parse(sim_id: str, limit: int, selected_only: bool = True) -> Dict[str, 
             if not plan_member:
                 raise ParseError("plans file not found in zip")
             fac_member = _locate_member(zf, tuple(_FACILITY_CANDIDATES))
+            ev_member = _locate_member(zf, tuple(_EVENT_CANDIDATES))
 
             plans_path = _extract_member(zf, plan_member, tmpd)
             facilities_path = _extract_member(zf, fac_member, tmpd) if fac_member else None
+            events_path = _extract_member(zf, ev_member, tmpd) if ev_member else None
 
-            logger.info("[parse] found plans=%s facilities=%s", plan_member, fac_member or "none")
+            logger.info("[parse] found plans=%s facilities=%s events=%s", plan_member, fac_member or "none", ev_member or "none")
             result = _parse_and_cache(sim_id, plans_path, facilities_path, limit, selected_only)
+
+            # Cache events locally so station-count queries don't have to re-download the zip.
+            if events_path:
+                parsed_dir = os.path.join(current_app.config["STORAGE_ROOT"], "parsed")
+                os.makedirs(parsed_dir, exist_ok=True)
+                cached_events_path = os.path.join(
+                    parsed_dir,
+                    f"{sim_id}.events{'.xml.gz' if events_path.endswith('.gz') else '.xml'}",
+                )
+                try:
+                    shutil.copyfile(events_path, cached_events_path)
+                    update_simulation(sim_id, cached_events_path=cached_events_path)
+                except Exception:
+                    current_app.logger.exception("[parse] failed to cache events for %s", sim_id)
+
             logger.info("[parse] cached %s persons from blob", result["count"])
             return result

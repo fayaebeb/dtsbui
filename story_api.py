@@ -2,18 +2,29 @@ import os
 import json
 import logging
 import re
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional, Callable
 from collections import Counter, defaultdict
 from threading import Lock
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
 
 from flask import Blueprint, request, jsonify
-from openai import OpenAI
-from openai.types.chat import (
-    ChatCompletionMessageParam,
-    ChatCompletionSystemMessageParam,
-    ChatCompletionUserMessageParam,
-)
-from openai.types.chat.completion_create_params import ResponseFormat
+
+try:
+    from openai import OpenAI  # type: ignore
+except Exception:  # pragma: no cover
+    OpenAI = None  # type: ignore
+
+try:
+    from azure.identity import DefaultAzureCredential, get_bearer_token_provider  # type: ignore
+except Exception:  # pragma: no cover
+    DefaultAzureCredential = None  # type: ignore
+    get_bearer_token_provider = None  # type: ignore
+
+try:
+    from azure.ai.projects import AIProjectClient  # type: ignore
+except Exception:  # pragma: no cover
+    AIProjectClient = None  # type: ignore
 
 # --- logging setup ---
 _LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -28,14 +39,23 @@ DEFAULT_WEIGHTS: Dict[str, Dict[str, float]] = {
 }
 
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
+FOUNDRY_MODEL = os.getenv("FOUNDRY_MODEL", OPENAI_MODEL).strip() or OPENAI_MODEL
 
 _OPENAI_CLIENT_LOCK = Lock()
-_OPENAI_CLIENT: Optional[OpenAI] = None
+_OPENAI_CLIENT: Optional[Any] = None
 _OPENAI_CLIENT_WARNED = False
 
+_FOUNDRY_TOKEN_LOCK = Lock()
+_FOUNDRY_TOKEN: Optional[str] = None
+_FOUNDRY_TOKEN_EXP: int = 0
 
-def _get_openai_client() -> Optional[OpenAI]:
+def _get_openai_client() -> Optional[Any]:
     global _OPENAI_CLIENT, _OPENAI_CLIENT_WARNED
+    if OpenAI is None:
+        if not _OPENAI_CLIENT_WARNED:
+            logger.warning("openai package not installed; skipping OpenAI client")
+            _OPENAI_CLIENT_WARNED = True
+        return None
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
         if not _OPENAI_CLIENT_WARNED:
@@ -58,6 +78,203 @@ def _get_openai_client() -> Optional[OpenAI]:
 story_bp = Blueprint("story_bp", __name__)
 
 # ---------------- utilities ----------------
+
+def _read_env(name: str) -> str:
+    return (os.getenv(name, "") or "").strip()
+
+def _is_foundry_project_endpoint(endpoint: str) -> bool:
+    ep = (endpoint or "").lower()
+    return "/api/projects/" in ep or ep.endswith("/api/projects") or "services.ai.azure.com/api/projects" in ep
+
+def _get_foundry_bearer_token() -> Optional[str]:
+    """
+    Returns a bearer token suitable for Azure AI Foundry project endpoints.
+    - If `FOUNDRY_BEARER_TOKEN` is set, use it directly.
+    - Otherwise try `DefaultAzureCredential` with scope `https://ai.azure.com/.default`.
+    """
+    token_env = _read_env("FOUNDRY_BEARER_TOKEN")
+    if token_env:
+        return token_env
+
+    global _FOUNDRY_TOKEN, _FOUNDRY_TOKEN_EXP
+    with _FOUNDRY_TOKEN_LOCK:
+        now = int(__import__("time").time())
+        if _FOUNDRY_TOKEN and (_FOUNDRY_TOKEN_EXP - now) > 60:
+            return _FOUNDRY_TOKEN
+
+        if DefaultAzureCredential is None:
+            return None
+        try:
+            cred = DefaultAzureCredential(exclude_interactive_browser_credential=True)
+            tok = cred.get_token("https://ai.azure.com/.default")
+            _FOUNDRY_TOKEN = tok.token
+            _FOUNDRY_TOKEN_EXP = int(getattr(tok, "expires_on", now + 300) or (now + 300))
+            return _FOUNDRY_TOKEN
+        except Exception as exc:
+            logger.warning("Failed to acquire Foundry bearer token via DefaultAzureCredential: %s", exc)
+            return None
+
+def _get_foundry_openai_client() -> Optional[Any]:
+    """
+    Preferred Foundry integration:
+    - For Foundry *project* endpoints, use `azure-ai-projects` + Entra ID auth to create an OpenAI client.
+    - For Azure OpenAI *resource* endpoints, use OpenAI SDK with Entra token provider or api-key.
+    """
+    endpoint = _read_env("FOUNDRY_ENDPOINT")
+    if not endpoint:
+        return None
+
+    # 1) Foundry project endpoint: use AIProjectClient (Entra ID)
+    if _is_foundry_project_endpoint(endpoint):
+        if AIProjectClient is None or DefaultAzureCredential is None:
+            logger.warning("Foundry project endpoint configured but azure-ai-projects/azure-identity not installed")
+            return None
+        try:
+            cred = DefaultAzureCredential(exclude_interactive_browser_credential=True)
+            project = AIProjectClient(endpoint=endpoint, credential=cred)
+            api_version = _read_env("FOUNDRY_API_VERSION") or "2024-10-01-preview"
+            return project.get_openai_client(api_version=api_version)
+        except Exception as exc:
+            logger.warning("Failed to create Foundry OpenAI client via project endpoint: %s", exc)
+            return None
+
+    # 2) Azure OpenAI resource endpoint: use OpenAI SDK directly
+    if OpenAI is None:
+        return None
+    base_url = endpoint.rstrip("/")
+    if not base_url.endswith("/openai/v1"):
+        # Allow users to pass either the resource root or the full v1 base URL.
+        if "openai.azure.com" in base_url and "/openai/" not in base_url:
+            base_url = base_url.rstrip("/") + "/openai/v1"
+    base_url = base_url.rstrip("/") + "/"
+
+    # Prefer Entra ID; fall back to api-key if provided.
+    if DefaultAzureCredential is not None and get_bearer_token_provider is not None:
+        try:
+            token_provider = get_bearer_token_provider(
+                DefaultAzureCredential(exclude_interactive_browser_credential=True),
+                "https://cognitiveservices.azure.com/.default",
+            )
+            return OpenAI(base_url=base_url, api_key=token_provider)
+        except Exception as exc:
+            logger.warning("Failed to create Azure OpenAI client with Entra token provider: %s", exc)
+
+    key = _read_env("FOUNDRY_KEY")
+    if key:
+        try:
+            return OpenAI(base_url=base_url, api_key=key)
+        except Exception as exc:
+            logger.warning("Failed to create Azure OpenAI client with api-key: %s", exc)
+    return None
+
+def _json_post(url: str, *, headers: Dict[str, str], payload: Dict[str, Any], timeout_sec: int = 30) -> Dict[str, Any]:
+    body = json.dumps(payload).encode("utf-8")
+    req = Request(url, data=body, method="POST")
+    req.add_header("Content-Type", "application/json")
+    for k, v in (headers or {}).items():
+        if v is not None and str(v) != "":
+            req.add_header(k, v)
+    try:
+        with urlopen(req, timeout=timeout_sec) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+            return json.loads(raw) if raw else {}
+    except HTTPError as e:
+        raw = ""
+        try:
+            raw = e.read().decode("utf-8", errors="replace")
+        except Exception:
+            pass
+        try:
+            obj = json.loads(raw) if raw else {}
+        except Exception:
+            obj = {"raw": raw}
+        raise RuntimeError(f"HTTP {e.code} from LLM endpoint: {obj}") from None
+    except URLError as e:
+        raise RuntimeError(f"LLM endpoint unreachable: {e}") from None
+
+def _foundry_candidates(endpoint: str, deployment_or_model: str, api_version: str) -> List[str]:
+    base = (endpoint or "").rstrip("/")
+    if not base:
+        return []
+
+    def with_api_version(u: str) -> str:
+        if "api-version=" in u:
+            return u
+        join = "&" if "?" in u else "?"
+        return f"{u}{join}api-version={api_version}"
+
+    # If a full URL is already provided, use it as-is.
+    if any(p in base for p in ("/chat/completions", "/completions")):
+        return [with_api_version(base)]
+
+    # Azure OpenAI resource endpoint (common)
+    if "openai.azure.com" in base:
+        dep = deployment_or_model
+        return [with_api_version(f"{base}/openai/deployments/{dep}/chat/completions")]
+
+    # Azure AI Foundry / Azure AI Inference endpoints (varies by deployment type)
+    cands = [
+        f"{base}/models/chat/completions",
+        f"{base}/models/openai/chat/completions",
+        f"{base}/chat/completions",
+    ]
+    return [with_api_version(u) for u in cands]
+
+def _call_foundry_chat(*, messages: List[Dict[str, Any]], response_format: Optional[Dict[str, Any]] = None) -> Tuple[str, str]:
+    """
+    Call Azure AI Foundry / Azure OpenAI compatible chat completions endpoint.
+    Returns (content, model_name).
+    """
+    endpoint = _read_env("FOUNDRY_ENDPOINT")
+    key = _read_env("FOUNDRY_KEY")
+    if not endpoint or not key:
+        raise RuntimeError("FOUNDRY_ENDPOINT/FOUNDRY_KEY not configured")
+
+    api_version = _read_env("FOUNDRY_API_VERSION")
+    if not api_version:
+        api_version = "2024-05-01-preview" if "services.ai.azure.com" in endpoint else "2024-02-15-preview"
+
+    deployment_or_model = _read_env("FOUNDRY_DEPLOYMENT") or FOUNDRY_MODEL
+
+    req: Dict[str, Any] = {
+        "messages": messages,
+        "temperature": 0.5,
+        "max_tokens": 260,
+    }
+    # Some endpoints require "model" and some use the deployment in the URL; include model for compatibility.
+    if deployment_or_model:
+        req["model"] = deployment_or_model
+
+    if response_format:
+        req["response_format"] = response_format
+
+    foundry_chat_url = _read_env("FOUNDRY_CHAT_URL")
+    candidates = [foundry_chat_url] if foundry_chat_url else _foundry_candidates(endpoint, deployment_or_model, api_version)
+
+    auth_mode = (_read_env("FOUNDRY_AUTH") or "").lower()  # "key" | "token"
+    wants_token = auth_mode == "token" or "/api/projects/" in endpoint or "services.ai.azure.com/api/projects" in endpoint
+    bearer = _get_foundry_bearer_token() if wants_token else None
+
+    headers: Dict[str, str] = {}
+    if bearer:
+        headers["Authorization"] = f"Bearer {bearer}"
+    if auth_mode != "token":
+        # Many inference endpoints accept api-key; harmless to include even when bearer is used.
+        headers["api-key"] = key
+
+    last_err: Optional[Exception] = None
+    for url in [u for u in candidates if u]:
+        try:
+            data = _json_post(url, headers=headers, payload=req, timeout_sec=30)
+            content = (((data.get("choices") or [{}])[0]).get("message") or {}).get("content")
+            if isinstance(content, str) and content.strip():
+                return content, str(data.get("model") or deployment_or_model or "foundry")
+            raise RuntimeError(f"Unexpected LLM response shape: {data}")
+        except Exception as e:
+            last_err = e
+            continue
+
+    raise RuntimeError(f"All Foundry endpoint candidates failed: {last_err}")
 
 def _sec(x: Any) -> int:
     try:
@@ -266,6 +483,33 @@ def _validate_payload(obj: Dict[str, Any]) -> Dict[str, str]:
     bubble = _sanitize_inline(bubble)
     return {"title": title, "one_liner": one_liner, "bubble": bubble}
 
+def _fallback_story(person_id: str, must_use: list[str], approved_facts: list[str], *, lang: str) -> Dict[str, str]:
+    # Deterministic, dependency-free fallback for environments where the LLM cannot be called.
+    fact1 = (must_use[0] if len(must_use) > 0 else "").strip()
+    fact2 = (must_use[1] if len(must_use) > 1 else "").strip()
+    bubble = (approved_facts[0] if approved_facts else "").strip()
+    if not bubble:
+        bubble = "今日の変化をひとことで" if lang == "ja" else "A quick takeaway"
+
+    if lang == "en":
+        title = "Daily story"
+        parts = [p for p in [fact1, fact2] if p]
+        core = ". ".join(parts) if parts else "A day-in-the-life summary based on the simulation."
+        one_liner = (
+            f"Person {person_id}: {core}. "
+            "This is a local fallback summary because the AI service is unavailable."
+        )
+    else:
+        title = "シミュ結果"
+        parts = [p for p in [fact1, fact2] if p]
+        core = "。".join(parts) + "。" if parts else "シミュレーション結果に基づく1日の要約です。"
+        one_liner = (
+            f"{person_id} の行動: {core}"
+            "AIサービスが利用できないため、ローカル要約で表示しています。"
+        )
+
+    return _validate_payload({"title": title, "one_liner": one_liner, "bubble": bubble})
+
 # ---------------- route ----------------
 
 @story_bp.route("/story", methods=["POST"])
@@ -294,42 +538,35 @@ def generate_story():
     approved_facts = _safe_facts(stats)
     must_use = _core_facts(stats, approved_facts)  # 2–4 prioritized facts
 
-    client = _get_openai_client()
-    if client is None:
-        return jsonify({"error": "LLM integration not configured"}), 503
-
-    try:
-        # ---- Build request payload for the LLM ----
-        sys_msg: ChatCompletionSystemMessageParam = {
-                "role": "system",
-                "content": (
-                    "You write short, concrete, optimistic day-in-the-life blurbs "
-                    "grounded ONLY in the given simulation data. "
-                    f"Language: {sys_lang}. Audience: general public. "
-                    "Style: concise but vivid, time-anchored. Do not use line breaks. "
-                    "Do not introduce numeric values (times, counts, minutes) that are not listed as MUST-USE facts."
-                ),
-            }
-        user_msg: ChatCompletionUserMessageParam = {
+    def _llm_call() -> Dict[str, Any]:
+        sys_msg = {
+            "role": "system",
+            "content": (
+                "You write short, concrete, optimistic day-in-the-life blurbs "
+                "grounded ONLY in the given simulation data. "
+                f"Language: {sys_lang}. Audience: general public. "
+                "Style: concise but vivid, time-anchored. Do not use line breaks. "
+                "Do not introduce numeric values (times, counts, minutes) that are not listed as MUST-USE facts."
+            ),
+        }
+        user_msg = {
             "role": "user",
             "content": (
-                    f"personId: {person_id}\n"
-                    f"Weights(act/leg): {json.dumps(weights, ensure_ascii=False)}\n\n"
-                    "Chronology sample:\n" + "\n".join(lines) + "\n\n"
-                    "Aggregated stats (JSON):\n" + json.dumps(stats, ensure_ascii=False) + "\n\n"
-                    "APPROVED facts (for 'bubble' enum):\n- " + "\n- ".join(approved_facts) + "\n\n"
-                    "MUST-USE facts for 'one_liner' (include AT LEAST TWO; use numbers/times VERBATIM):\n- " + "\n- ".join(must_use) + "\n\n"
-                    "Task: Return JSON {title, one_liner, bubble} only.\n"
-                    "- title ≤20 chars, punchy and neutral.\n"
-                    "- one_liner: 2–3 sentences, 80–200 chars, NO line breaks. "
-                    "Weave at least TWO of the MUST-USE facts naturally (use numbers/times exactly as written).\n"
-                    "- bubble: pick EXACTLY one from APPROVED facts.\n"
-                ),
-            }
-        
-        messages: list[ChatCompletionMessageParam] = [sys_msg, user_msg]
+                f"personId: {person_id}\n"
+                f"Weights(act/leg): {json.dumps(weights, ensure_ascii=False)}\n\n"
+                "Chronology sample:\n" + "\n".join(lines) + "\n\n"
+                "Aggregated stats (JSON):\n" + json.dumps(stats, ensure_ascii=False) + "\n\n"
+                "APPROVED facts (for 'bubble' enum):\n- " + "\n- ".join(approved_facts) + "\n\n"
+                "MUST-USE facts for 'one_liner' (include AT LEAST TWO; use numbers/times VERBATIM):\n- " + "\n- ".join(must_use) + "\n\n"
+                "Task: Return JSON {title, one_liner, bubble} only.\n"
+                "- title ≤20 chars, punchy and neutral.\n"
+                "- one_liner: 2–3 sentences, 80–200 chars, NO line breaks. "
+                "Weave at least TWO of the MUST-USE facts naturally (use numbers/times exactly as written).\n"
+                "- bubble: pick EXACTLY one from APPROVED facts.\n"
+            ),
+        }
 
-        response_format: ResponseFormat = {
+        response_format: Dict[str, Any] = {
             "type": "json_schema",
             "json_schema": {
                 "name": "story_payload",
@@ -338,61 +575,59 @@ def generate_story():
                     "type": "object",
                     "additionalProperties": False,
                     "properties": {
-                        "title": {
-                            "type": "string",
-                            "maxLength": 20,
-                            "pattern": r"^[^\n\r\t]{1,20}$"
-                        },
-                        "one_liner": {
-                            "type": "string",
-                            "maxLength": 200,
-                            "pattern": r"^[^\n\r\t]{80,200}$"
-                        },
-                        "bubble": {
-                            "type": "string",
-                            "maxLength": 28,
-                            "enum": approved_facts
-                        }
+                        "title": {"type": "string", "maxLength": 20, "pattern": r"^[^\n\r\t]{1,20}$"},
+                        "one_liner": {"type": "string", "maxLength": 200, "pattern": r"^[^\n\r\t]{80,200}$"},
+                        "bubble": {"type": "string", "maxLength": 28, "enum": approved_facts},
                     },
-                    "required": ["title", "one_liner", "bubble"]
-                }
-            }
+                    "required": ["title", "one_liner", "bubble"],
+                },
+            },
         }
 
-        # ---- Log full context safely (DEBUG only) ----
-        logger.debug("LLM context messages:\n%s", json.dumps(messages, ensure_ascii=False, indent=2))
-        logger.debug("LLM response_format:\n%s", json.dumps(response_format, ensure_ascii=False, indent=2))
+        messages = [sys_msg, user_msg]
 
-        # ---- Call LLM ----
+        foundry_client = _get_foundry_openai_client()
+        if foundry_client is not None:
+            model_name = _read_env("FOUNDRY_DEPLOYMENT") or FOUNDRY_MODEL
+            try:
+                resp = foundry_client.chat.completions.create(
+                    model=model_name,
+                    response_format=response_format,  # type: ignore[arg-type]
+                    messages=messages,  # type: ignore[arg-type]
+                    temperature=0.5,
+                    max_tokens=260,
+                )
+                raw = resp.choices[0].message.content or "{}"
+                logger.info(
+                    "Foundry OpenAI SDK response (id=%s, model=%s): %s",
+                    getattr(resp, "id", None),
+                    getattr(resp, "model", model_name),
+                    raw,
+                )
+                return json.loads(raw)
+            except Exception as exc:
+                logger.warning("Foundry OpenAI SDK call failed; falling back: %s", exc)
+
+        client = _get_openai_client()
+        if client is None:
+            raise RuntimeError("No LLM provider configured")
+
         resp = client.chat.completions.create(
             model=OPENAI_MODEL,
-            response_format=response_format,
-            messages=messages,
+            response_format=response_format,  # type: ignore[arg-type]
+            messages=messages,  # type: ignore[arg-type]
             temperature=0.5,
             max_tokens=260,
         )
-
-        # ---- Handle response ----
         raw = resp.choices[0].message.content or "{}"
-        resp_id = getattr(resp, "id", None)
-        model = getattr(resp, "model", OPENAI_MODEL)
-        usage = getattr(resp, "usage", None)
-        logger.info("LLM response (id=%s, model=%s): %s", resp_id, model, raw)
-        if usage:
-            try:
-                logger.info("LLM usage: %s", usage)
-            except Exception:
-                pass
+        logger.info("OpenAI response (id=%s, model=%s): %s", getattr(resp, "id", None), getattr(resp, "model", OPENAI_MODEL), raw)
+        return json.loads(raw)
 
-        try:
-            obj = json.loads(raw)
-        except json.JSONDecodeError as je:
-            logger.error("Failed to parse LLM JSON (id=%s): %s | raw=%r", resp_id, je, raw)
-            obj = {"title": "シミュ結果", "one_liner": "AI応答の解析に失敗", "bubble": "今日の移動をひとことで"}
-
+    try:
+        obj = _llm_call()
     except Exception as e:
         logger.exception("LLM call failed: %s", e)
-        obj = {"title": "シミュ結果", "one_liner": "AI生成に失敗しました", "bubble": "今日の変化をひとことで"}
+        obj = _fallback_story(str(person_id), must_use, approved_facts, lang=lang)
 
     # numeric/time cleanup (no tone/phrase filtering)
     payload = _validate_payload(obj)

@@ -123,6 +123,15 @@ def _read_cached(path: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def station_cache_path(sim_id: str, q: StationQuery) -> str:
+    parsed_dir = os.path.join(current_app.config["STORAGE_ROOT"], "parsed")
+    return os.path.join(parsed_dir, q.cache_key(sim_id))
+
+
+def read_station_cache(sim_id: str, q: StationQuery) -> Optional[Dict[str, Any]]:
+    return _read_cached(station_cache_path(sim_id, q))
+
+
 def _write_cached(path: str, payload: Dict[str, Any]) -> None:
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -183,8 +192,7 @@ def compute_station_counts(sim_id: str, q: StationQuery) -> Dict[str, Any]:
     if not sim:
         raise LookupError("simulation not found")
 
-    parsed_dir = os.path.join(current_app.config["STORAGE_ROOT"], "parsed")
-    cache_path = os.path.join(parsed_dir, q.cache_key(sim_id))
+    cache_path = station_cache_path(sim_id, q)
     cached = _read_cached(cache_path)
     if cached:
         return cached
@@ -193,7 +201,17 @@ def compute_station_counts(sim_id: str, q: StationQuery) -> Dict[str, Any]:
     events_path: Optional[str] = None
     facilities_map: Dict[str, Tuple[float, float]] = {}
 
-    if folder and os.path.isdir(folder):
+    # Prefer locally cached events (created during blob-parse) if present.
+    cached_events = sim.get("cached_events_path")
+    if cached_events and os.path.isfile(str(cached_events)):
+        events_path = str(cached_events)
+        if folder and os.path.isdir(folder):
+            facilities_map = _load_facilities_from_folder(folder)
+        else:
+            # If the simulation doesn't have a local extraction, try to pull facilities from the zip
+            # as we do below; the events cache itself doesn't include coordinates.
+            facilities_map = {}
+    elif folder and os.path.isdir(folder):
         events_path = _find_first_existing(folder, tuple(_EVENT_CANDIDATES))
         facilities_map = _load_facilities_from_folder(folder)
         if not events_path:
@@ -220,6 +238,9 @@ def compute_station_counts(sim_id: str, q: StationQuery) -> Dict[str, Any]:
                 facilities_map = _load_facilities_from_zip(zf, tmpd)
 
             # fall through to parse using extracted events_path
+
+    if not facilities_map:
+        raise FileNotFoundError("facilities file not found (required to locate event facilities)")
 
     if not events_path:
         raise FileNotFoundError("events path resolution failed")
@@ -338,4 +359,3 @@ def compute_station_counts(sim_id: str, q: StationQuery) -> Dict[str, Any]:
     }
     _write_cached(cache_path, payload)
     return payload
-

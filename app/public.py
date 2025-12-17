@@ -10,7 +10,8 @@ from azure.storage.blob import generate_blob_sas, BlobSasPermissions
 from .models import list_simulations, get_simulation
 from .azure_utils import get_storage_context
 from .frequency_compare import compute_frequency_compare_aggregates
-from .station_counts import StationQuery, compute_station_counts
+from .station_counts import StationQuery
+from .station_jobs import enqueue_station_job, get_station_status
 from .person_cache import iter_cached_persons, read_cached_persons_sample
 from .aggregates import Aggregator
 
@@ -468,10 +469,43 @@ def public_station_counts(sim_id: str):
 
     try:
         q = StationQuery(center_x=center_x, center_y=center_y, radius_m=radius_m, bin_sec=bin_sec)
-        out = compute_station_counts(sim_id, q)
-        return jsonify(out)
+        out = enqueue_station_job(sim_id, q)
+        status = str(out.get("status") or "")
+        code = 200 if status == "succeeded" else (500 if status == "failed" else 202)
+        return jsonify(out), code
     except FileNotFoundError as exc:
         return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         current_app.logger.exception("[station] failed for %s", sim_id)
         return jsonify({"error": str(exc) or "station-counts failed"}), 500
+
+
+@public_bp.route("/api/simulations/<sim_id>/station-counts/status", methods=["POST"])
+def public_station_counts_status(sim_id: str):
+    sim = get_simulation(sim_id)
+    if not sim or not sim.get("published"):
+        return jsonify({"error": "Not found"}), 404
+
+    payload = request.get_json(silent=True) or {}
+    try:
+        center_x = float(payload.get("centerX"))
+        center_y = float(payload.get("centerY"))
+        radius_m = float(payload.get("radiusM") or 500.0)
+        bin_sec = int(payload.get("binSec") or 3600)
+    except Exception:
+        return jsonify({"error": "Invalid payload"}), 400
+
+    if radius_m <= 0:
+        return jsonify({"error": "radiusM must be > 0"}), 400
+    if bin_sec <= 0 or bin_sec > 24 * 3600:
+        return jsonify({"error": "binSec out of range"}), 400
+
+    try:
+        q = StationQuery(center_x=center_x, center_y=center_y, radius_m=radius_m, bin_sec=bin_sec)
+        out = get_station_status(sim_id, q)
+        status = str(out.get("status") or "")
+        code = 200 if status == "succeeded" else (500 if status == "failed" else 202)
+        return jsonify(out), code
+    except Exception as exc:
+        current_app.logger.exception("[station] status failed for %s", sim_id)
+        return jsonify({"error": str(exc) or "station-counts status failed"}), 500

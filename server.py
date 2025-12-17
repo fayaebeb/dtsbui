@@ -82,4 +82,11 @@ with app.app_context():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=3000, debug=True)
+    # NOTE: The Werkzeug reloader restarts the process on file changes. This
+    # interacts badly with background parse threads (ThreadPoolExecutor) and
+    # can crash on Windows with WinError 10038 while a parse job is running.
+    #
+    # Keep debug on, but disable auto-reload by default for stability.
+    debug = os.getenv("FLASK_DEBUG", "1").lower() in {"1", "true", "yes"}
+    use_reloader = os.getenv("FLASK_RELOAD", "0").lower() in {"1", "true", "yes"}
+    app.run(host="127.0.0.1", port=3000, debug=debug, use_reloader=use_reloader)

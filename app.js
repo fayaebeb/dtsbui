@@ -1106,14 +1106,37 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
   }
 
   async function fetchStationCounts(simId, centerX, centerY, radiusM, binSec) {
-    const res = await fetch(`/api/simulations/${simId}/station-counts`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ centerX, centerY, radiusM, binSec }),
-    });
-    const data = await res.json().catch(() => ({}));
+    const body = { centerX, centerY, radiusM, binSec };
+
+    async function postJson(url) {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const d = await r.json().catch(() => ({}));
+      return { res: r, data: d };
+    }
+
+    // Kick off (or hit cache)
+    let { res, data } = await postJson(`/api/simulations/${simId}/station-counts`);
     if (!res.ok) throw new Error(data?.error || "station-counts failed");
-    return data;
+
+    // If async job, poll status until result is ready.
+    const startedAt = Date.now();
+    while (true) {
+      const status = String(data?.status || "");
+      if (status === "succeeded" && data?.result) return data.result;
+      if (status === "failed") throw new Error(data?.error || "station-counts failed");
+
+      // 202 running/idle
+      if (Date.now() - startedAt > 30 * 60 * 1000) {
+        throw new Error("station-counts timed out (still running)");
+      }
+      await new Promise(r => setTimeout(r, 1500));
+      ({ res, data } = await postJson(`/api/simulations/${simId}/station-counts/status`));
+      if (!res.ok) throw new Error(data?.error || "station-counts status failed");
+    }
   }
 
   function peakInfo(arr) {
