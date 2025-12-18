@@ -2,6 +2,7 @@ import json
 import os
 import gzip
 import datetime
+from itertools import islice
 from typing import Any, Dict, List, Optional, Tuple
 
 from flask import Blueprint, render_template, jsonify, request, send_file, send_from_directory, current_app
@@ -245,32 +246,30 @@ def public_summary(sim_id):
 def _resolve_cache_path(path: str) -> str:
     return path if os.path.isabs(path) else os.path.abspath(path)
 
+def _coerce_person_limit(v: Any) -> Optional[int]:
+    if v is None:
+        return None
+    if isinstance(v, str) and v.strip().lower() in {"", "all", "none", "null"}:
+        return None
+    try:
+        n = int(v)
+    except Exception:
+        return None
+    return n if n > 0 else None
 
-def _get_aggregates_for_sim(sim_id: str, *, top_routes_n: int) -> Tuple[Optional[Dict[str, Any]], Optional[Tuple[Dict[str, Any], int]]]:
-    sim = get_simulation(sim_id)
-    if not sim or not sim.get("published"):
-        return None, ({"error": "Not found"}, 404)
 
-    # Prefer precomputed aggregates from parse time
-    agg_path = sim.get("cached_agg_path")
-    if isinstance(agg_path, str) and agg_path:
-        agg_file = _resolve_cache_path(agg_path)
-        if os.path.isfile(agg_file):
-            with open(agg_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            if isinstance(data, dict) and isinstance(data.get("ptRoutesTop"), list):
-                data["ptRoutesTop"] = data["ptRoutesTop"][:top_routes_n]
-            return data if isinstance(data, dict) else {}, None
-
-    cache = sim.get("cached_json_path")
-    if not cache:
-        return None, ({"error": "No cached data. Admin must parse this simulation first."}, 400)
-    cache_path = _resolve_cache_path(cache)
-    if not os.path.isfile(cache_path):
-        return None, ({"error": "Cached data file missing"}, 500)
-
+def _compute_selected_aggregates_from_cache(
+    cache_path: str,
+    *,
+    top_routes_n: int,
+    person_limit: Optional[int] = None,
+) -> Dict[str, Any]:
     agg_calc = Aggregator()
-    for p in iter_cached_persons(cache_path):
+    persons_iter = iter_cached_persons(cache_path)
+    if person_limit is not None:
+        persons_iter = islice(persons_iter, person_limit)
+
+    for p in persons_iter:
         if not isinstance(p, dict):
             continue
         plans = p.get("plans") or []
@@ -283,17 +282,55 @@ def _get_aggregates_for_sim(sim_id: str, *, top_routes_n: int) -> Tuple[Optional
         if not isinstance(plan, dict):
             continue
         agg_calc.add_person_plan(str(p.get("personId") or ""), plan)
-    agg = agg_calc.to_dict(top_routes=top_routes_n)
-    try:
-        parsed_dir = os.path.dirname(cache_path)
-        out_path = os.path.join(parsed_dir, f"{sim_id}.aggregates.json")
-        with open(out_path, "w", encoding="utf-8") as f:
-            json.dump(agg, f)
-        from .models import update_simulation
 
-        update_simulation(sim_id, cached_agg_path=out_path)
-    except Exception:
-        current_app.logger.exception("Failed to persist aggregates for %s", sim_id)
+    return agg_calc.to_dict(top_routes=top_routes_n)
+
+
+def _get_aggregates_for_sim(
+    sim_id: str,
+    *,
+    top_routes_n: int,
+    person_limit: Optional[int] = None,
+) -> Tuple[Optional[Dict[str, Any]], Optional[Tuple[Dict[str, Any], int]]]:
+    sim = get_simulation(sim_id)
+    if not sim or not sim.get("published"):
+        return None, ({"error": "Not found"}, 404)
+
+    person_limit = _coerce_person_limit(person_limit)
+
+    # Prefer precomputed aggregates from parse time
+    if person_limit is None:
+        agg_path = sim.get("cached_agg_path")
+        if isinstance(agg_path, str) and agg_path:
+            agg_file = _resolve_cache_path(agg_path)
+            if os.path.isfile(agg_file):
+                with open(agg_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, dict) and isinstance(data.get("ptRoutesTop"), list):
+                    data["ptRoutesTop"] = data["ptRoutesTop"][:top_routes_n]
+                return data if isinstance(data, dict) else {}, None
+
+    cache = sim.get("cached_json_path")
+    if not cache:
+        return None, ({"error": "No cached data. Admin must parse this simulation first."}, 400)
+    cache_path = _resolve_cache_path(cache)
+    if not os.path.isfile(cache_path):
+        return None, ({"error": "Cached data file missing"}, 500)
+
+    agg = _compute_selected_aggregates_from_cache(cache_path, top_routes_n=top_routes_n, person_limit=person_limit)
+
+    # Only persist aggregates when it's a full-dataset compute.
+    if person_limit is None:
+        try:
+            parsed_dir = os.path.dirname(cache_path)
+            out_path = os.path.join(parsed_dir, f"{sim_id}.aggregates.json")
+            with open(out_path, "w", encoding="utf-8") as f:
+                json.dump(agg, f)
+            from .models import update_simulation
+
+            update_simulation(sim_id, cached_agg_path=out_path)
+        except Exception:
+            current_app.logger.exception("Failed to persist aggregates for %s", sim_id)
 
     return agg, None
 
@@ -307,7 +344,8 @@ def public_aggregates(sim_id: str):
     except Exception:
         top_routes_n = 12
 
-    data, err = _get_aggregates_for_sim(sim_id, top_routes_n=top_routes_n)
+    person_limit = _coerce_person_limit(request.args.get("person_limit"))
+    data, err = _get_aggregates_for_sim(sim_id, top_routes_n=top_routes_n, person_limit=person_limit)
     if err:
         body, code = err
         return jsonify(body), code
@@ -328,16 +366,18 @@ def public_compare_aggregates():
     except Exception:
         top_routes_n = 12
 
-    pre, pre_err = _get_aggregates_for_sim(pre_id, top_routes_n=top_routes_n)
+    person_limit = _coerce_person_limit(payload.get("person_limit") or payload.get("personLimit") or payload.get("limit"))
+
+    pre, pre_err = _get_aggregates_for_sim(pre_id, top_routes_n=top_routes_n, person_limit=person_limit)
     if pre_err:
         body, code = pre_err
         return jsonify(body), code
-    post, post_err = _get_aggregates_for_sim(post_id, top_routes_n=top_routes_n)
+    post, post_err = _get_aggregates_for_sim(post_id, top_routes_n=top_routes_n, person_limit=person_limit)
     if post_err:
         body, code = post_err
         return jsonify(body), code
 
-    return jsonify({"pre_id": pre_id, "post_id": post_id, "pre": pre, "post": post})
+    return jsonify({"pre_id": pre_id, "post_id": post_id, "personLimit": person_limit, "pre": pre, "post": post})
 
 
 @public_bp.route("/api/simulations/<sim_id>/frequency-compare", methods=["POST"])
@@ -364,6 +404,7 @@ def public_frequency_compare(sim_id: str):
     if old_f is None or new_f is None:
         return jsonify({"error": "oldFrequency and newFrequency required"}), 400
     include_most_steps = str(payload.get("includeMostImpactedSteps") or "").lower() in {"1", "true", "yes"}
+    person_limit = _coerce_person_limit(payload.get("person_limit") or payload.get("personLimit") or payload.get("limit"))
 
     # Prefer an explicit walk coefficient; else derive from weights (if provided).
     walk_coeff = payload.get("walkCoeffPerSec")
@@ -379,10 +420,13 @@ def public_frequency_compare(sim_id: str):
         walk_coeff_per_sec = 0.5
 
     # Baseline aggregates can come from the precomputed cache (fast).
-    pre, pre_err = _get_aggregates_for_sim(sim_id, top_routes_n=12)
-    if pre_err:
-        body, code = pre_err
-        return jsonify(body), code
+    if person_limit is None:
+        pre, pre_err = _get_aggregates_for_sim(sim_id, top_routes_n=12)
+        if pre_err:
+            body, code = pre_err
+            return jsonify(body), code
+    else:
+        pre = _compute_selected_aggregates_from_cache(cache_path, top_routes_n=12, person_limit=person_limit)
 
     # Frequency compare requires multiple plans per person to allow plan switching.
     # If the simulation was parsed in selected-only mode, this will always show no change.
@@ -391,7 +435,7 @@ def public_frequency_compare(sim_id: str):
         return jsonify({"error": "This simulation was parsed with selected-only plans. Re-parse with 'Parse all plans' to enable frequency compare."}), 400
 
     cmp = compute_frequency_compare_aggregates(
-        iter_cached_persons(cache_path),
+        islice(iter_cached_persons(cache_path), person_limit) if person_limit is not None else iter_cached_persons(cache_path),
         route_id=route_id,
         old_frequency=float(old_f),
         new_frequency=float(new_f),
@@ -408,6 +452,7 @@ def public_frequency_compare(sim_id: str):
             "oldFrequency": float(old_f),
             "newFrequency": float(new_f),
             "walkCoeffPerSec": walk_coeff_per_sec,
+            "personLimit": person_limit,
         },
         "changedPeople": int(cmp.get("changedPeople") or 0),
         "changedSample": cmp.get("changedSample") or [],

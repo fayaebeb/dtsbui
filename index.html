@@ -420,9 +420,9 @@
 								<span><span class="dot" style="background:gray"></span> pt interaction</span>
 							</div>
 							<!-- 🔎 Person filter + Export buttons -->
-							<div style="display:flex; gap:8px; align-items:center; margin-left:auto;">
+							<div class="dtsb-toolbar__actions" aria-label="Person filter and exports">
 								<input id="personSearch" type="text" placeholder="Filter by personId (partial ok)"
-									style="padding:6px 8px; font-size:12px; width:220px; border:1px solid #ccd5ff; border-radius:8px;">
+									style="padding:6px 8px; font-size:12px; width:220px; min-width:140px; flex:0 1 220px; border:1px solid #ccd5ff; border-radius:8px;">
 								<button id="clearSearchBtn" type="button" class="btn ghost">Clear</button>
 								<button id="exportSummaryBtn" type="button" class="btn">Export Summary CSV</button>
 								<button id="exportStepsBtn" type="button" class="btn secondary">Export Steps

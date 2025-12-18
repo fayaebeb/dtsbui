@@ -1,7 +1,7 @@
 // Aggregations and charts for simulations (computed on backend from full dataset)
 (function () {
   function onReady(fn) { if (document.readyState !== 'loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
-  const CACHE_KEY = 'dtsb.aggCompareCache.v1';
+  const CACHE_KEY = 'dtsb.aggCompareCache.v2';
 
   async function fetchSimulations() {
     const res = await fetch('/api/simulations');
@@ -9,22 +9,30 @@
     return Array.isArray(sims) ? sims : [];
   }
 
-  async function fetchCompare(preId, postId) {
+  async function fetchCompare(preId, postId, personLimit) {
     const res = await fetch('/api/simulations/compare-aggregates', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pre_id: preId, post_id: postId, top_routes: 12 })
+      body: JSON.stringify({
+        pre_id: preId,
+        post_id: postId,
+        top_routes: 12,
+        ...(personLimit ? { person_limit: personLimit } : {})
+      })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data?.error || 'compare failed');
     return data;
   }
 
-  async function fetchFrequencyCompare(simId, params) {
+  async function fetchFrequencyCompare(simId, params, personLimit) {
     const res = await fetch(`/api/simulations/${simId}/frequency-compare`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params || {})
+      body: JSON.stringify({
+        ...(params || {}),
+        ...(personLimit ? { person_limit: personLimit } : {})
+      })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data?.error || 'frequency compare failed');
@@ -53,14 +61,15 @@
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(entry)); } catch { }
   }
 
-  function routeSignature(params) {
+  function routeSignature(params, personLimit) {
     if (!params) return '';
     const rid = params.routeId || '';
     const oldF = params.oldFrequency ?? '';
     const newF = params.newFrequency ?? '';
     const ts = params.ts ?? '';
     const mode = params.timeMode ?? '';
-    return `${rid}|${oldF}|${newF}|${mode}|${ts}`;
+    const lim = personLimit ? String(personLimit) : 'all';
+    return `${rid}|${oldF}|${newF}|${mode}|${ts}|${lim}`;
   }
 
   function hhmmss(totalSec) {
@@ -98,6 +107,11 @@
           <select id="aggPreSelect" class="c-input" style="min-width:260px;"></select>
           <label class="muted">Post</label>
           <select id="aggPostSelect" class="c-input" style="min-width:260px;"></select>
+          <label class="muted">Persons</label>
+          <select id="aggPersonLimit" class="c-input" style="min-width:120px;">
+            <option value="">All</option>
+            <option value="1000">1000</option>
+          </select>
           <button id="aggCompareBtn" type="button" class="btn">Compare</button>
           <span id="aggStatus" class="muted"></span>
         </div>
@@ -121,6 +135,7 @@
   `;
 
     const container =
+      document.querySelector('.l-contents__data .c-box.c-area__scroll') ||
       document.querySelector('.l-contents__data') ||
       document.querySelector('.l-contents__map') ||
       document.body;
@@ -304,6 +319,7 @@
     const status = document.getElementById('aggStatus');
     const preSel = document.getElementById('aggPreSelect');
     const postSel = document.getElementById('aggPostSelect');
+    const limitSel = document.getElementById('aggPersonLimit');
     const btn = document.getElementById('aggCompareBtn');
     const modeEls = Array.from(document.querySelectorAll('input[name="aggMode"]'));
 
@@ -362,9 +378,12 @@
       const cached = getCachedCompare();
       if (!cached || !cached.data?.pre || !cached.data?.post) return;
 
+      const personLimit = cached.personLimit || null;
+      if (limitSel) limitSel.value = personLimit ? String(personLimit) : '';
+
       if (cached.mode === 'frequency') {
         const params = loadRouteParams();
-        const sigNow = routeSignature(params);
+        const sigNow = routeSignature(params, personLimit);
         if (!cached.simId || !eligible.some(s => s.id === cached.simId)) return;
         if (!cached.sig || cached.sig !== sigNow) return;
 
@@ -376,7 +395,7 @@
           preName: `${name} (before)`,
           postName: `${name} (after)`,
         });
-        if (status) status.textContent = `Cached (changed people: ${cached.data.changedPeople ?? 0})`;
+        if (status) status.textContent = `Cached (people used: ${cached.data.pre?.totalPeople ?? 0}, changed: ${cached.data.changedPeople ?? 0})`;
         return;
       }
 
@@ -391,7 +410,7 @@
         const preName = eligible.find(s => s.id === cached.preId)?.name || 'Pre';
         const postName = eligible.find(s => s.id === cached.postId)?.name || 'Post';
         renderCharts(cached.data.pre, cached.data.post, { preName, postName });
-        if (status) status.textContent = 'Cached';
+        if (status) status.textContent = `Cached (people used: ${cached.data.pre?.totalPeople ?? 0})`;
       }
     })();
 
@@ -400,6 +419,11 @@
       const postId = postSel.value;
       const preName = eligible.find(s => s.id === preId)?.name || 'Pre';
       const postName = eligible.find(s => s.id === postId)?.name || 'Post';
+      const personLimit = (() => {
+        const raw = (limitSel && limitSel.value) ? String(limitSel.value) : '';
+        const n = parseInt(raw, 10);
+        return Number.isFinite(n) && n > 0 ? n : null;
+      })();
       if (status) status.textContent = 'Computing…';
       try {
         const mode = getMode();
@@ -411,43 +435,43 @@
           }
           // Avoid recomputing when navigating between results.html and results_graph.html
           // by using a localStorage cache keyed on simulation + routeParams.
-          const sig = routeSignature(params);
+          const sig = routeSignature(params, personLimit);
           const cached = getCachedCompare();
-          if (cached && cached.mode === 'frequency' && cached.simId === preId && cached.sig === sig && cached.data?.pre && cached.data?.post) {
+          if (cached && cached.mode === 'frequency' && cached.simId === preId && cached.sig === sig && cached.personLimit === personLimit && cached.data?.pre && cached.data?.post) {
             const name = eligible.find(s => s.id === preId)?.name || 'Simulation';
             renderCharts(cached.data.pre, cached.data.post, {
               preName: `${name} (before)`,
               postName: `${name} (after)`,
             });
-            if (status) status.textContent = `Cached (changed people: ${cached.data.changedPeople ?? 0})`;
+            if (status) status.textContent = `Cached (people used: ${cached.data.pre?.totalPeople ?? 0}, changed: ${cached.data.changedPeople ?? 0})`;
             return;
           }
           const resp = await fetchFrequencyCompare(preId, {
             routeId: params.routeId,
             oldFrequency: params.oldFrequency,
             newFrequency: params.newFrequency,
-          });
+          }, personLimit);
           const name = eligible.find(s => s.id === preId)?.name || 'Simulation';
           renderCharts(resp.pre, resp.post, {
             preName: `${name} (before)`,
             postName: `${name} (after)`,
           });
-          if (status) status.textContent = `OK (changed people: ${resp.changedPeople ?? 0})`;
-          setCachedCompare({ mode: 'frequency', simId: preId, sig, data: resp, savedAt: Date.now() });
+          if (status) status.textContent = `OK (people used: ${resp.pre?.totalPeople ?? 0}, changed: ${resp.changedPeople ?? 0})`;
+          setCachedCompare({ mode: 'frequency', simId: preId, sig, personLimit, data: resp, savedAt: Date.now() });
           return;
         }
 
         // Sim-vs-sim compare cache to avoid duplicate fetch when moving between pages.
         const cached = getCachedCompare();
-        if (cached && cached.mode === 'sim' && cached.preId === preId && cached.postId === postId && cached.data?.pre && cached.data?.post) {
+        if (cached && cached.mode === 'sim' && cached.preId === preId && cached.postId === postId && cached.personLimit === personLimit && cached.data?.pre && cached.data?.post) {
           renderCharts(cached.data.pre, cached.data.post, { preName, postName });
-          if (status) status.textContent = 'Cached';
+          if (status) status.textContent = `Cached (people used: ${cached.data.pre?.totalPeople ?? 0})`;
           return;
         }
-        const cmp = await fetchCompare(preId, postId);
+        const cmp = await fetchCompare(preId, postId, personLimit);
         renderCharts(cmp.pre, cmp.post, { preName, postName });
-        if (status) status.textContent = 'OK';
-        setCachedCompare({ mode: 'sim', preId, postId, data: cmp, savedAt: Date.now() });
+        if (status) status.textContent = `OK (people used: ${cmp.pre?.totalPeople ?? 0})`;
+        setCachedCompare({ mode: 'sim', preId, postId, personLimit, data: cmp, savedAt: Date.now() });
       } catch (e) {
         console.error(e);
         if (status) status.textContent = e?.message || 'Failed';

@@ -24,6 +24,85 @@
 
 			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 		}
+
+		/* Compact header sizing (match `results.html` look/spacing) */
+		.p-result__graph .l-contents__tit {
+			font-size: 2.4rem;
+			letter-spacing: 0.02em;
+			margin-bottom: 1.2rem;
+		}
+
+		.p-result__graph .l-contents__dl-dt {
+			padding: clamp(10px, 0.85em, 14px) min(2.196193265vw, 30px);
+		}
+
+		.p-result__graph .l-contents__dl-dd {
+			padding: clamp(10px, 0.85em, 14px) min(1.4641288433vw, 20px);
+		}
+
+		.p-result__graph .l-contents__evaluation {
+			font-size: 1.8rem;
+		}
+
+		/* 1. Make the header a compact horizontal row */
+.p-result__graph .l-contents__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;          /* reduce horizontal spacing */
+  flex-wrap: nowrap; /* prevent wrapping */
+}
+
+/* 2. Prevent the title from breaking into 2 lines */
+.p-result__graph .l-contents__tit {
+  white-space: nowrap;
+  font-size: 2.2rem; /* slightly smaller than now */
+}
+
+/* 3. Stop 総合評価 / 名称 from stretching width */
+.p-result__graph .l-contents__dl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+/* In a flex header, don't use bottom margin on the title */
+.p-result__graph .l-contents__tit{
+  margin: 0;              /* <-- change from margin-bottom */
+  white-space: nowrap;
+  font-size: 2.2rem;
+}
+
+/* Make DT/DD the same height + vertically centered */
+.p-result__graph .l-contents__dl{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.p-result__graph .l-contents__dl-dt,
+.p-result__graph .l-contents__dl-dd{
+  display: flex;          /* <-- important */
+  align-items: center;    /* <-- important */
+}
+
+/* Fix 名称 dd (input + pencil) alignment */
+.p-result__graph .l-contents__dl-dd.c-area__name{
+  gap: 8px;
+}
+
+.p-result__graph .c-area__name-input{
+  line-height: 1;
+  padding: 0;             /* prevents “floating” baseline feel */
+}
+
+.p-result__graph .l-contents__name-edit{
+  display: flex;
+  align-items: center;
+  justify-content: center; /* centers the pencil */
+}
+
+
 	</style>
 </head>
 

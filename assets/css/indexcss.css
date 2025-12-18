@@ -6,6 +6,30 @@
     padding: 8px 0;
 }
 
+.dtsb-toolbar__actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex: 1 1 520px;
+    min-width: 0;
+    max-width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 860px) {
+    .dtsb-toolbar__actions {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 6px;
+    }
+
+    .dtsb-toolbar__actions > * {
+        flex: 0 0 auto;
+    }
+}
+
 .legend {
     display: flex;
     gap: 10px;
