@@ -608,6 +608,17 @@ def generate_story():
             except Exception as exc:
                 logger.warning("Foundry OpenAI SDK call failed; falling back: %s", exc)
 
+        # If Foundry is configured but the SDK path failed (common on App Service when
+        # managed identity isn't enabled/authorized), try a direct REST call which
+        # supports both api-key and bearer token auth.
+        if _read_env("FOUNDRY_ENDPOINT") and _read_env("FOUNDRY_KEY"):
+            try:
+                content, model_used = _call_foundry_chat(messages=messages, response_format=response_format)
+                logger.info("Foundry REST response (model=%s): %s", model_used, content)
+                return json.loads(content or "{}")
+            except Exception as exc:
+                logger.warning("Foundry REST call failed; falling back: %s", exc)
+
         client = _get_openai_client()
         if client is None:
             raise RuntimeError("No LLM provider configured")
