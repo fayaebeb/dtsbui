@@ -102,6 +102,15 @@
   justify-content: center; /* centers the pencil */
 }
 
+/* Always allow scrolling for the graph grid (results_graph.html) */
+.p-result__graph .l-contents__data .c-area__grid.c-area__scroll {
+	overflow-y: auto;
+	scrollbar-gutter: stable;
+}
+
+.p-result__graph .l-contents__data .c-area__grid.c-area__scroll:hover {
+	overflow-y: auto;
+}
 
 	</style>
 </head>

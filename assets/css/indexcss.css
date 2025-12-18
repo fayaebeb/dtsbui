@@ -8,24 +8,56 @@
 
 .dtsb-toolbar__actions {
     display: flex;
-    gap: 8px;
+    gap: 8px 12px;
     align-items: center;
+    justify-content: flex-end;
     flex: 1 1 520px;
     min-width: 0;
     max-width: 100%;
-    justify-content: flex-end;
     flex-wrap: wrap;
+}
+
+.dtsb-toolbar__filter {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+    flex: 1 1 320px;
+}
+
+.dtsb-toolbar__exports {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+    flex: 0 0 auto;
 }
 
 @media (max-width: 860px) {
     .dtsb-toolbar__actions {
+        width: 100%;
+        justify-content: flex-start;
+        align-items: stretch;
+    }
+
+    .dtsb-toolbar__filter {
+        width: 100%;
+    }
+
+    .dtsb-toolbar__exports {
+        width: 100%;
         flex-wrap: nowrap;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
         padding-bottom: 6px;
     }
 
-    .dtsb-toolbar__actions > * {
+    .dtsb-toolbar__exports::-webkit-scrollbar {
+        display: none;
+    }
+
+    .dtsb-toolbar__exports > * {
         flex: 0 0 auto;
     }
 }

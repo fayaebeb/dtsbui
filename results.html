@@ -216,6 +216,10 @@
 						<span
 							class="l-fixed__open p-result__story-btn c-btn__small c-btn__small-black target u-hover-op js-fixed-open"
 							data-fixed="target">ターゲット選択</span>
+						<button id="genStoryBtn" type="button"
+							class="p-result__story-btn c-btn__small c-btn__small-black u-hover-op">
+							AIストーリー生成 <span id="genStorySpin" style="display:none; margin-left:6px;">⏳</span>
+						</button>
 					</div>
 					<ul class="p-result__story-target">
 						<li class="js-target-item" data-target="target01">
@@ -745,6 +749,125 @@ window.addEventListener("load", function () {
     console.warn("AI story render failed:", e);
   }
 });
+	</script>
+	<script>
+(function () {
+  const DEFAULT_WEIGHTS = {
+    act: { Home: 1.0, Work: 0.5, Business: 0.3, Shopping: 0.2, __other__: 0.1 },
+    leg: { car: -2.0, walk: 0.5, pt: 0.1, __other__: 0.0 }
+  };
+
+  function loadWeights() {
+    try {
+      const ui = JSON.parse(localStorage.getItem("matsim-ui-v1") || "{}");
+      const w = ui && ui.weights;
+      if (w && typeof w === "object") return w;
+    } catch {}
+    return DEFAULT_WEIGHTS;
+  }
+
+  function renderStory(story) {
+    if (!story) return;
+    const titleEl = document.getElementById("aiStoryTitle");
+    const textEl = document.getElementById("aiStoryText");
+    const ul = document.getElementById("aiStoryBubbles");
+
+    if (titleEl) titleEl.textContent = (story.title || "AIストーリー").trim();
+    if (textEl) {
+      textEl.textContent = (story.one_liner || "").trim();
+      const bubbleText = (typeof story.bubble === "string" ? story.bubble.trim() : "");
+      if (bubbleText) {
+        textEl.appendChild(document.createElement("br"));
+        textEl.appendChild(document.createTextNode(bubbleText));
+      }
+    }
+    if (ul) ul.style.display = "none";
+  }
+
+  async function pickSimulationId() {
+    const res = await fetch("/api/simulations");
+    const list = await res.json().catch(() => ([]));
+    const sims = Array.isArray(list) ? list : [];
+    const first = sims.find(s => s && s.has_cache) || sims[0];
+    if (!first || !first.id) throw new Error("No published simulations");
+    return first.id;
+  }
+
+  function loadRouteParams() {
+    try { return JSON.parse(localStorage.getItem("routeParams") || "null"); } catch { return null; }
+  }
+
+  async function pickPlanForStory(simId, weights) {
+    const params = loadRouteParams();
+    if (params && (params.oldFrequency != null) && (params.newFrequency != null)) {
+      try {
+        const resCmp = await fetch(`/api/simulations/${simId}/frequency-compare`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...params, weights, includeMostImpactedSteps: true }),
+        });
+        const cmp = await resCmp.json().catch(() => ({}));
+        if (resCmp.ok) {
+          const mi = cmp && cmp.mostImpacted;
+          if (mi && mi.personId && Array.isArray(mi.afterPlanSteps) && mi.afterPlanSteps.length) {
+            return { personId: mi.personId, planSteps: mi.afterPlanSteps, meta: { kind: "mostImpacted", routeId: params.routeId } };
+          }
+        }
+      } catch {}
+    }
+
+    const resSummary = await fetch(`/api/simulations/${simId}/summary`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ weights }),
+    });
+    const summary = await resSummary.json().catch(() => ({}));
+    if (!resSummary.ok) throw new Error(summary && summary.error ? summary.error : "Summary failed");
+    const best = summary && summary.bestPlan;
+    if (!best || !best.personId || !Array.isArray(best.steps) || !best.steps.length) throw new Error("No plans available");
+    return { personId: best.personId, planSteps: best.steps, meta: { kind: "bestPlan" } };
+  }
+
+  async function generateAndRenderStory() {
+    const btn = document.getElementById("genStoryBtn");
+    const spin = document.getElementById("genStorySpin");
+    try {
+      if (btn) btn.disabled = true;
+      if (spin) spin.style.display = "inline";
+
+      const weights = loadWeights();
+      const simId = await pickSimulationId();
+      const picked = await pickPlanForStory(simId, weights);
+
+      const res = await fetch("/story", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          personId: picked.personId,
+          plan: { steps: picked.planSteps },
+          weights,
+          lang: "ja",
+        }),
+      });
+      const story = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(story && story.error ? story.error : "AI story failed");
+
+      const payload = { personId: picked.personId, meta: picked.meta, story, ts: Date.now() };
+      localStorage.setItem("matsim-ai-story", JSON.stringify(payload));
+      renderStory(story);
+    } catch (e) {
+      console.error(e);
+      alert("AIストーリー生成に失敗しました。");
+    } finally {
+      if (spin) spin.style.display = "none";
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  window.addEventListener("load", () => {
+    document.getElementById("genStoryBtn")?.addEventListener("click", generateAndRenderStory);
+  });
+})();
 	</script>
 
 

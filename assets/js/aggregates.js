@@ -85,6 +85,7 @@
     host = document.createElement('section');
     host.id = 'aggPanel';
     host.style.marginTop = '16px';
+    host.style.minWidth = '0';
 
     host.innerHTML = `
     <div class="c-box">
@@ -135,12 +136,23 @@
   `;
 
     const container =
+      // Prefer inserting into the scrollable chart grid on results_graph.html
+      document.querySelector('.l-contents__data .c-area__grid.c-area__scroll') ||
+      // Fallbacks for other pages/layouts
       document.querySelector('.l-contents__data .c-box.c-area__scroll') ||
       document.querySelector('.l-contents__data') ||
       document.querySelector('.l-contents__map') ||
       document.body;
 
-    container.appendChild(host);
+    if (container && container.classList?.contains('c-area__grid')) {
+      host.style.marginTop = '0';
+      host.style.marginBottom = '12px';
+      host.style.gridColumn = '1 / -1';
+      if (typeof container.prepend === 'function') container.prepend(host);
+      else container.insertBefore(host, container.firstChild);
+    } else {
+      container.appendChild(host);
+    }
 
     const details = host.querySelector('#aggDetails');
     const KEY = 'aggDetailsOpen';
