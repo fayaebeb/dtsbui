@@ -135,6 +135,12 @@ def run_parse(sim_id: str, limit: int, selected_only: bool = True) -> Dict[str, 
         events_path = _find_first_existing(folder, tuple(_EVENT_CANDIDATES))
         result = _parse_and_cache(sim_id, plans_path, facilities_path, limit, selected_only)
 
+        if facilities_path:
+            try:
+                update_simulation(sim_id, cached_facilities_path=facilities_path)
+            except Exception:
+                current_app.logger.exception("[parse] failed to record cached_facilities_path for %s", sim_id)
+
         # If events are present, record their path so station-count queries can avoid zip access.
         if events_path:
             try:
@@ -171,6 +177,20 @@ def run_parse(sim_id: str, limit: int, selected_only: bool = True) -> Dict[str, 
 
             logger.info("[parse] found plans=%s facilities=%s events=%s", plan_member, fac_member or "none", ev_member or "none")
             result = _parse_and_cache(sim_id, plans_path, facilities_path, limit, selected_only)
+
+            # Cache facilities locally so station-count queries can avoid zip access.
+            if facilities_path:
+                parsed_dir = os.path.join(current_app.config["STORAGE_ROOT"], "parsed")
+                os.makedirs(parsed_dir, exist_ok=True)
+                cached_facilities_path = os.path.join(
+                    parsed_dir,
+                    f"{sim_id}.facilities{'.xml.gz' if facilities_path.endswith('.gz') else '.xml'}",
+                )
+                try:
+                    shutil.copyfile(facilities_path, cached_facilities_path)
+                    update_simulation(sim_id, cached_facilities_path=cached_facilities_path)
+                except Exception:
+                    current_app.logger.exception("[parse] failed to cache facilities for %s", sim_id)
 
             # Cache events locally so station-count queries don't have to re-download the zip.
             if events_path:

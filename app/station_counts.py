@@ -367,12 +367,25 @@ def compute_station_counts(sim_id: str, q: StationQuery) -> Dict[str, Any]:
     cached_events = sim.get("cached_events_path")
     if cached_events and os.path.isfile(str(cached_events)):
         events_path = str(cached_events)
-        if folder and os.path.isdir(folder):
+        cached_facilities = sim.get("cached_facilities_path")
+        if cached_facilities and os.path.isfile(str(cached_facilities)):
+            facilities_map = parse_facilities_file(str(cached_facilities))
+        elif folder and os.path.isdir(folder):
             facilities_map = _load_facilities_from_folder(folder)
         else:
-            # If the simulation doesn't have a local extraction, try to pull facilities from the zip
-            # as we do below; the events cache itself doesn't include coordinates.
+            # No cached facilities and no local extraction; fall back to the zip (facilities only).
             facilities_map = {}
+            blob_name = sim.get("blob_name")
+            if blob_name:
+                bsc, _account, container, _key = get_storage_context()
+                blob: BlobClient = bsc.get_blob_client(container, blob_name)
+                with tempfile.TemporaryDirectory(dir=current_app.config["STORAGE_ROOT"]) as tmpd:
+                    tmp_zip = os.path.join(tmpd, "sim.zip")
+                    current_app.logger.info("[station] downloading blob %s to %s (facilities)", blob_name, tmp_zip)
+                    with open(tmp_zip, "wb") as handle:
+                        blob.download_blob().readinto(handle)
+                    with zipfile.ZipFile(tmp_zip, "r") as zf:
+                        facilities_map = _load_facilities_from_zip(zf, tmpd)
     elif folder and os.path.isdir(folder):
         events_path = _find_first_existing(folder, tuple(_EVENT_CANDIDATES))
         facilities_map = _load_facilities_from_folder(folder)
@@ -402,7 +415,11 @@ def compute_station_counts(sim_id: str, q: StationQuery) -> Dict[str, Any]:
             # fall through to parse using extracted events_path
 
     if not facilities_map:
-        raise FileNotFoundError("facilities file not found (required to locate event facilities)")
+        raise FileNotFoundError(
+            "facilities file not found (required to locate event facilities). "
+            "If your simulation doesn't include facilities, select Persons=1000 in the Station Counts UI "
+            "to compute from cached persons (selected plans) instead of events."
+        )
 
     if not events_path:
         raise FileNotFoundError("events path resolution failed")
