@@ -506,6 +506,7 @@ def public_station_counts(sim_id: str):
         bin_sec = int(payload.get("binSec") or 3600)
     except Exception:
         return jsonify({"error": "Invalid payload"}), 400
+    person_limit = _coerce_person_limit(payload.get("person_limit") or payload.get("personLimit") or payload.get("limit"))
 
     if radius_m <= 0:
         return jsonify({"error": "radiusM must be > 0"}), 400
@@ -513,7 +514,7 @@ def public_station_counts(sim_id: str):
         return jsonify({"error": "binSec out of range"}), 400
 
     try:
-        q = StationQuery(center_x=center_x, center_y=center_y, radius_m=radius_m, bin_sec=bin_sec)
+        q = StationQuery(center_x=center_x, center_y=center_y, radius_m=radius_m, bin_sec=bin_sec, person_limit=person_limit)
         out = enqueue_station_job(sim_id, q)
         status = str(out.get("status") or "")
         code = 200 if status == "succeeded" else (500 if status == "failed" else 202)
@@ -539,6 +540,7 @@ def public_station_counts_status(sim_id: str):
         bin_sec = int(payload.get("binSec") or 3600)
     except Exception:
         return jsonify({"error": "Invalid payload"}), 400
+    person_limit = _coerce_person_limit(payload.get("person_limit") or payload.get("personLimit") or payload.get("limit"))
 
     if radius_m <= 0:
         return jsonify({"error": "radiusM must be > 0"}), 400
@@ -546,7 +548,7 @@ def public_station_counts_status(sim_id: str):
         return jsonify({"error": "binSec out of range"}), 400
 
     try:
-        q = StationQuery(center_x=center_x, center_y=center_y, radius_m=radius_m, bin_sec=bin_sec)
+        q = StationQuery(center_x=center_x, center_y=center_y, radius_m=radius_m, bin_sec=bin_sec, person_limit=person_limit)
         out = get_station_status(sim_id, q)
         status = str(out.get("status") or "")
         code = 200 if status == "succeeded" else (500 if status == "failed" else 202)

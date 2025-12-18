@@ -1018,12 +1018,13 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
   const latInput = document.getElementById("stationLat");
   const lonInput = document.getElementById("stationLon");
   const radiusInput = document.getElementById("stationRadiusM");
+  const personLimitSel = document.getElementById("stationPersonLimit");
   const binSel = document.getElementById("stationBinSec");
   const computeBtn = document.getElementById("stationComputeBtn");
   const statusEl = document.getElementById("stationCountsStatus");
   const outEl = document.getElementById("stationCountsOut");
 
-  if (!pickBtn || !latInput || !lonInput || !radiusInput || !binSel || !computeBtn || !outEl) return;
+  if (!pickBtn || !latInput || !lonInput || !radiusInput || !personLimitSel || !binSel || !computeBtn || !outEl) return;
 
   let pickMode = false;
   let circleLayer = null;
@@ -1060,6 +1061,7 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
     UI.station.lat = latInput.value ? Number(latInput.value) : null;
     UI.station.lon = lonInput.value ? Number(lonInput.value) : null;
     UI.station.radiusM = Number(radiusInput.value || 500);
+    UI.station.personLimit = personLimitSel.value ? Number(personLimitSel.value) : null;
     UI.station.binSec = Number(binSel.value || 3600);
     UI.station.beforeSimId = beforeSel?.value || null;
     UI.station.afterSimId = afterSel?.value || null;
@@ -1071,6 +1073,7 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
     if (st.lat != null) latInput.value = String(st.lat);
     if (st.lon != null) lonInput.value = String(st.lon);
     if (st.radiusM != null) radiusInput.value = String(st.radiusM);
+    if (st.personLimit != null) personLimitSel.value = String(st.personLimit);
     if (st.binSec != null) binSel.value = String(st.binSec);
     updateCircle();
   }
@@ -1081,6 +1084,7 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
   latInput.addEventListener("input", () => { persistStation(); updateCircle(); });
   lonInput.addEventListener("input", () => { persistStation(); updateCircle(); });
   radiusInput.addEventListener("input", () => { persistStation(); updateCircle(); });
+  personLimitSel.addEventListener("change", persistStation);
   binSel.addEventListener("change", persistStation);
 
   pickBtn.addEventListener("click", () => {
@@ -1105,8 +1109,14 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
     });
   }
 
-  async function fetchStationCounts(simId, centerX, centerY, radiusM, binSec) {
-    const body = { centerX, centerY, radiusM, binSec };
+  async function fetchStationCounts(simId, centerX, centerY, radiusM, binSec, personLimit) {
+    const body = {
+      centerX,
+      centerY,
+      radiusM,
+      binSec,
+      ...(personLimit ? { person_limit: personLimit } : {}),
+    };
 
     async function postJson(url) {
       const r = await fetch(url, {
@@ -1187,6 +1197,7 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
     const lon = Number(lonInput.value);
     const radiusM = Number(radiusInput.value || 500);
     const binSec = Number(binSel.value || 3600);
+    const personLimit = personLimitSel.value ? Number(personLimitSel.value) : null;
     if (!isFinite(lat) || !isFinite(lon)) {
       alert("Set station Lat/Lon (or use Pick on map).");
       return;
@@ -1207,16 +1218,17 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
     UI.station.beforeSimId = beforeId;
     UI.station.afterSimId = afterId;
     UI.station.radiusM = radiusM;
+    UI.station.personLimit = personLimit;
     UI.station.binSec = binSec;
     Persist.saveUI(UI);
 
-    setStatus("Computing station counts from events…");
+    setStatus(personLimit ? `Computing station counts (first ${personLimit} persons)…` : "Computing station counts from events…");
     outEl.textContent = "";
 
     try {
       const [before, after] = await Promise.all([
-        fetchStationCounts(beforeId, x, y, radiusM, binSec),
-        fetchStationCounts(afterId, x, y, radiusM, binSec),
+        fetchStationCounts(beforeId, x, y, radiusM, binSec, personLimit),
+        fetchStationCounts(afterId, x, y, radiusM, binSec, personLimit),
       ]);
       renderCompare(before, after);
       setStatus("Done.");

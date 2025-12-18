@@ -9,6 +9,7 @@ import tempfile
 import zipfile
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
+from itertools import islice
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from flask import current_app
@@ -17,6 +18,7 @@ from azure.storage.blob import BlobClient
 from .azure_utils import get_storage_context
 from .models import get_simulation
 from .parsing import parse_facilities_file
+from .person_cache import iter_cached_persons
 
 
 _EVENT_CANDIDATES = ("output_events.xml.gz", "output_events.xml", "events.xml.gz", "events.xml")
@@ -62,10 +64,28 @@ def _open_maybe_gzip_path(path: str):
     return open(path, "r", encoding="utf-8")
 
 
-def _as_int_sec(t: Optional[str]) -> Optional[int]:
+def _as_int_sec(t: Any) -> Optional[int]:
     if t is None:
         return None
     try:
+        if isinstance(t, (int, float)):
+            return int(float(t))
+        if isinstance(t, str):
+            s = t.strip()
+            if not s:
+                return None
+            # Accept "HH:MM:SS" (or "H:MM:SS") common in plans.
+            if ":" in s:
+                parts = s.split(":")
+                if len(parts) == 3:
+                    h = int(parts[0])
+                    m = int(parts[1])
+                    sec = float(parts[2])
+                    return int(h * 3600 + m * 60 + sec)
+                if len(parts) == 2:
+                    h = int(parts[0])
+                    m = float(parts[1])
+                    return int(h * 3600 + m * 60)
         # MATSim times are typically float seconds.
         return int(float(t))
     except Exception:
@@ -102,6 +122,7 @@ class StationQuery:
     center_y: float
     radius_m: float
     bin_sec: int = 3600
+    person_limit: Optional[int] = None
 
     def cache_key(self, sim_id: str) -> str:
         # Round to avoid cache fragmentation from tiny float deltas.
@@ -109,7 +130,9 @@ class StationQuery:
         y = round(float(self.center_y), 3)
         r = round(float(self.radius_m), 3)
         b = int(self.bin_sec)
-        return f"{sim_id}.station.x{x}.y{y}.r{r}.b{b}.json"
+        pl = self.person_limit
+        pl_key = f"n{int(pl)}" if isinstance(pl, int) and pl > 0 else "all"
+        return f"{sim_id}.station.x{x}.y{y}.r{r}.b{b}.{pl_key}.json"
 
 
 def _read_cached(path: str) -> Optional[Dict[str, Any]]:
@@ -182,12 +205,151 @@ def _iter_events(path: str) -> Iterable[Dict[str, str]]:
                 yield attrs
 
 
+def _resolve_cache_path(path: str) -> str:
+    return path if os.path.isabs(path) else os.path.abspath(path)
+
+
+def _pick_selected_plan(person: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    plans = person.get("plans") or []
+    if not isinstance(plans, list) or not plans:
+        return None
+    idx = person.get("selectedPlanIndex")
+    if not isinstance(idx, int) or idx < 0 or idx >= len(plans):
+        idx = 0
+    plan = plans[idx] if 0 <= idx < len(plans) else plans[0]
+    return plan if isinstance(plan, dict) else None
+
+
+def _compute_station_counts_from_person_cache(sim_id: str, q: StationQuery) -> Dict[str, Any]:
+    sim = get_simulation(sim_id)
+    if not sim:
+        raise LookupError("simulation not found")
+
+    cache = sim.get("cached_json_path")
+    if not cache:
+        raise FileNotFoundError("No cached persons data (cached_json_path missing)")
+    cache_path = _resolve_cache_path(str(cache))
+    if not os.path.isfile(cache_path):
+        raise FileNotFoundError("Cached persons file missing")
+
+    r2 = float(q.radius_m) * float(q.radius_m)
+    cx = float(q.center_x)
+    cy = float(q.center_y)
+    bin_sec = max(1, int(q.bin_sec))
+    person_limit = q.person_limit
+    if person_limit is not None:
+        try:
+            person_limit = int(person_limit)
+        except Exception:
+            person_limit = None
+    if person_limit is not None and person_limit <= 0:
+        person_limit = None
+
+    present_by_bin: List[int] = []
+    unique_visitors: set[str] = set()
+    max_time = 0
+
+    persons_iter: Iterable[Dict[str, Any]] = iter_cached_persons(cache_path)
+    if person_limit is not None:
+        persons_iter = islice(persons_iter, person_limit)
+
+    for p in persons_iter:
+        if not isinstance(p, dict):
+            continue
+        pid = str(p.get("personId") or "")
+        if not pid:
+            continue
+        plan = _pick_selected_plan(p)
+        if not plan:
+            continue
+        steps = plan.get("steps") or []
+        if not isinstance(steps, list):
+            continue
+
+        mask = 0
+        saw_inside = False
+
+        for s in steps:
+            if not isinstance(s, dict):
+                continue
+            if s.get("kind") != "activity":
+                continue
+            x = s.get("x")
+            y = s.get("y")
+            if x is None or y is None:
+                continue
+            try:
+                dx = float(x) - cx
+                dy = float(y) - cy
+            except Exception:
+                continue
+            if (dx * dx + dy * dy) > r2:
+                continue
+
+            saw_inside = True
+
+            st = _as_int_sec(s.get("startTime"))
+            en = _as_int_sec(s.get("endTime"))
+            dur = _as_int_sec(s.get("durationSec"))
+            if st is None and en is None:
+                continue
+            if st is None and en is not None and dur is not None:
+                st = en - dur
+            if en is None and st is not None and dur is not None:
+                en = st + dur
+            if st is None or en is None:
+                continue
+
+            if en < st:
+                continue
+
+            if en > max_time:
+                max_time = en
+
+            if en == st:
+                start_bin = st // bin_sec
+                end_bin = start_bin
+            else:
+                start_bin = st // bin_sec
+                end_bin = (max(st, en - 1) // bin_sec)
+
+            for b in range(start_bin, end_bin + 1):
+                bit = 1 << b
+                if mask & bit:
+                    continue
+                mask |= bit
+                _ensure_len(present_by_bin, b + 1)
+                present_by_bin[b] += 1
+
+        if saw_inside:
+            unique_visitors.add(pid)
+
+    return {
+        "simulationId": sim_id,
+        "centerX": cx,
+        "centerY": cy,
+        "radiusM": float(q.radius_m),
+        "binSec": bin_sec,
+        "maxTimeSec": max_time,
+        "uniqueVisitors": len(unique_visitors),
+        "presentByBin": present_by_bin,
+        "personLimit": person_limit,
+        "method": "person_cache_selected_plan",
+    }
+
+
 def compute_station_counts(sim_id: str, q: StationQuery) -> Dict[str, Any]:
     """
     Compute station-area counts using output_events.xml(.gz):
       - uniqueVisitors: distinct persons with any activity start/end inside the station radius
       - presentByBin: for each bin, distinct persons with any activity interval overlapping that bin
     """
+    if q.person_limit is not None:
+        payload = _compute_station_counts_from_person_cache(sim_id, q)
+        cache_path = station_cache_path(sim_id, q)
+        _write_cached(cache_path, payload)
+        return payload
+
     sim = get_simulation(sim_id)
     if not sim:
         raise LookupError("simulation not found")
@@ -356,6 +518,8 @@ def compute_station_counts(sim_id: str, q: StationQuery) -> Dict[str, Any]:
         "maxTimeSec": max_time,
         "uniqueVisitors": len(unique_visitors),
         "presentByBin": present_by_bin,
+        "personLimit": None,
+        "method": "events",
     }
     _write_cached(cache_path, payload)
     return payload
