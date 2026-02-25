@@ -615,6 +615,11 @@ details.c-route>.c-route__setting {
     border-radius: 6px;
 }
 
+.c-input__range-wrap:not(.dual) input[type=range] {
+    /* Used by assets/js/simulation.js to center the value bubble over the thumb */
+    --range-thumb-width: 22px;
+}
+
 .c-input__range-wrap input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none;
     pointer-events: all;
@@ -869,6 +874,7 @@ details.c-route>.c-route__setting {
   box-shadow: none;
   filter: none;
 }
+
 
 /* Saved status pill */
 #dynSaveStatus.muted{

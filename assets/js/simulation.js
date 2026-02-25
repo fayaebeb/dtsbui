@@ -305,137 +305,102 @@ document.querySelectorAll('.js-range').forEach(function (rangeElement) {
         const rangeChange = rangeElement.querySelector('.js-range-change');
         const rangeChangeValue = rangeElement.querySelector('.js-range-value');
         const rangeChangeDiff = rangeElement.querySelector('.js-range-diff');
-        // デフォルト値の表示
-        rangeSavedValue.textContent = range.dataset.default;
-        // デフォルト値の位置に印を配置
-        const halfPosition = range.max / 2;
-        const defaultPosition = (range.dataset.default - range.min) / (range.max - range.min) * 100;
-        // デフォルト値の印の位置調整
-        const markWidth = rangeMark.offsetWidth;
-        let defaultAdjust = 0;
-        if (range.dataset.default == range.min) {
-                if (range.dataset.saved == range.min) {
-                        defaultAdjust = 7 - (markWidth / 2);
-                } else {
-                        defaultAdjust = 0;
-                }
-        } else if (range.dataset.default < halfPosition) {
-                defaultAdjust = halfPosition - range.dataset.default;
-        } else if (range.dataset.default == halfPosition) {
-                defaultAdjust = 0 - (markWidth / 2);
-        } else if (range.dataset.default == range.max) {
-                if (range.dataset.saved == range.max) {
-                        defaultAdjust = 0 - 7 - (markWidth / 2);
-                } else {
-                        defaultAdjust = 0 - (markWidth / 2);
-                }
-        } else {
-                defaultAdjust = 0 - range.dataset.default + halfPosition - markWidth;
+        const rangeWrap = rangeElement.querySelector('.c-input__range-wrap') || range?.parentElement;
+        if (!range) return;
+
+        function getThumbWidthPx() {
+                const raw = getComputedStyle(range).getPropertyValue('--range-thumb-width').trim();
+                const n = raw ? parseFloat(raw) : NaN;
+                // Fallback: indexcss.css overrides the thumb width to 22px (Chrome/Safari)
+                return Number.isFinite(n) && n > 0 ? n : 22;
         }
-        rangeMark.style.left = `calc(${defaultPosition}% + ${defaultAdjust}px)`;
-        rangeSavedValue.style.left = `calc(${defaultPosition}% + ${defaultAdjust}px)`;
-        function rangeSlider(rangeValue) {
-                // デフォルト値＝初期値の場合classにequal追加
-                if (range.dataset.default == rangeValue) {
+
+        function valueToThumbCenterPx(value) {
+                const min = Number(range.min || 0);
+                const max = Number(range.max || 0);
+                const v = Number(value);
+                const span = max - min;
+                if (!Number.isFinite(v) || !Number.isFinite(span) || span <= 0) return null;
+
+                const inputRect = range.getBoundingClientRect();
+                const w = inputRect.width;
+                if (!Number.isFinite(w) || w <= 0) return null;
+
+                const pct = (v - min) / span;
+                const thumb = getThumbWidthPx();
+                const xInInput = pct * (w - thumb) + thumb / 2;
+                return { inputRect, xInInput };
+        }
+
+        function setLeftPx(el, value, containerEl) {
+                if (!el || !containerEl) return;
+                const res = valueToThumbCenterPx(value);
+                if (!res) return;
+                const containerRect = containerEl.getBoundingClientRect();
+                const x = (res.inputRect.left - containerRect.left) + res.xInInput;
+                if (!Number.isFinite(x)) return;
+                el.style.left = `${x}px`;
+        }
+
+        function syncPositions(currentValue) {
+                const def = Number(range.dataset.default ?? range.value ?? 0);
+                if (rangeSavedValue) rangeSavedValue.textContent = String(def);
+                setLeftPx(rangeMark, def, rangeWrap || rangeElement);
+                setLeftPx(rangeSavedValue, def, rangeElement);
+                setLeftPx(rangeChange, currentValue, rangeElement);
+        }
+
+        function syncMinMaxLabels(currentValue) {
+                if (rangeMin) rangeMin.classList.toggle('hide', String(currentValue) === String(range.min));
+                if (rangeMax) rangeMax.classList.toggle('hide', String(currentValue) === String(range.max));
+        }
+
+        function syncBubbleText(currentValue) {
+                const def = Number(range.dataset.default ?? 0);
+                const v = Number(currentValue);
+                const diff = v - def;
+                if (rangeChangeValue) rangeChangeValue.textContent = String(v);
+                if (rangeChangeDiff) rangeChangeDiff.textContent = `(${diff >= 0 ? '+' : ''}${diff})`;
+        }
+
+        // デフォルト値の表示
+        if (rangeSavedValue) rangeSavedValue.textContent = range.dataset.default;
+        // デフォルト値＝初期値の場合classにequal追加
+        if (rangeMark) {
+                if (String(range.dataset.default) === String(range.dataset.saved)) {
                         rangeMark.classList.add('equal');
                 } else {
                         rangeMark.classList.remove('equal');
                 }
-        }
-        // デフォルト値＝初期値の場合classにequal追加
-        if (range.dataset.default == range.dataset.saved) {
-                rangeMark.classList.add('equal');
-        } else {
-                rangeMark.classList.remove('equal');
         }
         // 初期値
         range.value = range.dataset.saved;
-        // 初期値の吹き出し位置調整
-        const currentPosition = (range.dataset.saved - range.min) / (range.max - range.min) * 100;
-        let currentAdjust = 0;
-        if (range.dataset.saved == range.min) {
-                currentAdjust = 7 - (markWidth / 2);
-        } else if (range.dataset.saved < halfPosition) {
-                currentAdjust = halfPosition - range.dataset.saved;
-        } else if (range.dataset.saved == halfPosition) {
-                currentAdjust = 0 - (markWidth / 2);
-        } else if (range.dataset.saved == range.max) {
-                currentAdjust = 0 - 7 - (markWidth / 2);
+        syncPositions(range.value);
+        syncMinMaxLabels(range.value);
+        syncBubbleText(range.value);
+
+        // When the range becomes visible / resizes, keep the bubble centered over the thumb.
+        if (typeof ResizeObserver !== 'undefined') {
+                const ro = new ResizeObserver(() => {
+                        syncPositions(range.value);
+                });
+                ro.observe(range);
         } else {
-                currentAdjust = 0 - range.dataset.saved + halfPosition - markWidth;
+                window.addEventListener('resize', () => syncPositions(range.value));
         }
-        rangeChange.style.left = `calc(${currentPosition}% + ${currentAdjust}px)`;
-        // 初期値＝最小値のとき目盛りの値を隠す
-        if (range.dataset.saved == range.min) {
-                rangeMin.classList.add('hide');
-        } else {
-                rangeMin.classList.remove('hide');
-        }
-        // 初期値＝最大値のとき目盛りの値を隠す
-        if (range.dataset.saved == range.max) {
-                rangeMax.classList.add('hide');
-        } else {
-                rangeMax.classList.remove('hide');
-        }
+
         // 入力値の変化を監視
         range.addEventListener('input', function () {
-                // デフォルト値の印の位置調整
-                if (range.dataset.default == range.min) {
-                        if (this.value == range.min) {
-                                defaultAdjust = 7 - (markWidth / 2);
-                        } else {
-                                defaultAdjust = 0;
-                        }
-                } else if (range.dataset.default < halfPosition) {
-                        defaultAdjust = halfPosition - range.dataset.default;
-                } else if (range.dataset.default == halfPosition) {
-                        defaultAdjust = 0 - (markWidth / 2);
-                } else if (range.dataset.default == range.max) {
-                        if (this.value == range.max) {
-                                defaultAdjust = 0 - 7 - (markWidth / 2);
-                        } else {
-                                defaultAdjust = 0 - (markWidth / 2);
-                        }
-                } else {
-                        defaultAdjust = 0 - range.dataset.default + halfPosition - markWidth;
-                }
-                rangeMark.style.left = `calc(${defaultPosition}% + ${defaultAdjust}px)`;
                 // 入力値＝デフォルト値の場合classにequal追加
-                if (this.value == range.dataset.default) {
-                        rangeMark.classList.add('equal');
-                } else {
-                        rangeMark.classList.remove('equal');
+                if (rangeMark) {
+                        if (String(this.value) === String(range.dataset.default)) {
+                                rangeMark.classList.add('equal');
+                        } else {
+                                rangeMark.classList.remove('equal');
+                        }
                 }
-                // 入力値の吹き出し位置調整
-                const currentPosition = (this.value - range.min) / (range.max - range.min) * 100;
-                let currentAdjust = 0;
-                if (this.value == range.min) {
-                        currentAdjust = 7 - (markWidth / 2);
-                } else if (this.value < halfPosition) {
-                        currentAdjust = halfPosition - this.value;
-                } else if (this.value == halfPosition) {
-                        currentAdjust = 0 - (markWidth / 2);
-                } else if (this.value == range.max) {
-                        currentAdjust = 0 - 7 - (markWidth / 2);
-                } else {
-                        currentAdjust = 0 - this.value + halfPosition - markWidth;
-                }
-                rangeChange.style.left = `calc(${currentPosition}% + ${currentAdjust}px)`;
-                // 入力値＝最小値のとき目盛りの値を隠す
-                if (this.value == range.min) {
-                        rangeMin.classList.add('hide');
-                } else {
-                        rangeMin.classList.remove('hide');
-                }
-                // 入力値＝最大値のとき目盛りの値を隠す
-                if (this.value == range.max) {
-                        rangeMax.classList.add('hide');
-                } else {
-                        rangeMax.classList.remove('hide');
-                }
-                // 入力値の吹き出しの更新
-                let diff = this.value - range.dataset.default;
-                rangeChangeValue.textContent = this.value;
-                rangeChangeDiff.textContent = `(${diff >= 0 ? '+' : ''}${diff})`;
+                syncPositions(this.value);
+                syncMinMaxLabels(this.value);
+                syncBubbleText(this.value);
         });
 });

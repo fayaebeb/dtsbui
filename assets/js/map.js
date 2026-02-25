@@ -78,6 +78,24 @@ routeCheckbox?.addEventListener('change', routeCheckboxChange);
 // Dynamic panel
 // ================================
 let selectedRouteInfo = null;
+let dynControlsVisible = false;
+
+function setDynControlsVisibility(visible, opts = {}) {
+  const controls = document.getElementById('dynRouteControls');
+  const shouldScroll = !!opts.scroll;
+
+  dynControlsVisible = !!visible;
+  if (controls) {
+    controls.hidden = !dynControlsVisible;
+    // Be robust even if some CSS overrides the UA [hidden] rule.
+    controls.style.display = dynControlsVisible ? '' : 'none';
+  }
+
+  if (dynControlsVisible && shouldScroll) {
+    // Make the "something happened" obvious, especially inside scroll containers.
+    controls?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
 
 function ensureDynRoutePanel() {
   return document.getElementById('dynRouteContainer');
@@ -142,13 +160,6 @@ function bindDynRoutePanel() {
 
   document.getElementById('clearRouteBtn')?.addEventListener('click', () => clearSelection());
 
-  document.getElementById('dynToggleParamsBtn')?.addEventListener('click', () => {
-    const controls = document.getElementById('dynRouteControls');
-    if (!controls) return;
-    if (!selectedRouteInfo) return;
-    controls.hidden = !controls.hidden;
-  });
-
   const slider = document.querySelector('#dynFreqRange .js-range-slider');
   if (slider) slider.addEventListener('input', updateDynFreqUi);
 
@@ -179,7 +190,6 @@ renderRouteDetails(null);
 // Bus routes derived from transitSchedule
 // ================================
 let busRoutesLayer = null;
-let busOverlayAdded = false;
 let busFitDone = false;
 let selectedRouteLayer = null;
 let routeStatsMap = new Map();
@@ -393,12 +403,6 @@ async function buildBusRoutesLayer() {
     }
   });
 
-  if (!busOverlayAdded) {
-    overlayLayers["バス路線"] = busRoutesLayer;
-    layerControl.addOverlay(busRoutesLayer, "バス路線");
-    busOverlayAdded = true;
-  }
-
   return busRoutesLayer;
 }
 
@@ -426,8 +430,6 @@ function renderRouteDetails(info) {
   const badge = document.getElementById('dynRouteSummaryBadge');
   const empty = document.getElementById('dynRouteEmpty');
   const details = document.getElementById('dynRouteDetails');
-  const controls = document.getElementById('dynRouteControls');
-  const toggleBtn = document.getElementById('dynToggleParamsBtn');
   const applyBtn = document.getElementById('applyDynParamsBtn');
 
   if (!details) return;
@@ -441,9 +443,8 @@ function renderRouteDetails(info) {
     if (empty) empty.hidden = false;
     details.hidden = true;
     details.innerHTML = '';
-    if (controls) controls.hidden = true;
-    if (toggleBtn) toggleBtn.disabled = true;
     if (applyBtn) applyBtn.disabled = true;
+    setDynControlsVisibility(false);
     return;
   }
 
@@ -475,13 +476,16 @@ function renderRouteDetails(info) {
     slider.value = String(freqSelected);
     slider.dataset.default = String(freqSelected);
     slider.dataset.saved = String(freqSelected);
+    // Keep the value bubble centered and UI in sync (simulation.js binds on `input`).
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
   const saved = readDynSavedParams(info);
   const brtToggle = document.getElementById('dynBrtToggle');
   if (brtToggle) brtToggle.checked = !!saved?.brtExclusive;
-  if (toggleBtn) toggleBtn.disabled = false;
   if (applyBtn) applyBtn.disabled = false;
+  // Always show controls when a route is selected.
+  setDynControlsVisibility(true, { scroll: true });
   setDynSaveStatus(false);
   updateDynFreqUi();
 

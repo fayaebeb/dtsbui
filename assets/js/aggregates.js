@@ -104,32 +104,36 @@
         </div>
 
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0;">
-          <label class="muted">Pre</label>
-          <select id="aggPreSelect" class="c-input" style="min-width:260px;"></select>
-          <label class="muted">Post</label>
-          <select id="aggPostSelect" class="c-input" style="min-width:260px;"></select>
-          <label class="muted">Persons</label>
-          <select id="aggPersonLimit" class="c-input" style="min-width:120px;">
-            <option value="">All</option>
-            <option value="1000">1000</option>
-          </select>
+          <label style="display:flex; gap:6px; align-items:center; min-width:0; flex:1 1 260px;">
+            <span class="muted">Pre</span>
+            <select id="aggPreSelect" class="c-input" style="min-width:0; width:100%;"></select>
+          </label>
+          <label style="display:flex; gap:6px; align-items:center; min-width:0; flex:1 1 260px;">
+            <span class="muted">Post</span>
+            <select id="aggPostSelect" class="c-input" style="min-width:0; width:100%;"></select>
+          </label>
+          <label style="display:flex; gap:6px; align-items:center; min-width:0; flex:0 1 160px;">
+            <span class="muted">Persons</span>
+            <select id="aggPersonLimit" class="c-input" style="min-width:0; width:100%;">
+              <option value="">All</option>
+              <option value="1000">1000</option>
+            </select>
+          </label>
           <button id="aggCompareBtn" type="button" class="btn">Compare</button>
-          <span id="aggStatus" class="muted"></span>
+          <span id="aggStatus" class="muted" style="min-width:0; flex:1 1 180px;"></span>
         </div>
 
         <div id="aggCards"
              style="display:flex; gap:12px; flex-wrap:wrap; margin:8px 0;"></div>
 
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
-          <div class="c-chart"><canvas id="chartActPeople"></canvas></div>
-          <div class="c-chart"><canvas id="chartActTime"></canvas></div>
-          <div class="c-chart"><canvas id="chartActAvg"></canvas></div>
-          <div class="c-chart"><canvas id="chartModeTime"></canvas></div>
-          <div class="c-chart"><canvas id="chartModeAvg"></canvas></div>
-          <div class="c-chart"><canvas id="chartPt"></canvas></div>
-          <div class="c-chart">
-            <div id="ptRouteTable" style="max-height:240px; overflow:auto; border:1px solid #eee; border-radius:6px;"></div>
-          </div>
+        <div id="aggCharts" style="display:none; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+          <div class="c-chart" style="--chartAspect:auto; height:220px;"><canvas id="chartActPeople"></canvas></div>
+          <div class="c-chart" style="--chartAspect:auto; height:220px;"><canvas id="chartActTime"></canvas></div>
+          <div class="c-chart" style="--chartAspect:auto; height:220px;"><canvas id="chartActAvg"></canvas></div>
+          <div class="c-chart" style="--chartAspect:auto; height:220px;"><canvas id="chartModeTime"></canvas></div>
+          <div class="c-chart" style="--chartAspect:auto; height:220px;"><canvas id="chartModeAvg"></canvas></div>
+          <div class="c-chart" style="--chartAspect:auto; height:220px;"><canvas id="chartPt"></canvas></div>
+          <div id="ptRouteTable" style="max-height:240px; overflow:auto; border:1px solid #eee; border-radius:6px;"></div>
         </div>
       </details>
     </div>
@@ -190,7 +194,9 @@
 
   function renderCharts(pre, post, meta) {
     const cards = document.getElementById('aggCards');
+    const charts = document.getElementById('aggCharts');
     cards.innerHTML = '';
+    if (charts) charts.style.display = 'grid';
 
     const preName = meta?.preName || 'Pre';
     const postName = meta?.postName || 'Post';
@@ -233,7 +239,11 @@
 
     const commonBar = {
       type: 'bar',
-      options: { responsive: true, plugins: { legend: { display: true } } }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true } }
+      }
     };
 
     upsertChart('chartActPeople', {
@@ -280,7 +290,11 @@
           { label: postName, data: [fmt(post.ptUsers), Math.max(0, fmt(post.totalPeople) - fmt(post.ptUsers))], backgroundColor: '#F5813C' },
         ]
       },
-      options: { responsive: true, plugins: { legend: { display: true } } }
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true } }
+      }
     });
 
     // PT per-route top list (merge pre/post by route id)
@@ -329,6 +343,7 @@
   onReady(async () => {
     const host = ensurePanel();
     const status = document.getElementById('aggStatus');
+    const charts = document.getElementById('aggCharts');
     const preSel = document.getElementById('aggPreSelect');
     const postSel = document.getElementById('aggPostSelect');
     const limitSel = document.getElementById('aggPersonLimit');
@@ -340,12 +355,14 @@
       sims = await fetchSimulations();
     } catch (e) {
       console.error(e);
+      if (charts) charts.style.display = 'none';
       host.querySelector('#aggCards').innerHTML = '<div style="color:#666;">Failed to load simulations list.</div>';
       return;
     }
 
     const eligible = sims.filter(s => s.has_cache);
     if (!eligible.length) {
+      if (charts) charts.style.display = 'none';
       host.querySelector('#aggCards').innerHTML = '<div style="color:#666;">No parsed simulations available.</div>';
       return;
     }
@@ -363,7 +380,7 @@
     fillSelect(preSel, eligible);
     fillSelect(postSel, eligible);
     if (eligible.length >= 2) postSel.value = eligible[1].id;
-    if (status) status.textContent = 'Ready. Choose options and click Compare.';
+    if (status) status.textContent = 'Ready.';
 
     function getMode() {
       const picked = modeEls.find((r) => r.checked);
