@@ -2200,6 +2200,13 @@
     margin-top: clamp(5px, 1.3020833333vh, 10px)
   }
 
+  #genStoryBtn:disabled {
+    opacity: 0.45;
+    filter: grayscale(0.35);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
   .p-result__story-tit {
     padding-right: min(1.4641288433vw, 20px);
     align-content: center;
@@ -2727,4 +2734,92 @@
     border-radius: var(--commonRadius);
     box-shadow: var(--shadow-md);
     border: 1px solid var(--glass-border);
+  }
+
+  /* Aggregations: compact density for laptop viewports without changing panel width */
+  @media screen and (max-width: 1440px) and (min-width: 960px) {
+    .p-result__map {
+      --mainColumn: 2.35fr 1.25fr;
+    }
+
+    .p-result__map .l-contents__main>*,
+    .p-result__map .l-contents__map,
+    .p-result__map .l-contents__data,
+    #aggPanel {
+      min-width: 0;
+    }
+
+    #aggPanel,
+    #aggPanel .c-box,
+    #aggPanel #aggDetails,
+    #aggPanel #aggCharts,
+    #aggPanel #aggCards {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    #aggPanel #aggDetails>div {
+      margin-top: 6px !important;
+      margin-bottom: 6px !important;
+    }
+
+    #aggPanel #aggCards {
+      gap: 8px !important;
+      margin: 6px 0 !important;
+    }
+
+    #aggPanel #aggCards>div {
+      min-width: 150px !important;
+      padding: 8px 10px !important;
+    }
+
+    #aggPanel #aggCards>div>div:first-child {
+      font-size: 11px !important;
+    }
+
+    #aggPanel #aggCards>div>div.u-en {
+      font-size: 16px !important;
+    }
+
+    #aggPanel #aggCharts {
+      grid-template-columns: minmax(0, 1fr) !important;
+      gap: 10px !important;
+    }
+
+    #aggPanel #aggCharts>* {
+      min-width: 0 !important;
+      max-width: 100% !important;
+    }
+
+    #aggPanel #aggCharts .c-chart {
+      height: 190px !important;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    #aggPanel #aggCharts .c-chart canvas {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+
+    #aggPanel #ptRouteTable {
+      max-height: 200px !important;
+    }
+
+    #aggPanel .c-input,
+    #aggPanel #aggCompareBtn,
+    #aggPanel .muted,
+    #aggPanel label {
+      font-size: 1.3rem;
+    }
+
+    .p-result__map .l-contents__data .c-box.c-area__scroll {
+      overflow-x: hidden;
+    }
+
+    .p-result__map .l-contents__data .c-chart canvas {
+      display: block;
+      width: 100% !important;
+      max-width: 100% !important;
+    }
   }

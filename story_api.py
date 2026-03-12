@@ -11,9 +11,10 @@ from urllib.error import HTTPError, URLError
 from flask import Blueprint, request, jsonify
 
 try:
-    from openai import OpenAI  # type: ignore
+    from openai import OpenAI, AzureOpenAI  # type: ignore
 except Exception:  # pragma: no cover
     OpenAI = None  # type: ignore
+    AzureOpenAI = None  # type: ignore
 
 try:
     from azure.identity import DefaultAzureCredential, get_bearer_token_provider  # type: ignore
@@ -44,6 +45,8 @@ FOUNDRY_MODEL = os.getenv("FOUNDRY_MODEL", OPENAI_MODEL).strip() or OPENAI_MODEL
 _OPENAI_CLIENT_LOCK = Lock()
 _OPENAI_CLIENT: Optional[Any] = None
 _OPENAI_CLIENT_WARNED = False
+_AZURE_OPENAI_CLIENT: Optional[Any] = None
+_AZURE_OPENAI_CLIENT_WARNED = False
 
 _FOUNDRY_TOKEN_LOCK = Lock()
 _FOUNDRY_TOKEN: Optional[str] = None
@@ -73,6 +76,77 @@ def _get_openai_client() -> Optional[Any]:
                 _OPENAI_CLIENT_WARNED = True
             return None
         return _OPENAI_CLIENT
+
+
+def _get_azure_openai_client_and_model() -> Tuple[Optional[Any], str]:
+    """
+    Azure OpenAI path using AZURE_OPENAI_* env vars.
+    Returns (client, model_name). client is None when not configured.
+    """
+    global _AZURE_OPENAI_CLIENT, _AZURE_OPENAI_CLIENT_WARNED
+
+    endpoint = _read_env("AZURE_OPENAI_ENDPOINT")
+    key = _read_env("AZURE_OPENAI_KEY")
+    model = _read_env("AZURE_OPENAI_MODEL")
+    api_version = _read_env("AZURE_OPENAI_API_VERSION") or "2024-06-01"
+
+    if not endpoint and not key and not model:
+        return None, ""
+
+    if AzureOpenAI is None:
+        if not _AZURE_OPENAI_CLIENT_WARNED:
+            logger.warning("openai package missing AzureOpenAI; cannot use AZURE_OPENAI_* configuration")
+            _AZURE_OPENAI_CLIENT_WARNED = True
+        return None, ""
+
+    missing = []
+    if not endpoint:
+        missing.append("AZURE_OPENAI_ENDPOINT")
+    if not key:
+        missing.append("AZURE_OPENAI_KEY")
+    if not model:
+        missing.append("AZURE_OPENAI_MODEL")
+    if missing:
+        if not _AZURE_OPENAI_CLIENT_WARNED:
+            logger.warning("Azure OpenAI configuration incomplete (missing: %s)", ", ".join(missing))
+            _AZURE_OPENAI_CLIENT_WARNED = True
+        return None, ""
+
+    with _OPENAI_CLIENT_LOCK:
+        if _AZURE_OPENAI_CLIENT is not None:
+            return _AZURE_OPENAI_CLIENT, model
+        try:
+            _AZURE_OPENAI_CLIENT = AzureOpenAI(
+                api_key=key,
+                azure_endpoint=endpoint,
+                api_version=api_version,
+                timeout=20,
+                max_retries=2,
+            )
+        except Exception as exc:
+            if not _AZURE_OPENAI_CLIENT_WARNED:
+                logger.exception("Failed to initialize Azure OpenAI client: %s", exc)
+                _AZURE_OPENAI_CLIENT_WARNED = True
+            return None, ""
+        return _AZURE_OPENAI_CLIENT, model
+
+
+def _get_openai_like_client_and_model() -> Tuple[Optional[Any], str, str]:
+    """
+    Unified OpenAI-family client selection.
+    Priority:
+      1) Azure OpenAI via AZURE_OPENAI_*
+      2) OpenAI via OPENAI_API_KEY
+    Returns (client, model_name, provider_label)
+    """
+    az_client, az_model = _get_azure_openai_client_and_model()
+    if az_client is not None and az_model:
+        return az_client, az_model, "Azure OpenAI"
+
+    client = _get_openai_client()
+    if client is not None:
+        return client, OPENAI_MODEL, "OpenAI"
+    return None, "", ""
 
 
 story_bp = Blueprint("story_bp", __name__)
@@ -230,9 +304,17 @@ def _call_foundry_chat(*, messages: List[Dict[str, Any]], response_format: Optio
     if not endpoint or not key:
         raise RuntimeError("FOUNDRY_ENDPOINT/FOUNDRY_KEY not configured")
 
-    api_version = _read_env("FOUNDRY_API_VERSION")
-    if not api_version:
-        api_version = "2024-05-01-preview" if "services.ai.azure.com" in endpoint else "2024-02-15-preview"
+    env_api_version = _read_env("FOUNDRY_API_VERSION")
+    api_versions: List[str] = []
+    if env_api_version:
+        api_versions.append(env_api_version)
+    if "services.ai.azure.com" in endpoint:
+        api_versions.extend(["2024-05-01-preview", "2024-02-15-preview"])
+    else:
+        api_versions.extend(["2024-10-21", "2024-06-01", "2024-02-15-preview"])
+    # Deduplicate while preserving order
+    seen = set()
+    api_versions = [v for v in api_versions if v and not (v in seen or seen.add(v))]
 
     deployment_or_model = _read_env("FOUNDRY_DEPLOYMENT") or FOUNDRY_MODEL
 
@@ -249,7 +331,6 @@ def _call_foundry_chat(*, messages: List[Dict[str, Any]], response_format: Optio
         req["response_format"] = response_format
 
     foundry_chat_url = _read_env("FOUNDRY_CHAT_URL")
-    candidates = [foundry_chat_url] if foundry_chat_url else _foundry_candidates(endpoint, deployment_or_model, api_version)
 
     auth_mode = (_read_env("FOUNDRY_AUTH") or "").lower()  # "key" | "token"
     wants_token = auth_mode == "token" or "/api/projects/" in endpoint or "services.ai.azure.com/api/projects" in endpoint
@@ -263,16 +344,18 @@ def _call_foundry_chat(*, messages: List[Dict[str, Any]], response_format: Optio
         headers["api-key"] = key
 
     last_err: Optional[Exception] = None
-    for url in [u for u in candidates if u]:
-        try:
-            data = _json_post(url, headers=headers, payload=req, timeout_sec=30)
-            content = (((data.get("choices") or [{}])[0]).get("message") or {}).get("content")
-            if isinstance(content, str) and content.strip():
-                return content, str(data.get("model") or deployment_or_model or "foundry")
-            raise RuntimeError(f"Unexpected LLM response shape: {data}")
-        except Exception as e:
-            last_err = e
-            continue
+    for api_version in api_versions:
+        candidates = [foundry_chat_url] if foundry_chat_url else _foundry_candidates(endpoint, deployment_or_model, api_version)
+        for url in [u for u in candidates if u]:
+            try:
+                data = _json_post(url, headers=headers, payload=req, timeout_sec=30)
+                content = (((data.get("choices") or [{}])[0]).get("message") or {}).get("content")
+                if isinstance(content, str) and content.strip():
+                    return content, str(data.get("model") or deployment_or_model or "foundry")
+                raise RuntimeError(f"Unexpected LLM response shape: {data}")
+            except Exception as e:
+                last_err = e
+                continue
 
     raise RuntimeError(f"All Foundry endpoint candidates failed: {last_err}")
 
@@ -409,11 +492,114 @@ def _safe_facts(stats: Dict[str, Any]) -> List[str]:
 
     return (facts[:8] or ["今日の移動をひとことで"])
 
+def _as_int(v: Any) -> Optional[int]:
+    try:
+        n = float(v)
+        if n != n:  # NaN
+            return None
+        return int(round(n))
+    except Exception:
+        return None
+
+def _dedupe_keep_order(items: List[str]) -> List[str]:
+    out: List[str] = []
+    seen = set()
+    for x in items:
+        s = str(x or "").strip()
+        if not s or s in seen:
+            continue
+        out.append(s)
+        seen.add(s)
+    return out
+
+def _compare_story_facts(
+    before_stats: Optional[Dict[str, Any]],
+    after_stats: Dict[str, Any],
+    compare_ctx: Optional[Dict[str, Any]],
+    person_ctx: Optional[Dict[str, Any]],
+    *,
+    lang: str,
+) -> Tuple[List[str], List[str]]:
+    """
+    Build additional approved/must-use facts from before/after and aggregate compare context.
+    Returns (approved_extra, must_use_extra).
+    """
+    approved: List[str] = []
+    must_use: List[str] = []
+
+    mode_label = {"walk": "徒歩", "pt": "公共交通", "car": "自動車"}
+
+    if before_stats:
+        b_total = _as_int(before_stats.get("total_travel_minutes"))
+        a_total = _as_int(after_stats.get("total_travel_minutes"))
+        if b_total is not None and a_total is not None and b_total != a_total:
+            approved.append(f"移動合計{b_total}分→{a_total}分")
+            must_use.append(f"移動合計{b_total}分→{a_total}分")
+
+        b_modes = before_stats.get("travel_minutes_by_mode") or {}
+        a_modes = after_stats.get("travel_minutes_by_mode") or {}
+        for m in ("pt", "walk", "car"):
+            b = _as_int(b_modes.get(m))
+            a = _as_int(a_modes.get(m))
+            if b is None or a is None or b == a:
+                continue
+            label = mode_label.get(m, m)
+            fact = f"{label}合計{b}分→{a}分"
+            approved.append(fact)
+            if m == "pt":
+                must_use.append(fact)
+
+    if isinstance(person_ctx, dict):
+        changed_plan = person_ctx.get("changedPlan")
+        if isinstance(changed_plan, bool):
+            approved.append("対象者の選択経路が変更" if changed_plan else "対象者の選択経路は維持")
+
+    if isinstance(compare_ctx, dict):
+        mode = str(compare_ctx.get("mode") or "")
+        pre = compare_ctx.get("pre") or {}
+        post = compare_ctx.get("post") or {}
+
+        pre_pt_users = _as_int(pre.get("ptUsers"))
+        post_pt_users = _as_int(post.get("ptUsers"))
+        if pre_pt_users is not None and post_pt_users is not None:
+            fact = f"全体PT利用者{pre_pt_users}人→{post_pt_users}人"
+            approved.append(fact)
+            must_use.append(fact)
+
+        pre_avg_sec = _as_int(pre.get("avgTravelSec"))
+        post_avg_sec = _as_int(post.get("avgTravelSec"))
+        if pre_avg_sec is not None and post_avg_sec is not None:
+            pre_min = int(round(pre_avg_sec / 60.0))
+            post_min = int(round(post_avg_sec / 60.0))
+            approved.append(f"全体平均移動時間{pre_min}分→{post_min}分")
+
+        changed_people = _as_int(compare_ctx.get("changedPeople"))
+        if changed_people is not None:
+            approved.append(f"経路変更人数{changed_people}人")
+            if changed_people > 0:
+                must_use.append(f"経路変更人数{changed_people}人")
+
+        if mode == "frequency":
+            params = compare_ctx.get("params") or {}
+            old_f = _as_int(params.get("oldFrequency"))
+            new_f = _as_int(params.get("newFrequency"))
+            if old_f is not None and new_f is not None:
+                fact = f"対象路線の運行頻度{old_f}本→{new_f}本"
+                approved.append(fact)
+                must_use.insert(0, fact)
+
+    approved = _dedupe_keep_order(approved)
+    must_use = _dedupe_keep_order(must_use)
+    if lang == "en":
+        # English path currently keeps same numeric facts for strict token safety.
+        return approved, must_use
+    return approved, must_use
+
 def _core_facts(stats: Dict[str, Any], approved: List[str]) -> List[str]:
     """Pick 2–4 high-priority facts used to guide one_liner."""
     chosen: List[str] = []
     fs = stats.get("first_start_display"); le = stats.get("last_end_display")
-    if isinstance(fs, str) and isinstance(le, str) and fs != "-" and le != "-":
+    if isinstance(fs, str) and isinstance(le, str) and fs != "-" and le != "-" and fs != "00:00":
         pair = f"{fs}出発→{le}帰宅"
         if pair in approved:
             chosen.append(pair)
@@ -437,7 +623,7 @@ def _core_facts(stats: Dict[str, Any], approved: List[str]) -> List[str]:
 
 # ---------- numeric/time sanitization only ----------
 
-_NUM_RE = re.compile(r"(翌?\d{2}:\d{2})|(\d{1,3})(?=分|時|回|本|km|m|%)")
+_NUM_RE = re.compile(r"(翌?\d{2}:\d{2})|(\d{1,7})(?=分|時|回|本|km|m|%|人|秒)")
 
 def _extract_allowed_tokens(approved_facts: List[str]) -> Dict[str, set]:
     """Build a set of allowed times and numbers from approved facts."""
@@ -446,7 +632,7 @@ def _extract_allowed_tokens(approved_facts: List[str]) -> Dict[str, set]:
     for f in approved_facts:
         for m in re.finditer(r"(翌?\d{2}:\d{2})", f):
             allowed_times.add(m.group(1))
-        for m in re.finditer(r"(\d{1,3})(?=分|時|回|本|km|m|%)", f):
+        for m in re.finditer(r"(\d{1,7})(?=分|時|回|本|km|m|%|人|秒)", f):
             allowed_nums.add(m.group(1))
     return {"times": allowed_times, "nums": allowed_nums}
 
@@ -483,6 +669,49 @@ def _validate_payload(obj: Dict[str, Any]) -> Dict[str, str]:
     bubble = _sanitize_inline(bubble)
     return {"title": title, "one_liner": one_liner, "bubble": bubble}
 
+def _ensure_must_use_facts(text: str, must_use: List[str], *, min_count: int = 2, max_len: int = 200) -> str:
+    base = _sanitize_inline(text)
+    facts = [str(f or "").strip() for f in (must_use or []) if str(f or "").strip()]
+    if not base or not facts or min_count <= 0:
+        return base
+
+    present = [f for f in facts if f in base]
+    if len(present) >= min_count:
+        return base
+
+    missing = [f for f in facts if f not in base]
+    need = max(0, min_count - len(present))
+    inject = missing[:need]
+    if not inject:
+        return base
+
+    joined = "、".join(inject)
+    suffix = f" 主な変化: {joined}。"
+    candidate = (base + suffix).strip()
+    if len(candidate) <= max_len:
+        return candidate
+
+    while inject:
+        inject.pop()
+        if not inject:
+            break
+        joined = "、".join(inject)
+        suffix = f" 主な変化: {joined}。"
+        candidate = (base + suffix).strip()
+        if len(candidate) <= max_len:
+            return candidate
+    return base[:max_len]
+
+
+def _is_llm_provider_configured() -> bool:
+    """Return True when at least one callable LLM provider is configured."""
+    has_azure_openai = bool(_read_env("AZURE_OPENAI_ENDPOINT")) and bool(_read_env("AZURE_OPENAI_KEY")) and bool(_read_env("AZURE_OPENAI_MODEL")) and (AzureOpenAI is not None)
+    has_openai = bool(os.getenv("OPENAI_API_KEY", "").strip()) and (OpenAI is not None)
+    has_foundry = bool(_read_env("FOUNDRY_ENDPOINT")) and bool(
+        _read_env("FOUNDRY_KEY") or _read_env("FOUNDRY_BEARER_TOKEN")
+    )
+    return has_azure_openai or has_openai or has_foundry
+
 def _fallback_story(person_id: str, must_use: list[str], approved_facts: list[str], *, lang: str) -> Dict[str, str]:
     # Deterministic, dependency-free fallback for environments where the LLM cannot be called.
     fact1 = (must_use[0] if len(must_use) > 0 else "").strip()
@@ -518,7 +747,10 @@ def generate_story():
     Body: {
       "personId": str,
       "plan": { "steps": [...] },   # ONE plan (already chosen)
+      "beforePlan": { "steps": [...] },              # optional, for before→after narrative
       "weights": { "act": {...}, "leg": {...} },  # optional
+      "compareContext": { ... },                     # optional aggregates before/after context
+      "personContext": { ... },                      # optional metadata (changedPlan, scores, etc.)
       "lang": "ja" | "en"                         # optional
     }
     Returns: { "title": str, "one_liner": str, "bubble": str }
@@ -527,25 +759,52 @@ def generate_story():
     person_id = data.get("personId")
     plan = data.get("plan") or {}
     steps = plan.get("steps") or []
+    before_plan = data.get("beforePlan") or {}
+    before_steps = before_plan.get("steps") or []
     weights = data.get("weights") or DEFAULT_WEIGHTS
+    compare_ctx = data.get("compareContext") if isinstance(data.get("compareContext"), dict) else {}
+    person_ctx = data.get("personContext") if isinstance(data.get("personContext"), dict) else {}
     lang = (data.get("lang") or "ja").lower()
     sys_lang = "Japanese" if lang == "ja" else "English"
 
     if not person_id or not isinstance(steps, list) or not steps:
         return jsonify({"error": "invalid payload"}), 400
 
+    if not _is_llm_provider_configured():
+        return jsonify({
+            "error": (
+                "AI provider is not configured. "
+                "Set AZURE_OPENAI_ENDPOINT + AZURE_OPENAI_KEY + AZURE_OPENAI_MODEL "
+                "(optional: AZURE_OPENAI_API_VERSION), or OPENAI_API_KEY, "
+                "or FOUNDRY_ENDPOINT + FOUNDRY_KEY (or FOUNDRY_BEARER_TOKEN), "
+                "then restart the server."
+            )
+        }), 503
+
     lines, stats = _summarize_plan(steps, cap=60)
+    before_stats: Optional[Dict[str, Any]] = None
+    before_lines: List[str] = []
+    if isinstance(before_steps, list) and before_steps:
+        before_lines, before_stats = _summarize_plan(before_steps, cap=40)
+
     approved_facts = _safe_facts(stats)
+    approved_extra, must_extra = _compare_story_facts(before_stats, stats, compare_ctx, person_ctx, lang=lang)
+    approved_facts = _dedupe_keep_order(approved_facts + approved_extra)[:14]
+
     must_use = _core_facts(stats, approved_facts)  # 2–4 prioritized facts
+    if must_extra:
+        must_use = _dedupe_keep_order(must_extra + must_use)[:6]
 
     def _llm_call() -> Dict[str, Any]:
+        last_error: Optional[Exception] = None
         sys_msg = {
             "role": "system",
             "content": (
-                "You write short, concrete, optimistic day-in-the-life blurbs "
+                "You write short, concrete, data-grounded day-in-the-life blurbs "
                 "grounded ONLY in the given simulation data. "
                 f"Language: {sys_lang}. Audience: general public. "
-                "Style: concise but vivid, time-anchored. Do not use line breaks. "
+                "Style: concise and specific. Do not use line breaks. "
+                "Avoid generic phrasing and avoid repeating the same fact twice. "
                 "Do not introduce numeric values (times, counts, minutes) that are not listed as MUST-USE facts."
             ),
         }
@@ -556,11 +815,16 @@ def generate_story():
                 f"Weights(act/leg): {json.dumps(weights, ensure_ascii=False)}\n\n"
                 "Chronology sample:\n" + "\n".join(lines) + "\n\n"
                 "Aggregated stats (JSON):\n" + json.dumps(stats, ensure_ascii=False) + "\n\n"
+                "Before-change chronology sample (optional):\n" + ("\n".join(before_lines) if before_lines else "(none)") + "\n\n"
+                "Before-change stats (optional JSON):\n" + (json.dumps(before_stats, ensure_ascii=False) if before_stats else "{}") + "\n\n"
+                "Compare context (optional JSON):\n" + json.dumps(compare_ctx or {}, ensure_ascii=False) + "\n\n"
+                "Person context (optional JSON):\n" + json.dumps(person_ctx or {}, ensure_ascii=False) + "\n\n"
                 "APPROVED facts (for 'bubble' enum):\n- " + "\n- ".join(approved_facts) + "\n\n"
                 "MUST-USE facts for 'one_liner' (include AT LEAST TWO; use numbers/times VERBATIM):\n- " + "\n- ".join(must_use) + "\n\n"
                 "Task: Return JSON {title, one_liner, bubble} only.\n"
                 "- title ≤20 chars, punchy and neutral.\n"
-                "- one_liner: 2–3 sentences, 80–200 chars, NO line breaks. "
+                "- one_liner: exactly 2 sentences, 60–200 chars, NO line breaks. "
+                "Sentence 1 should describe the person's day and change. Sentence 2 should describe the simulation implication.\n"
                 "Weave at least TWO of the MUST-USE facts naturally (use numbers/times exactly as written).\n"
                 "- bubble: pick EXACTLY one from APPROVED facts.\n"
             ),
@@ -576,7 +840,7 @@ def generate_story():
                     "additionalProperties": False,
                     "properties": {
                         "title": {"type": "string", "maxLength": 20, "pattern": r"^[^\n\r\t]{1,20}$"},
-                        "one_liner": {"type": "string", "maxLength": 200, "pattern": r"^[^\n\r\t]{80,200}$"},
+                        "one_liner": {"type": "string", "maxLength": 200, "pattern": r"^[^\n\r\t]{60,200}$"},
                         "bubble": {"type": "string", "maxLength": 28, "enum": approved_facts},
                     },
                     "required": ["title", "one_liner", "bubble"],
@@ -585,6 +849,24 @@ def generate_story():
         }
 
         messages = [sys_msg, user_msg]
+
+        # Prefer Azure OpenAI / OpenAI explicit configuration first.
+        client, model_name, provider = _get_openai_like_client_and_model()
+        if client is not None and model_name:
+            try:
+                resp = client.chat.completions.create(
+                    model=model_name,
+                    response_format=response_format,  # type: ignore[arg-type]
+                    messages=messages,  # type: ignore[arg-type]
+                    temperature=0.5,
+                    max_tokens=260,
+                )
+                raw = resp.choices[0].message.content or "{}"
+                logger.info("%s response (id=%s, model=%s): %s", provider or "OpenAI", getattr(resp, "id", None), getattr(resp, "model", model_name), raw)
+                return json.loads(raw)
+            except Exception as exc:
+                last_error = exc
+                logger.warning("%s call failed; trying Foundry fallback: %s", provider or "OpenAI", exc)
 
         foundry_client = _get_foundry_openai_client()
         if foundry_client is not None:
@@ -606,6 +888,7 @@ def generate_story():
                 )
                 return json.loads(raw)
             except Exception as exc:
+                last_error = exc
                 logger.warning("Foundry OpenAI SDK call failed; falling back: %s", exc)
 
         # If Foundry is configured but the SDK path failed (common on App Service when
@@ -617,40 +900,38 @@ def generate_story():
                 logger.info("Foundry REST response (model=%s): %s", model_used, content)
                 return json.loads(content or "{}")
             except Exception as exc:
+                last_error = exc
                 logger.warning("Foundry REST call failed; falling back: %s", exc)
 
-        client = _get_openai_client()
-        if client is None:
-            raise RuntimeError("No LLM provider configured")
+        if last_error is not None:
+            raise RuntimeError(f"No callable LLM provider succeeded: {last_error}")
+        raise RuntimeError("No callable LLM provider succeeded")
 
-        resp = client.chat.completions.create(
-            model=OPENAI_MODEL,
-            response_format=response_format,  # type: ignore[arg-type]
-            messages=messages,  # type: ignore[arg-type]
-            temperature=0.5,
-            max_tokens=260,
-        )
-        raw = resp.choices[0].message.content or "{}"
-        logger.info("OpenAI response (id=%s, model=%s): %s", getattr(resp, "id", None), getattr(resp, "model", OPENAI_MODEL), raw)
-        return json.loads(raw)
-
+    allow_local_fallback = str(os.getenv("STORY_ALLOW_LOCAL_FALLBACK", "0")).lower() in {"1", "true", "yes"}
     try:
         obj = _llm_call()
     except Exception as e:
         logger.exception("LLM call failed: %s", e)
+        if not allow_local_fallback:
+            return jsonify({"error": f"AI story generation failed: {e}"}), 502
         obj = _fallback_story(str(person_id), must_use, approved_facts, lang=lang)
 
     # numeric/time cleanup (no tone/phrase filtering)
     payload = _validate_payload(obj)
     try:
         clean_one = _sanitize_one_liner(payload["one_liner"], approved_facts)
+        clean_one = _ensure_must_use_facts(clean_one, must_use, min_count=2, max_len=200)
         # keep length floor if cleanup shortened it too much: lightly pad with safe facts
-        if len(clean_one) < 80:
+        if len(clean_one) < 60:
             # simple pad from must_use, without adding new numbers
             pad = " " + " ".join([f for f in must_use[:2] if f])
             clean_one = (clean_one + pad).strip()
         payload["one_liner"] = clean_one[:200]
     except Exception as _e:
         logger.warning("sanitize failed: %s", _e)
+
+    # Never return the local fallback marker as a successful AI response.
+    if "AIサービスが利用できないため、ローカル要約で表示しています。" in str(payload.get("one_liner") or ""):
+        return jsonify({"error": "AI backend returned local fallback text. Check provider configuration."}), 502
 
     return jsonify(payload)

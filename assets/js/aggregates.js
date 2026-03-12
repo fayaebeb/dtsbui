@@ -139,7 +139,7 @@
         <div id="aggCards"
              style="display:flex; gap:12px; flex-wrap:wrap; margin:8px 0;"></div>
 
-        <div id="aggCharts" style="display:none; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+        <div id="aggCharts" style="display:none; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px; min-width:0;">
           <div class="c-chart" style="--chartAspect:auto; height:220px;"><canvas id="chartActPeople"></canvas></div>
           <div class="c-chart" style="--chartAspect:auto; height:220px;"><canvas id="chartActTime"></canvas></div>
           <div class="c-chart" style="--chartAspect:auto; height:220px;"><canvas id="chartActAvg"></canvas></div>
@@ -152,23 +152,44 @@
     </div>
   `;
 
-    const container =
+    const gridContainer =
       // Prefer inserting into the scrollable chart grid on results_graph.html
       document.querySelector('.l-contents__data .c-area__grid.c-area__scroll') ||
+      null;
+    const mount = document.getElementById('aggPanelMount');
+    const titleBar = document.querySelector('.l-contents__data .l-contents__main-tit');
+    const fallbackContainer =
       // Fallbacks for other pages/layouts
       document.querySelector('.l-contents__data .c-box.c-area__scroll') ||
       document.querySelector('.l-contents__data') ||
       document.querySelector('.l-contents__map') ||
       document.body;
 
-    if (container && container.classList?.contains('c-area__grid')) {
+    if (gridContainer && gridContainer.classList?.contains('c-area__grid')) {
       host.style.marginTop = '0';
       host.style.marginBottom = '12px';
       host.style.gridColumn = '1 / -1';
-      if (typeof container.prepend === 'function') container.prepend(host);
-      else container.insertBefore(host, container.firstChild);
+      if (typeof gridContainer.prepend === 'function') gridContainer.prepend(host);
+      else gridContainer.insertBefore(host, gridContainer.firstChild);
+    } else if (mount) {
+      host.style.marginTop = '8px';
+      mount.appendChild(host);
+      const scrollBox = mount.closest('.c-area__scroll');
+      if (scrollBox) {
+        // On touch devices :hover doesn't reliably switch overflow to auto.
+        // Keep this container scrollable so expanded Aggregations won't overflow vertically.
+        scrollBox.style.overflowY = 'auto';
+        scrollBox.style.overflowX = 'hidden';
+        scrollBox.style.scrollbarGutter = 'stable both-edges';
+        scrollBox.style.webkitOverflowScrolling = 'touch';
+        scrollBox.style.paddingBottom = '120px';
+      }
+    } else if (titleBar && titleBar.parentElement) {
+      host.style.marginTop = '8px';
+      titleBar.insertAdjacentElement('afterend', host);
     } else {
-      container.appendChild(host);
+      if (typeof fallbackContainer.prepend === 'function') fallbackContainer.prepend(host);
+      else fallbackContainer.insertBefore(host, fallbackContainer.firstChild);
     }
 
     const details = host.querySelector('#aggDetails');
@@ -214,8 +235,12 @@
     const preName = meta?.preName || 'Pre';
     const postName = meta?.postName || 'Post';
     const fmt = (n) => (typeof n === 'number' ? n : 0);
-
-    cards.appendChild(card('People', `${fmt(pre.totalPeople)} → ${fmt(post.totalPeople)}`));
+    const hasChangedPeople = Number.isFinite(Number(meta?.changedPeople));
+    if (hasChangedPeople) {
+      cards.appendChild(card('Changed people', `${fmt(Number(meta.changedPeople))}`));
+    } else {
+      cards.appendChild(card('People', `${fmt(pre.totalPeople)} → ${fmt(post.totalPeople)}`));
+    }
     cards.appendChild(card('Avg travel / person', `${hhmmss(fmt(pre.avgTravelSec))} → ${hhmmss(fmt(post.avgTravelSec))}`));
     cards.appendChild(card('Avg utility / person', `${fmt(pre.avgUtility).toFixed(2)} → ${fmt(post.avgUtility).toFixed(2)}`));
     cards.appendChild(card('PT users', `${fmt(pre.ptUsers)} → ${fmt(post.ptUsers)}`));
@@ -365,6 +390,17 @@
     const btn = document.getElementById('aggCompareBtn');
     const modeEls = Array.from(document.querySelectorAll('input[name="aggMode"]'));
 
+    function emitCompareReady(detail) {
+      try {
+        window.__dtsbCompareReady = detail;
+        window.dispatchEvent(new CustomEvent('dtsb:compare-ready', { detail }));
+      } catch (e) {
+        console.warn('Failed to emit compare-ready event', e);
+      }
+    }
+
+    emitCompareReady({ ready: false, reason: 'await_compare' });
+
     let sims = [];
     try {
       sims = await fetchSimulations();
@@ -448,6 +484,7 @@
         renderCharts(cached.data.pre, cached.data.post, {
           preName: `${name} (before)`,
           postName: `${name} (after)`,
+          changedPeople: Number(cached.data.changedPeople || 0),
         });
         if (status) status.textContent = `Cached (people used: ${cached.data.pre?.totalPeople ?? 0}, changed: ${cached.data.changedPeople ?? 0})`;
         return;
@@ -479,6 +516,7 @@
         return Number.isFinite(n) && n > 0 ? n : null;
       })();
       if (status) status.textContent = 'Computing…';
+      emitCompareReady({ ready: false, reason: 'computing' });
       try {
         const mode = getMode();
         setControlsForMode(mode);
@@ -505,8 +543,21 @@
             renderCharts(cached.data.pre, cached.data.post, {
               preName: `${name} (before)`,
               postName: `${name} (after)`,
+              changedPeople: Number(cached.data.changedPeople || 0),
             });
             if (status) status.textContent = `Cached (people used: ${cached.data.pre?.totalPeople ?? 0}, changed: ${cached.data.changedPeople ?? 0})`;
+            emitCompareReady({
+              ready: true,
+              source: 'cache',
+              mode: 'frequency',
+              simId: freqSimId,
+              params: {
+                routeId: params.routeId,
+                oldFrequency: Number(params.oldFrequency),
+                newFrequency: Number(params.newFrequency),
+                personLimit,
+              },
+            });
             return;
           }
           const resp = await fetchFrequencyCompare(freqSimId, {
@@ -518,9 +569,22 @@
           renderCharts(resp.pre, resp.post, {
             preName: `${name} (before)`,
             postName: `${name} (after)`,
+            changedPeople: Number(resp.changedPeople || 0),
           });
           if (status) status.textContent = `OK (people used: ${resp.pre?.totalPeople ?? 0}, changed: ${resp.changedPeople ?? 0})`;
           setCachedCompare({ mode: 'frequency', simId: freqSimId, sig, personLimit, data: resp, savedAt: Date.now() });
+          emitCompareReady({
+            ready: true,
+            source: 'fresh',
+            mode: 'frequency',
+            simId: freqSimId,
+            params: {
+              routeId: params.routeId,
+              oldFrequency: Number(params.oldFrequency),
+              newFrequency: Number(params.newFrequency),
+              personLimit,
+            },
+          });
           return;
         }
 
@@ -529,15 +593,32 @@
         if (cached && cached.mode === 'sim' && cached.preId === preId && cached.postId === postId && cached.personLimit === personLimit && cached.data?.pre && cached.data?.post) {
           renderCharts(cached.data.pre, cached.data.post, { preName, postName });
           if (status) status.textContent = `Cached (people used: ${cached.data.pre?.totalPeople ?? 0})`;
+          emitCompareReady({
+            ready: true,
+            source: 'cache',
+            mode: 'sim',
+            preId,
+            postId,
+            personLimit,
+          });
           return;
         }
         const cmp = await fetchCompare(preId, postId, personLimit);
         renderCharts(cmp.pre, cmp.post, { preName, postName });
         if (status) status.textContent = `OK (people used: ${cmp.pre?.totalPeople ?? 0})`;
         setCachedCompare({ mode: 'sim', preId, postId, personLimit, data: cmp, savedAt: Date.now() });
+        emitCompareReady({
+          ready: true,
+          source: 'fresh',
+          mode: 'sim',
+          preId,
+          postId,
+          personLimit,
+        });
       } catch (e) {
         console.error(e);
         if (status) status.textContent = e?.message || 'Failed';
+        emitCompareReady({ ready: false, reason: 'failed', error: e?.message || 'Failed' });
       }
     }
 

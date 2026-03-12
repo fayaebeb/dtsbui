@@ -4,11 +4,19 @@ import logging
 from flask import Flask, jsonify
 from flask_wtf import CSRFProtect
 from flask_login import LoginManager
+try:
+    from dotenv import load_dotenv  # type: ignore
+except Exception:  # pragma: no cover
+    def load_dotenv(*args, **kwargs) -> bool:  # type: ignore
+        return False
 
 csrf = CSRFProtect()
 login_manager = LoginManager()
 
 def create_app():
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    load_dotenv(dotenv_path=os.path.join(project_root, ".env"), override=False)
+
     # Avoid extremely verbose Azure SDK request logging (per-range GETs) which
     # can slow down parsing and flood App Service logs.
     logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)

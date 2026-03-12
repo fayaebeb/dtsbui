@@ -210,7 +210,9 @@ def compute_frequency_compare_aggregates(
                 "changedPlan": bool(after_idx != before_idx),
             }
             if include_most_impacted_steps:
+                pre_plan = plans[before_idx] if 0 <= before_idx < len(plans) else plans[0]
                 post_plan = plans[after_idx] if 0 <= after_idx < len(plans) else plans[0]
+                most_impacted["beforePlanSteps"] = pre_plan.get("steps") or []
                 most_impacted["afterPlanSteps"] = post_plan.get("steps") or []
 
         if after_idx != before_idx:

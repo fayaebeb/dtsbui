@@ -911,6 +911,7 @@ showCachedSimulationBtn?.addEventListener("click", () => {
 
 // button to call the Flask /story endpoint and persist the result for results.html
 document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
+  const STORY_FALLBACK_MARKER = "AIサービスが利用できないため、ローカル要約で表示しています。";
   const sel = document.getElementById("simulationSelect");
   const simId = sel && sel.value;
   if (!simId) {
@@ -990,7 +991,11 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
         lang: "ja", // set to "en" if you add a language toggle later
       }),
     });
-    const story = await res.json();
+    const story = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(story?.error || "AI story failed");
+    if (String(story?.one_liner || "").includes(STORY_FALLBACK_MARKER)) {
+      throw new Error("AI backend returned local fallback text. Story not saved.");
+    }
 
     const payload = {
       personId: picked.personId,
@@ -1003,7 +1008,9 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
     alert("AIストーリーを保存しました。results.html を開いてください。");
   } catch (e) {
     console.error(e);
-    alert("AIストーリー生成に失敗しました。");
+    localStorage.removeItem("matsim-ai-story");
+    const msg = e && e.message ? String(e.message) : "";
+    alert(msg ? `AIストーリー生成に失敗しました。\n${msg}` : "AIストーリー生成に失敗しました。");
   }
 });
 

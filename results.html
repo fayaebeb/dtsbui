@@ -178,6 +178,7 @@
 						</button>
 					</div>
 					<div class="c-box c-area__scroll">
+						<div id="aggPanelMount"></div>
 						<details class="c-details" open>
 							<summary class="c-details__summary">結果</summary>
 							<small>※メッシュをクリックすると、メッシュごとの結果が表示されます。</small>
@@ -237,7 +238,7 @@
 								<figcaption id="aiStoryTitle">AIストーリー</figcaption>
 							</figure>
 							<div class="p-result__story-fukidashi">
-								<span id="aiStoryText" class="p-result__story-txt c-area__scroll">生成中...</span>
+								<span id="aiStoryText" class="p-result__story-txt c-area__scroll">Compareを実行後、AIストーリー生成を押してください。</span>
 								<ul id="aiStoryBubbles" style="margin-top:8px; list-style:disc; padding-left:1.2em;">
 								</ul>
 							</div>
@@ -386,7 +387,7 @@
 	<script src="assets/js/common.js"></script>
 	<script src="assets/js/map.js"></script>
     <script src="assets/js/results.js"></script>
-    <script src="assets/js/route_sim.js"></script>
+    <!-- <script src="assets/js/route_sim.js"></script> -->
     <script src="assets/js/aggregates.js"></script>
 	<script>
 		// 総合評価の初期化
@@ -714,18 +715,36 @@
 		});
 	</script>
 	<script src="assets/js/input_bars.js"></script>
-	<script>
+<script>
 window.addEventListener("load", function () {
+  const STORY_FALLBACK_MARKER = "AIサービスが利用できないため、ローカル要約で表示しています。";
+  const titleEl = document.getElementById("aiStoryTitle");
+  const textEl  = document.getElementById("aiStoryText");
+  const ul      = document.getElementById("aiStoryBubbles");
   try {
     const raw = localStorage.getItem("matsim-ai-story");
-    if (!raw) return;
+    if (!raw) {
+      if (titleEl) titleEl.textContent = "AIストーリー";
+      if (textEl) textEl.textContent = "Compareを実行後、AIストーリー生成を押してください。";
+      if (ul) ul.style.display = "none";
+      return;
+    }
 
     const { story } = JSON.parse(raw) || {};
-    if (!story) return;
-
-    const titleEl = document.getElementById("aiStoryTitle");
-    const textEl  = document.getElementById("aiStoryText");
-    const ul      = document.getElementById("aiStoryBubbles");
+    if (!story) {
+      if (titleEl) titleEl.textContent = "AIストーリー";
+      if (textEl) textEl.textContent = "Compareを実行後、AIストーリー生成を押してください。";
+      if (ul) ul.style.display = "none";
+      return;
+    }
+    const oneLiner = String(story.one_liner || "");
+    if (oneLiner.includes(STORY_FALLBACK_MARKER)) {
+      localStorage.removeItem("matsim-ai-story");
+      if (titleEl) titleEl.textContent = "AIストーリー";
+      if (textEl) textEl.textContent = "Compareを実行後、AIストーリー生成を押してください。";
+      if (ul) ul.style.display = "none";
+      return;
+    }
     const item    = document.getElementById("aiStoryItem");
 
     // Title + one-liner (speech balloon)
@@ -747,11 +766,16 @@ window.addEventListener("load", function () {
 
   } catch (e) {
     console.warn("AI story render failed:", e);
+    if (titleEl) titleEl.textContent = "AIストーリー";
+    if (textEl) textEl.textContent = "Compareを実行後、AIストーリー生成を押してください。";
+    if (ul) ul.style.display = "none";
   }
 });
 	</script>
 	<script>
 (function () {
+  const STORY_FALLBACK_MARKER = "AIサービスが利用できないため、ローカル要約で表示しています。";
+  const AGG_CACHE_KEY = "dtsb.aggCompareCache.v2";
   const DEFAULT_WEIGHTS = {
     act: { Home: 1.0, Work: 0.5, Business: 0.3, Shopping: 0.2, __other__: 0.1 },
     leg: { car: -2.0, walk: 0.5, pt: 0.1, __other__: 0.0 }
@@ -766,8 +790,72 @@ window.addEventListener("load", function () {
     return DEFAULT_WEIGHTS;
   }
 
+  function readAggCompareCache() {
+    try {
+      const raw = localStorage.getItem(AGG_CACHE_KEY);
+      return raw ? (JSON.parse(raw) || null) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function pickMetrics(pre, post) {
+    const p = pre || {};
+    const q = post || {};
+    const toNum = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+    return {
+      pre: {
+        totalPeople: toNum(p.totalPeople),
+        avgTravelSec: toNum(p.avgTravelSec),
+        avgUtility: toNum(p.avgUtility),
+        ptUsers: toNum(p.ptUsers),
+      },
+      post: {
+        totalPeople: toNum(q.totalPeople),
+        avgTravelSec: toNum(q.avgTravelSec),
+        avgUtility: toNum(q.avgUtility),
+        ptUsers: toNum(q.ptUsers),
+      },
+    };
+  }
+
+  function getCompareContextForStory(compareCtx, fallback) {
+    if (!compareCtx || !compareCtx.mode) return null;
+    if (fallback) return fallback;
+
+    const cached = readAggCompareCache();
+    if (!cached || !cached.data || !cached.mode) return null;
+
+    if (compareCtx.mode === "frequency" && cached.mode === "frequency" && compareCtx.simId && cached.simId === compareCtx.simId) {
+      return {
+        mode: "frequency",
+        simId: compareCtx.simId,
+        params: compareCtx.params || null,
+        changedPeople: Number(cached.data.changedPeople || 0),
+        ...pickMetrics(cached.data.pre, cached.data.post),
+      };
+    }
+    if (compareCtx.mode === "sim" && cached.mode === "sim" && cached.preId === compareCtx.preId && cached.postId === compareCtx.postId) {
+      return {
+        mode: "sim",
+        preId: compareCtx.preId,
+        postId: compareCtx.postId,
+        changedPeople: null,
+        ...pickMetrics(cached.data.pre, cached.data.post),
+      };
+    }
+    return null;
+  }
+
   function renderStory(story) {
     if (!story) return;
+    const oneLiner = String(story.one_liner || "");
+    if (oneLiner.includes(STORY_FALLBACK_MARKER)) {
+      throw new Error("AI backend returned local fallback text.");
+    }
     const titleEl = document.getElementById("aiStoryTitle");
     const textEl = document.getElementById("aiStoryText");
     const ul = document.getElementById("aiStoryBubbles");
@@ -784,33 +872,85 @@ window.addEventListener("load", function () {
     if (ul) ul.style.display = "none";
   }
 
-  async function pickSimulationId() {
-    const res = await fetch("/api/simulations");
-    const list = await res.json().catch(() => ([]));
-    const sims = Array.isArray(list) ? list : [];
-    const first = sims.find(s => s && s.has_cache) || sims[0];
-    if (!first || !first.id) throw new Error("No published simulations");
-    return first.id;
+  let latestCompareContext = null;
+
+  function setStoryButtonState(enabled, reason) {
+    const btn = document.getElementById("genStoryBtn");
+    if (!btn) return;
+    btn.disabled = !enabled;
+    btn.title = enabled ? "" : (reason || "先にAggregationsでCompareを実行してください");
   }
 
-  function loadRouteParams() {
-    try { return JSON.parse(localStorage.getItem("routeParams") || "null"); } catch { return null; }
+  function onCompareReady(detail) {
+    if (detail && detail.ready) {
+      latestCompareContext = detail;
+      setStoryButtonState(true);
+      return;
+    }
+    setStoryButtonState(false, "先にAggregationsでCompareを実行してください");
   }
 
-  async function pickPlanForStory(simId, weights) {
-    const params = loadRouteParams();
+  window.addEventListener("dtsb:compare-ready", (ev) => onCompareReady(ev && ev.detail));
+
+  function getStorySimulationId(compareCtx) {
+    if (!compareCtx || !compareCtx.mode) return null;
+    if (compareCtx.mode === "frequency") return compareCtx.simId || null;
+    if (compareCtx.mode === "sim") return compareCtx.postId || compareCtx.preId || null;
+    return null;
+  }
+
+  async function pickPlanForStory(compareCtx, weights) {
+    const simId = getStorySimulationId(compareCtx);
+    if (!simId) throw new Error("Compare result context missing");
+
+    const params = compareCtx && compareCtx.mode === "frequency" ? (compareCtx.params || {}) : null;
     if (params && (params.oldFrequency != null) && (params.newFrequency != null)) {
       try {
+        const body = {
+          routeId: params.routeId,
+          oldFrequency: params.oldFrequency,
+          newFrequency: params.newFrequency,
+          weights,
+          includeMostImpactedSteps: true,
+        };
+        if (params.personLimit != null) body.person_limit = params.personLimit;
         const resCmp = await fetch(`/api/simulations/${simId}/frequency-compare`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...params, weights, includeMostImpactedSteps: true }),
+          body: JSON.stringify(body),
         });
         const cmp = await resCmp.json().catch(() => ({}));
         if (resCmp.ok) {
           const mi = cmp && cmp.mostImpacted;
           if (mi && mi.personId && Array.isArray(mi.afterPlanSteps) && mi.afterPlanSteps.length) {
-            return { personId: mi.personId, planSteps: mi.afterPlanSteps, meta: { kind: "mostImpacted", routeId: params.routeId } };
+            return {
+              personId: mi.personId,
+              planSteps: mi.afterPlanSteps,
+              beforePlanSteps: Array.isArray(mi.beforePlanSteps) ? mi.beforePlanSteps : null,
+              meta: {
+                kind: "mostImpacted",
+                routeId: params.routeId,
+                beforePlanIndex: Number(mi.beforePlanIndex),
+                afterPlanIndex: Number(mi.afterPlanIndex),
+                beforeScore: Number(mi.beforeScore),
+                afterScore: Number(mi.afterScore),
+                deltaScore: Number(mi.deltaScore),
+                changedPlan: !!mi.changedPlan,
+              },
+              compare: {
+                mode: "frequency",
+                simId,
+                params: {
+                  routeId: params.routeId,
+                  oldFrequency: Number(params.oldFrequency),
+                  newFrequency: Number(params.newFrequency),
+                },
+                changedPeople: Number(cmp.changedPeople || 0),
+                deltaWaitMin: Number(cmp.deltaWaitMin || 0),
+                deltaScore: Number(cmp.deltaScore || 0),
+                ...pickMetrics(cmp.pre, cmp.post),
+              },
+            };
           }
         }
       } catch {}
@@ -825,7 +965,13 @@ window.addEventListener("load", function () {
     if (!resSummary.ok) throw new Error(summary && summary.error ? summary.error : "Summary failed");
     const best = summary && summary.bestPlan;
     if (!best || !best.personId || !Array.isArray(best.steps) || !best.steps.length) throw new Error("No plans available");
-    return { personId: best.personId, planSteps: best.steps, meta: { kind: "bestPlan" } };
+    return {
+      personId: best.personId,
+      planSteps: best.steps,
+      beforePlanSteps: null,
+      meta: { kind: "bestPlan" },
+      compare: getCompareContextForStory(compareCtx, null),
+    };
   }
 
   async function generateAndRenderStory() {
@@ -836,8 +982,10 @@ window.addEventListener("load", function () {
       if (spin) spin.style.display = "inline";
 
       const weights = loadWeights();
-      const simId = await pickSimulationId();
-      const picked = await pickPlanForStory(simId, weights);
+      if (!latestCompareContext || !latestCompareContext.ready) {
+        throw new Error("Please run Compare first.");
+      }
+      const picked = await pickPlanForStory(latestCompareContext, weights);
 
       const res = await fetch("/story", {
         method: "POST",
@@ -845,26 +993,38 @@ window.addEventListener("load", function () {
         body: JSON.stringify({
           personId: picked.personId,
           plan: { steps: picked.planSteps },
+          ...(picked.beforePlanSteps ? { beforePlan: { steps: picked.beforePlanSteps } } : {}),
+          compareContext: getCompareContextForStory(latestCompareContext, picked.compare),
+          personContext: picked.meta || null,
           weights,
           lang: "ja",
         }),
       });
       const story = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(story && story.error ? story.error : "AI story failed");
+      if (String(story?.one_liner || "").includes(STORY_FALLBACK_MARKER)) {
+        throw new Error("AI backend returned local fallback text. Check provider configuration.");
+      }
 
       const payload = { personId: picked.personId, meta: picked.meta, story, ts: Date.now() };
       localStorage.setItem("matsim-ai-story", JSON.stringify(payload));
       renderStory(story);
     } catch (e) {
       console.error(e);
-      alert("AIストーリー生成に失敗しました。");
+      localStorage.removeItem("matsim-ai-story");
+      const msg = (e && e.message) ? String(e.message) : "";
+      alert(msg ? `AIストーリー生成に失敗しました。\n${msg}` : "AIストーリー生成に失敗しました。");
     } finally {
       if (spin) spin.style.display = "none";
-      if (btn) btn.disabled = false;
+      if (btn) btn.disabled = !(latestCompareContext && latestCompareContext.ready);
     }
   }
 
   window.addEventListener("load", () => {
+    setStoryButtonState(false, "先にAggregationsでCompareを実行してください");
+    if (window.__dtsbCompareReady && window.__dtsbCompareReady.ready) {
+      onCompareReady(window.__dtsbCompareReady);
+    }
     document.getElementById("genStoryBtn")?.addEventListener("click", generateAndRenderStory);
   });
 })();

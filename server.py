@@ -2,6 +2,8 @@ import sys
 import subprocess
 import os
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # --- Azure App Service fallback: ensure dependencies are installed ---
 def ensure_deps():
     try:
@@ -21,15 +23,13 @@ except ModuleNotFoundError:
     def load_dotenv(*args, **kwargs) -> bool:
         return False
 
-load_dotenv()
+load_dotenv(dotenv_path=os.path.join(BASE_DIR, ".env"), override=False)
 
 from flask import Flask, send_from_directory
 from flask_compress import Compress
 
 from app import create_app, csrf
 from app.models import init_db, create_admin_if_missing
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def build_app() -> Flask:
