@@ -104,11 +104,11 @@
         </div>
 
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0;">
-          <label style="display:flex; gap:6px; align-items:center; min-width:0; flex:1 1 260px;">
+          <label id="aggPreWrap" style="display:flex; gap:6px; align-items:center; min-width:0; flex:1 1 260px;">
             <span class="muted">Pre</span>
             <select id="aggPreSelect" class="c-input" style="min-width:0; width:100%;"></select>
           </label>
-          <label style="display:flex; gap:6px; align-items:center; min-width:0; flex:1 1 260px;">
+          <label id="aggPostWrap" style="display:flex; gap:6px; align-items:center; min-width:0; flex:1 1 260px;">
             <span class="muted">Post</span>
             <select id="aggPostSelect" class="c-input" style="min-width:0; width:100%;"></select>
           </label>
@@ -344,6 +344,8 @@
     const host = ensurePanel();
     const status = document.getElementById('aggStatus');
     const charts = document.getElementById('aggCharts');
+    const preWrap = document.getElementById('aggPreWrap');
+    const postWrap = document.getElementById('aggPostWrap');
     const preSel = document.getElementById('aggPreSelect');
     const postSel = document.getElementById('aggPostSelect');
     const limitSel = document.getElementById('aggPersonLimit');
@@ -389,9 +391,15 @@
 
     function setControlsForMode(mode) {
       if (mode === 'frequency') {
-        // Only need one simulation; keep post select visible but disabled for clarity.
+        // Frequency compare uses one selected simulation internally; hide sim-vs-sim controls.
+        if (preWrap) preWrap.style.display = 'none';
+        if (postWrap) postWrap.style.display = 'none';
+        if (preSel) preSel.disabled = true;
         postSel.disabled = true;
       } else {
+        if (preWrap) preWrap.style.display = 'flex';
+        if (postWrap) postWrap.style.display = 'flex';
+        if (preSel) preSel.disabled = false;
         postSel.disabled = false;
       }
     }
@@ -400,6 +408,10 @@
       modeEls.forEach((r) => { r.checked = (r.value === mode); });
       setControlsForMode(mode);
     }
+
+    // Apply initial mode UI and keep controls in sync when radio selection changes.
+    setControlsForMode(getMode());
+    modeEls.forEach((r) => r.addEventListener('change', () => setControlsForMode(getMode())));
 
     // Restore cached results (no recompute) so navigating between results.html
     // and results_graph.html doesn't "lose" the last computed graphs.
