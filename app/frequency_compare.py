@@ -11,7 +11,7 @@ def _best_index_by_server_score(plans: List[Dict[str, Any]]) -> int:
     best_val = float(plans[0].get("serverScore") or 0.0)
     for i in range(1, len(plans)):
         v = float(plans[i].get("serverScore") or 0.0)
-        if v < best_val:
+        if v > best_val:
             best_val = v
             best = i
     return best
@@ -44,6 +44,18 @@ def _plan_affected_by_route(plan: Dict[str, Any], route_id: str) -> bool:
     return has_exact if supports_ids else has_any_pt
 
 
+def _argmax(values: List[float]) -> int:
+    if not values:
+        return 0
+    best = 0
+    best_val = values[0]
+    for i, v in enumerate(values):
+        if v > best_val:
+            best_val = v
+            best = i
+    return best
+
+
 def compare_frequency(
     persons: Iterable[Dict[str, Any]],
     *,
@@ -59,7 +71,8 @@ def compare_frequency(
     old_f = max(1.0, float(old_frequency or 0.0))
     new_f = max(1.0, float(new_frequency or 0.0))
     delta_wait_min = ((60.0 / old_f) - (60.0 / new_f)) / 2.0
-    delta_score = - (delta_wait_min * 60.0) * float(walk_coeff_per_sec)
+    # Treat score as utility (higher is better): higher frequency -> lower wait -> higher utility.
+    delta_score = (delta_wait_min * 60.0) * float(walk_coeff_per_sec)
 
     changed = 0
     before_indices: Dict[str, int] = {}
@@ -76,21 +89,27 @@ def compare_frequency(
         if not plans:
             continue
 
-        before_idx = p.get("selectedPlanIndex")
-        if not isinstance(before_idx, int) or before_idx < 0 or before_idx >= len(plans):
-            before_idx = _best_index_by_server_score(plans)
+        # Use the same objective for baseline and post-change selection.
+        before_idx = _best_index_by_server_score(plans)
 
+        plan_affected: List[bool] = []
         adjusted_scores: List[float] = []
         for pl in plans:
             base = float(pl.get("serverScore") or 0.0)
-            adjusted_scores.append(base + delta_score if _plan_affected_by_route(pl, route_id) else base)
+            affected = _plan_affected_by_route(pl, route_id)
+            plan_affected.append(affected)
+            adjusted_scores.append(base + delta_score if affected else base)
 
-        after_idx = 0
-        best_val = adjusted_scores[0] if adjusted_scores else 0.0
-        for i, v in enumerate(adjusted_scores):
-            if v < best_val:
-                best_val = v
-                after_idx = i
+        # If no plan for this person is affected (or no effective frequency change),
+        # keep the current selected plan unchanged.
+        any_affected = any(plan_affected)
+        if not any_affected or abs(delta_score) < 1e-12:
+            after_idx = before_idx
+            before_indices[pid] = before_idx
+            after_indices[pid] = after_idx
+            continue
+
+        after_idx = _argmax(adjusted_scores)
 
         before_indices[pid] = before_idx
         after_indices[pid] = after_idx
@@ -127,12 +146,17 @@ def compute_frequency_compare_aggregates(
     old_f = max(1.0, float(old_frequency or 0.0))
     new_f = max(1.0, float(new_frequency or 0.0))
     delta_wait_min = ((60.0 / old_f) - (60.0 / new_f)) / 2.0
-    delta_score = - (delta_wait_min * 60.0) * float(walk_coeff_per_sec)
+    # Treat score as utility (higher is better): higher frequency -> lower wait -> higher utility.
+    delta_score = (delta_wait_min * 60.0) * float(walk_coeff_per_sec)
 
     changed = 0
     changed_sample: List[Dict[str, Any]] = []
 
+    pre_agg = Aggregator()
     post_agg = Aggregator()
+    pre_total_utility = 0.0
+    post_total_utility = 0.0
+    utility_people = 0
 
     most_impacted: Optional[Dict[str, Any]] = None
     most_delta = float("-inf")
@@ -148,25 +172,32 @@ def compute_frequency_compare_aggregates(
         if not plans:
             continue
 
-        before_idx = p.get("selectedPlanIndex")
-        if not isinstance(before_idx, int) or before_idx < 0 or before_idx >= len(plans):
-            before_idx = _best_index_by_server_score(plans)
+        # Use the same objective for baseline and post-change selection.
+        before_idx = _best_index_by_server_score(plans)
 
+        plan_affected: List[bool] = []
         adjusted_scores: List[float] = []
         for pl in plans:
             base = float(pl.get("serverScore") or 0.0)
-            adjusted_scores.append(base + delta_score if _plan_affected_by_route(pl, route_id) else base)
+            affected = _plan_affected_by_route(pl, route_id)
+            plan_affected.append(affected)
+            adjusted_scores.append(base + delta_score if affected else base)
 
-        after_idx = 0
-        best_val = adjusted_scores[0] if adjusted_scores else 0.0
-        for i, v in enumerate(adjusted_scores):
-            if v < best_val:
-                best_val = v
-                after_idx = i
+        any_affected = any(plan_affected)
+        if not any_affected or abs(delta_score) < 1e-12:
+            after_idx = before_idx
+            best_val = (
+                float(plans[before_idx].get("serverScore") or 0.0)
+                if 0 <= before_idx < len(plans)
+                else 0.0
+            )
+        else:
+            after_idx = _argmax(adjusted_scores)
+            best_val = adjusted_scores[after_idx] if 0 <= after_idx < len(adjusted_scores) else 0.0
 
         before_score = float(plans[before_idx].get("serverScore") or 0.0) if 0 <= before_idx < len(plans) else 0.0
         after_score = float(best_val or 0.0)
-        delta = before_score - after_score  # positive means improved (lower generalized cost)
+        delta = after_score - before_score  # positive means improved utility
         if delta > most_delta:
             most_delta = delta
             most_impacted = {
@@ -187,8 +218,21 @@ def compute_frequency_compare_aggregates(
             if len(changed_sample) < max(0, int(changed_sample_n)):
                 changed_sample.append({"personId": pid, "before": int(before_idx), "after": int(after_idx)})
 
+        before_plan = plans[before_idx] if 0 <= before_idx < len(plans) else plans[0]
+        pre_agg.add_person_plan(pid, before_plan)
         post_plan = plans[after_idx] if 0 <= after_idx < len(plans) else plans[0]
         post_agg.add_person_plan(pid, post_plan)
+        pre_total_utility += before_score
+        post_total_utility += after_score
+        utility_people += 1
+
+    pre_out = pre_agg.to_dict(top_routes=top_routes)
+    post_out = post_agg.to_dict(top_routes=top_routes)
+    if utility_people > 0:
+        pre_out["totalUtility"] = pre_total_utility
+        pre_out["avgUtility"] = pre_total_utility / utility_people
+        post_out["totalUtility"] = post_total_utility
+        post_out["avgUtility"] = post_total_utility / utility_people
 
     return {
         "routeId": route_id,
@@ -199,5 +243,6 @@ def compute_frequency_compare_aggregates(
         "changedPeople": changed,
         "changedSample": changed_sample,
         "mostImpacted": most_impacted,
-        "postAggregates": post_agg.to_dict(top_routes=top_routes),
+        "preAggregates": pre_out,
+        "postAggregates": post_out,
     }

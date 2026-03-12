@@ -5,6 +5,12 @@
 (function () {
   const ROUTE_KEY = 'routeParams';
   const COLLAPSE_KEY = 'routeSimCollapsed';
+  const ROUTE_SOURCE_TO_SIM_ID = {
+    'bus_route/baseline_transitSchedule_cr24_1.xml': '096896b54be24ffbb0cbee53dde6fd9f',
+    'bus_route/brt_transitSchedule_brt24_2.xml': '67eb5392da3a4202906f46f7b808b888',
+    'bus_route/net_expansion_transitSchedule_cr40_3.xml': '18c774153bad4ee0aae34a8dcbb7f03b',
+    'bus_route/output_transitSchedule_brt40_4.xml': '21f892bd-34a6-443d-82e4-1c41ab8bec82'
+  };
 
   function $(sel) { return document.querySelector(sel); }
 
@@ -38,53 +44,33 @@
     }
   }
 
-  async function loadFirstPublishedDataset() {
+  async function fetchSimulations() {
     const res = await fetch('/api/simulations');
-    const list = await res.json();
-    const first = Array.isArray(list) ? list.find(s => s.has_cache) || list[0] : null;
-    if (!first) throw new Error('No published simulations');
-    const res2 = await fetch(`/api/simulations/${first.id}/data`);
-    if (!res2.ok) throw new Error('Failed to load dataset');
-    const persons = await res2.json();
-    return { id: first.id, persons };
+    const sims = await res.json().catch(() => []);
+    return Array.isArray(sims) ? sims : [];
   }
 
-  function bestIndexByServerScore(plans) {
-    if (!plans || !plans.length) return 0;
-    let best = 0; let bestVal = plans[0].serverScore ?? 0;
-    for (let i = 1; i < plans.length; i++) {
-      const v = plans[i].serverScore ?? 0;
-      if (v < bestVal) { bestVal = v; best = i; }
-    }
-    return best;
+  function resolveFrequencySimulationId(params, eligible) {
+    const fromSource = params?.sourcePath ? ROUTE_SOURCE_TO_SIM_ID[String(params.sourcePath)] : null;
+    const simId = params?.simulationId || fromSource || null;
+    const isEligible = !!simId && eligible.some(s => s.id === simId);
+    return { simId, isEligible };
   }
 
-  function recomputeWithFrequency(person, params) {
-    // Prefer precise matching using transitRouteId parsed from plans.
-    const oldF = Math.max(1, Number(params.oldFrequency || 0));
-    const newF = Math.max(1, Number(params.newFrequency || 0));
-    const deltaWaitMin = ((60 / oldF) - (60 / newF)) / 2; // minutes
-    const walkCoeffPerSec = 0.5; // matches DEFAULT_WEIGHTS.leg.walk in server (per second)
-    const deltaScore = - (deltaWaitMin * 60) * walkCoeffPerSec; // subtract waiting time counted as walk
-
-    const beforeIdx = Number.isInteger(person.selectedPlanIndex) ? person.selectedPlanIndex : bestIndexByServerScore(person.plans);
-    const adjusted = (person.plans || []).map(pl => {
-      const steps = pl.steps || [];
-      const routeId = params.routeId || '';
-      const hasAnyPt = steps.some(s => s && s.kind === 'leg' && s.mode === 'pt');
-      const supportsIds = steps.some(s => s && s.kind === 'leg' && s.mode === 'pt' && typeof s.transitRouteId !== 'undefined');
-      const hasExact = routeId && steps.some(s => s && s.kind === 'leg' && s.mode === 'pt' && s.transitRouteId === routeId);
-      // If the dataset has transitRouteId, only affect exact matches.
-      // Otherwise, fall back to treating any PT plan as affected.
-      const affected = supportsIds ? hasExact : hasAnyPt;
-      const base = pl.serverScore ?? 0;
-      return affected ? (base + deltaScore) : base;
+  async function fetchFrequencyCompare(simId, params) {
+    const res = await fetch(`/api/simulations/${simId}/frequency-compare`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        routeId: params.routeId,
+        oldFrequency: params.oldFrequency,
+        newFrequency: params.newFrequency,
+        includeMostImpactedSteps: true
+      })
     });
-    let afterIdx = 0; let best = adjusted[0] ?? 0;
-    for (let i = 1; i < adjusted.length; i++) {
-      if (adjusted[i] < best) { best = adjusted[i]; afterIdx = i; }
-    }
-    return { beforeIdx, afterIdx, adjustedScores: adjusted };
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || 'frequency compare failed');
+    return data;
   }
 
   function ensureResultPanel() {
@@ -208,33 +194,52 @@
     `対象経路: ${params.routeId || '(不明)'} / 変更: ${params.oldFrequency || 0}→${params.newFrequency || 0}`;
 
   try {
-    const { persons } = await loadFirstPublishedDataset();
-    const changed = [];
-    persons.forEach(p => {
-      const r = recomputeWithFrequency(p, params);
-      if (r.afterIdx !== r.beforeIdx) changed.push({ person: p, beforeIdx: r.beforeIdx, afterIdx: r.afterIdx });
-    });
+    const sims = await fetchSimulations();
+    const eligible = sims.filter(s => s && s.has_cache);
+    const resolved = resolveFrequencySimulationId(params, eligible);
+    if (!resolved.simId) {
+      if (statusEl) statusEl.textContent += ' / 対象シミュレーションが特定できません';
+      return;
+    }
+    if (!resolved.isEligible) {
+      if (statusEl) statusEl.textContent += ' / 対象シミュレーションが未公開または未解析です';
+      return;
+    }
 
-    if (!changed.length) {
+    const cmp = await fetchFrequencyCompare(resolved.simId, params);
+    const changedPeople = Number(cmp?.changedPeople || 0);
+    const changedSample = Array.isArray(cmp?.changedSample) ? cmp.changedSample : [];
+
+    if (!changedPeople) {
       if (statusEl) statusEl.textContent += ' / 変更された選択はありません';
       return;
     }
-    if (statusEl) statusEl.textContent += ` / 変更人数: ${changed.length}`;
+    if (statusEl) statusEl.textContent += ` / 変更人数: ${changedPeople}`;
 
-    changed.slice(0, 100).forEach(item => {
+    changedSample.slice(0, 100).forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = `${item.personId || ''} : ${item.before}→${item.after}`;
+      listEl.appendChild(li);
+    });
+
+    const most = cmp?.mostImpacted;
+    if (
+      most &&
+      Array.isArray(most.afterPlanSteps) &&
+      most.afterPlanSteps.length
+    ) {
       const li = document.createElement('li');
       li.style.cursor = 'pointer';
-      li.textContent = `${item.person.personId} : ${item.beforeIdx}→${item.afterIdx}`;
+      li.textContent = `Most impacted: ${most.personId || ''} : ${most.beforePlanIndex}→${most.afterPlanIndex}`;
       li.onclick = () => {
         const m = window.map;
         if (!m) return;
-        const plan = item.person.plans[item.afterIdx] || item.person.plans[0];
-        drawPlanOnMap(m, item.person, plan);
+        drawPlanOnMap(m, { personId: most.personId }, { steps: most.afterPlanSteps });
       };
-      listEl.appendChild(li);
-    });
+      listEl.insertBefore(li, listEl.firstChild);
+    }
   } catch (e) {
-    if (statusEl) statusEl.textContent = 'データの取得に失敗しました';
+    if (statusEl) statusEl.textContent = e?.message || 'データの取得に失敗しました';
   }
 });
 })();

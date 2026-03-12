@@ -2,6 +2,12 @@
 (function () {
   function onReady(fn) { if (document.readyState !== 'loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
   const CACHE_KEY = 'dtsb.aggCompareCache.v2';
+  const ROUTE_SOURCE_TO_SIM_ID = {
+    'bus_route/baseline_transitSchedule_cr24_1.xml': '096896b54be24ffbb0cbee53dde6fd9f',
+    'bus_route/brt_transitSchedule_brt24_2.xml': '67eb5392da3a4202906f46f7b808b888',
+    'bus_route/net_expansion_transitSchedule_cr40_3.xml': '18c774153bad4ee0aae34a8dcbb7f03b',
+    'bus_route/output_transitSchedule_brt40_4.xml': '21f892bd-34a6-443d-82e4-1c41ab8bec82'
+  };
 
   async function fetchSimulations() {
     const res = await fetch('/api/simulations');
@@ -72,6 +78,13 @@
     return `${rid}|${oldF}|${newF}|${mode}|${ts}|${lim}`;
   }
 
+  function resolveFrequencySimulationId(params, eligible, fallbackId) {
+    const fromSource = params?.sourcePath ? ROUTE_SOURCE_TO_SIM_ID[String(params.sourcePath)] : null;
+    const simId = params?.simulationId || fromSource || fallbackId || null;
+    const isEligible = !!simId && eligible.some(s => s.id === simId);
+    return { simId, isEligible };
+  }
+
   function hhmmss(totalSec) {
     const s = Math.max(0, Math.round(totalSec || 0));
     const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
@@ -90,7 +103,7 @@
     host.innerHTML = `
     <div class="c-box">
       <details id="aggDetails" class="c-details" open>
-        <summary class="c-details__summary">Aggregations (all persons, backend)</summary>
+        <summary class="c-details__summary">Aggregations</summary>
 
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:8px 0;">
           <label style="display:flex; gap:6px; align-items:center;">
@@ -474,12 +487,21 @@
           if (!params || params.oldFrequency == null || params.newFrequency == null) {
             throw new Error('routeParams not found. Save 運航頻度 in index.html first.');
           }
+          const resolved = resolveFrequencySimulationId(params, eligible, preId);
+          if (!resolved.simId) {
+            throw new Error('No simulation id found in routeParams for frequency compare.');
+          }
+          if (!resolved.isEligible) {
+            throw new Error(`Mapped simulation is unavailable or not parsed: ${resolved.simId}`);
+          }
+          const freqSimId = resolved.simId;
+          preSel.value = freqSimId;
           // Avoid recomputing when navigating between results.html and results_graph.html
           // by using a localStorage cache keyed on simulation + routeParams.
           const sig = routeSignature(params, personLimit);
           const cached = getCachedCompare();
-          if (cached && cached.mode === 'frequency' && cached.simId === preId && cached.sig === sig && cached.personLimit === personLimit && cached.data?.pre && cached.data?.post) {
-            const name = eligible.find(s => s.id === preId)?.name || 'Simulation';
+          if (cached && cached.mode === 'frequency' && cached.simId === freqSimId && cached.sig === sig && cached.personLimit === personLimit && cached.data?.pre && cached.data?.post) {
+            const name = eligible.find(s => s.id === freqSimId)?.name || 'Simulation';
             renderCharts(cached.data.pre, cached.data.post, {
               preName: `${name} (before)`,
               postName: `${name} (after)`,
@@ -487,18 +509,18 @@
             if (status) status.textContent = `Cached (people used: ${cached.data.pre?.totalPeople ?? 0}, changed: ${cached.data.changedPeople ?? 0})`;
             return;
           }
-          const resp = await fetchFrequencyCompare(preId, {
+          const resp = await fetchFrequencyCompare(freqSimId, {
             routeId: params.routeId,
             oldFrequency: params.oldFrequency,
             newFrequency: params.newFrequency,
           }, personLimit);
-          const name = eligible.find(s => s.id === preId)?.name || 'Simulation';
+          const name = eligible.find(s => s.id === freqSimId)?.name || 'Simulation';
           renderCharts(resp.pre, resp.post, {
             preName: `${name} (before)`,
             postName: `${name} (after)`,
           });
           if (status) status.textContent = `OK (people used: ${resp.pre?.totalPeople ?? 0}, changed: ${resp.changedPeople ?? 0})`;
-          setCachedCompare({ mode: 'frequency', simId: preId, sig, personLimit, data: resp, savedAt: Date.now() });
+          setCachedCompare({ mode: 'frequency', simId: freqSimId, sig, personLimit, data: resp, savedAt: Date.now() });
           return;
         }
 

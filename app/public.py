@@ -419,15 +419,6 @@ def public_frequency_compare(sim_id: str):
     except Exception:
         walk_coeff_per_sec = 0.5
 
-    # Baseline aggregates can come from the precomputed cache (fast).
-    if person_limit is None:
-        pre, pre_err = _get_aggregates_for_sim(sim_id, top_routes_n=12)
-        if pre_err:
-            body, code = pre_err
-            return jsonify(body), code
-    else:
-        pre = _compute_selected_aggregates_from_cache(cache_path, top_routes_n=12, person_limit=person_limit)
-
     # Frequency compare requires multiple plans per person to allow plan switching.
     # If the simulation was parsed in selected-only mode, this will always show no change.
     peek = read_cached_persons_sample(cache_path, 3)
@@ -457,7 +448,7 @@ def public_frequency_compare(sim_id: str):
         "changedPeople": int(cmp.get("changedPeople") or 0),
         "changedSample": cmp.get("changedSample") or [],
         "mostImpacted": cmp.get("mostImpacted"),
-        "pre": pre,
+        "pre": cmp.get("preAggregates") or {},
         "post": cmp.get("postAggregates") or {},
     })
 

@@ -20,6 +20,23 @@ panes.forEach((pane, index) => {
 
 let routeA;
 const routeCheckbox = document.getElementById('data_root');
+const BUS_ROUTE_SOURCES = [
+  'bus_route/baseline_transitSchedule_cr24_1.xml',
+  'bus_route/brt_transitSchedule_brt24_2.xml',
+  'bus_route/net_expansion_transitSchedule_cr40_3.xml',
+  'bus_route/output_transitSchedule_brt40_4.xml'
+];
+const BUS_ROUTE_SOURCE_TO_SIM_ID = {
+  'bus_route/baseline_transitSchedule_cr24_1.xml': '096896b54be24ffbb0cbee53dde6fd9f',
+  'bus_route/brt_transitSchedule_brt24_2.xml': '67eb5392da3a4202906f46f7b808b888',
+  'bus_route/net_expansion_transitSchedule_cr40_3.xml': '18c774153bad4ee0aae34a8dcbb7f03b',
+  'bus_route/output_transitSchedule_brt40_4.xml': '21f892bd-34a6-443d-82e4-1c41ab8bec82'
+};
+let currentBusRouteSource = BUS_ROUTE_SOURCES[0];
+
+function getSimulationIdForCurrentBusSource() {
+  return BUS_ROUTE_SOURCE_TO_SIM_ID[currentBusRouteSource] || null;
+}
 
 // ================================
 // Index network link geometry
@@ -60,10 +77,20 @@ fetch("matsim_data/network_bus_and_rail_up.geojson")
     map.fitBounds(routeA.getBounds());
     if (routeCheckbox?.checked) routeA.addTo(map);
 
-    if (busRoutesLayer) {
+    busRouteLayerCache.clear();
+    if (busRoutesLayer && map.hasLayer(busRoutesLayer)) {
       map.removeLayer(busRoutesLayer);
       busRoutesLayer = null;
-      buildBusRoutesLayer().then(addBusLayerToMap);
+      clearSelection();
+    }
+    if (document.getElementById('toggleBusRoutes')?.checked) {
+      const source = currentBusRouteSource;
+      buildBusRoutesLayer({ source, forceRebuild: true }).then(layer => {
+        if (source !== currentBusRouteSource) return;
+        if (!document.getElementById('toggleBusRoutes')?.checked) return;
+        addBusLayerToMap(layer);
+        updateBusRouteViewForTimeMode();
+      });
     }
   });
 
@@ -167,10 +194,13 @@ function bindDynRoutePanel() {
     if (!selectedRouteInfo) return;
     const newFreq = Number(document.querySelector('#dynFreqRange .js-range-slider')?.value || 0);
     const brt = !!document.getElementById('dynBrtToggle')?.checked;
+    const simId = getSimulationIdForCurrentBusSource();
     const payload = {
       routeId: selectedRouteInfo.routeId,
       lineId: selectedRouteInfo.lineId,
       systemId: selectedRouteInfo.systemId,
+      sourcePath: currentBusRouteSource,
+      simulationId: simId,
       timeMode: getBusTimeMode(),
       oldFrequency: getBusFreq(selectedRouteInfo),
       newFrequency: newFreq,
@@ -193,6 +223,56 @@ let busRoutesLayer = null;
 let busFitDone = false;
 let selectedRouteLayer = null;
 let routeStatsMap = new Map();
+let busRouteLayerCache = new Map();
+
+function setActiveBusRouteSourceButton(sourcePath) {
+  const wrap = document.getElementById('busRouteSourceButtons');
+  if (!wrap) return;
+  const buttons = wrap.querySelectorAll('[data-bus-route-source]');
+  buttons.forEach(btn => {
+    const isActive = btn.getAttribute('data-bus-route-source') === sourcePath;
+    btn.classList.toggle('is-active', isActive);
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+}
+
+function initBusRouteSourceButtons() {
+  const wrap = document.getElementById('busRouteSourceButtons');
+  if (!wrap) return;
+  const buttons = Array.from(wrap.querySelectorAll('[data-bus-route-source]'));
+  if (!buttons.length) return;
+
+  const activeBtn = buttons.find(btn => btn.classList.contains('is-active')) || buttons[0];
+  const initialSource = activeBtn.getAttribute('data-bus-route-source');
+  if (initialSource && BUS_ROUTE_SOURCES.includes(initialSource)) {
+    currentBusRouteSource = initialSource;
+  }
+  setActiveBusRouteSourceButton(currentBusRouteSource);
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const source = btn.getAttribute('data-bus-route-source');
+      if (!source || !BUS_ROUTE_SOURCES.includes(source)) return;
+      if (source === currentBusRouteSource) return;
+      currentBusRouteSource = source;
+      setActiveBusRouteSourceButton(currentBusRouteSource);
+      clearSelection();
+      if (busRoutesLayer && map.hasLayer(busRoutesLayer)) map.removeLayer(busRoutesLayer);
+      busRoutesLayer = null;
+
+      if (document.getElementById('toggleBusRoutes')?.checked) {
+        const selectedSource = currentBusRouteSource;
+        const layer = await buildBusRoutesLayer({ source: selectedSource });
+        if (selectedSource !== currentBusRouteSource) return;
+        if (!document.getElementById('toggleBusRoutes')?.checked) return;
+        addBusLayerToMap(layer);
+        updateBusRouteViewForTimeMode();
+      }
+    });
+  });
+}
 
 function parseTimeHHMMSS(t) {
   const m = /^([0-9]{2,}):([0-9]{2}):([0-9]{2})$/.exec(t || "");
@@ -244,6 +324,22 @@ function getBusLineWeight(info) {
   return 1.5;                     // low frequency
 }
 
+function getBusRouteColor(info) {
+  const key = String(info?.routeId || info?.lineId || info?.systemId || '');
+  const palette = [
+    '#E76F51', '#2A9D8F', '#1D3557', '#F4A261',
+    '#457B9D', '#43AA8B', '#E63946', '#577590',
+    '#8AB17D', '#FF7F11', '#3A86FF', '#6D597A'
+  ];
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = ((hash << 5) - hash) + key.charCodeAt(i);
+    hash |= 0;
+  }
+  const idx = Math.abs(hash) % palette.length;
+  return palette[idx];
+}
+
 function updateBusRouteViewForTimeMode() {
   if (busRoutesLayer) {
     busRoutesLayer.eachLayer(layer => {
@@ -270,12 +366,22 @@ function km2deg(xy) {
   return [31.5, 132.5];
 }
 
-async function buildBusRoutesLayer() {
-  if (busRoutesLayer) return busRoutesLayer;
+async function buildBusRoutesLayer(opts = {}) {
+  const source = opts.source || currentBusRouteSource;
+  const forceRebuild = !!opts.forceRebuild;
 
-  const resp = await fetch('output_transitSchedule.xml');
+  if (!forceRebuild && busRoutesLayer && busRoutesLayer.__sourcePath === source) {
+    return busRoutesLayer;
+  }
+
+  if (!forceRebuild && busRouteLayerCache.has(source)) {
+    busRoutesLayer = busRouteLayerCache.get(source);
+    return busRoutesLayer;
+  }
+
+  const resp = await fetch(source);
   if (!resp.ok) {
-    console.warn("Failed to load output_transitSchedule.xml:", resp.status, resp.statusText);
+    console.warn("Failed to load bus route schedule:", source, resp.status, resp.statusText);
     return L.layerGroup();
   }
   const xmlText = await resp.text();
@@ -353,7 +459,10 @@ async function buildBusRoutesLayer() {
       const samplesAll = depAll.slice(0, 4).map(o => o.t);
       const samples0609 = depMorning.slice(0, 4).map(o => o.t);
 
-      const stats = { lineId, routeId, systemId, countAll, count0609, samplesAll, samples0609 };
+      const stats = {
+        lineId, routeId, systemId, countAll, count0609, samplesAll, samples0609,
+        baseColor: getBusRouteColor({ routeId, lineId, systemId })
+      };
 
       routeStatsMap.set(routeId, stats);
 
@@ -378,7 +487,7 @@ async function buildBusRoutesLayer() {
     style: feature => {
       const p = feature?.properties || {};
       return {
-        color: '#FF6600',
+        color: p.baseColor || getBusRouteColor(p),
         weight: getBusLineWeight(p),
         opacity: 1
       };
@@ -403,6 +512,8 @@ async function buildBusRoutesLayer() {
     }
   });
 
+  busRoutesLayer.__sourcePath = source;
+  busRouteLayerCache.set(source, busRoutesLayer);
   return busRoutesLayer;
 }
 
@@ -497,7 +608,7 @@ function clearSelection() {
     try {
       const p = selectedRouteLayer.feature?.properties || {};
       const w = getBusLineWeight(p);
-      selectedRouteLayer.setStyle({ color: '#FF6600', weight: w, opacity: 1 });
+      selectedRouteLayer.setStyle({ color: p.baseColor || getBusRouteColor(p), weight: w, opacity: 1 });
     } catch { }
     selectedRouteLayer = null;
   }
@@ -510,7 +621,7 @@ function selectRoute(layer, props) {
     try {
       const pPrev = selectedRouteLayer.feature?.properties || {};
       const wPrev = getBusLineWeight(pPrev);
-      selectedRouteLayer.setStyle({ color: '#FF6600', weight: wPrev, opacity: 1 });
+      selectedRouteLayer.setStyle({ color: pPrev.baseColor || getBusRouteColor(pPrev), weight: wPrev, opacity: 1 });
     } catch { }
   }
   selectedRouteLayer = layer;
@@ -532,7 +643,9 @@ const busToggle = document.getElementById('toggleBusRoutes');
 if (busToggle) {
   busToggle.addEventListener('change', async (e) => {
     if (e.target.checked) {
-      const layer = await buildBusRoutesLayer();
+      const source = currentBusRouteSource;
+      const layer = await buildBusRoutesLayer({ source });
+      if (source !== currentBusRouteSource) return;
       addBusLayerToMap(layer);
       updateBusRouteViewForTimeMode();
     } else {
@@ -543,7 +656,8 @@ if (busToggle) {
 }
 
 // Build once; only add to map if the custom toggle is on
-buildBusRoutesLayer().then(layer => {
+initBusRouteSourceButtons();
+buildBusRoutesLayer({ source: currentBusRouteSource }).then(layer => {
   if (document.getElementById('toggleBusRoutes')?.checked) addBusLayerToMap(layer);
 });
 

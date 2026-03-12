@@ -23,6 +23,7 @@
 			align-items: center;
 			justify-content: space-between;
 			gap: 12px;
+			flex-wrap: wrap;
 		}
 
 		.dtsb-pill {
@@ -121,6 +122,77 @@
 			padding: 10px 16px 14px;
 		}
 
+		.dtsb-route-source {
+			margin-top: 10px;
+			padding: 10px 12px;
+			border-radius: 14px;
+			border: 1px solid rgba(var(--colorSubRgb), 0.24);
+			background:
+				radial-gradient(circle at 0% 0%, rgba(var(--colorMainRgb), 0.16), transparent 45%),
+				linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(var(--colorSubRgb), 0.08));
+			box-shadow: 0 8px 18px rgba(var(--colorSubRgb), 0.14);
+		}
+
+		.dtsb-route-source--summary {
+			flex: 0 0 100%;
+			margin: 0 0 6px;
+			padding: 10px 12px;
+			border-bottom: 1px solid rgba(var(--colorSubRgb), 0.24);
+		}
+
+		.dtsb-route-source__title {
+			display: block;
+			margin-bottom: 8px;
+			font-weight: 700;
+			font-size: 1.1rem;
+			letter-spacing: 0.03em;
+			color: var(--colorSub);
+		}
+
+		.dtsb-route-source__buttons {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+		}
+
+		.dtsb-route-source__btn {
+			position: relative;
+			padding: 5px 12px;
+			border: 1px solid rgba(var(--colorSubRgb), 0.42);
+			background: linear-gradient(180deg, #ffffff, rgba(var(--colorMainRgb), 0.1));
+			color: var(--colorSub);
+			font-family: "Poppins", "Noto Sans JP", sans-serif;
+			font-size: 1.1rem;
+			font-weight: 700;
+			line-height: 1.35;
+			box-shadow: 0 4px 10px rgba(var(--colorSubRgb), 0.13);
+			transition: transform .16s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease, color .2s ease;
+		}
+
+		.dtsb-route-source__btn:hover {
+			transform: translateY(-1px);
+			border-color: rgba(var(--colorMainRgb), 0.72);
+			background: linear-gradient(180deg, #ffffff, rgba(var(--colorMainRgb), 0.18));
+			box-shadow: 0 8px 14px rgba(var(--colorSubRgb), 0.2);
+		}
+
+		.dtsb-route-source__btn:focus-visible {
+			outline: 0;
+			box-shadow: 0 0 0 3px rgba(var(--colorMainRgb), 0.28), 0 8px 14px rgba(var(--colorSubRgb), 0.2);
+		}
+
+		.dtsb-route-source__btn.is-active {
+			border-color: rgba(var(--colorSubRgb), 0.9);
+			background: linear-gradient(135deg, var(--colorMain), var(--colorSub));
+			color: #fff;
+			box-shadow: 0 10px 18px rgba(var(--colorSubRgb), 0.3);
+		}
+
+		.dtsb-route-source__btn.is-active:hover {
+			background: linear-gradient(135deg, var(--colorSub), var(--colorMain));
+			border-color: rgba(var(--colorSubRgb), 1);
+		}
+
 		/* Make reset/pills read nicely on small widths */
 		@media (max-width: 720px) {
 			.dtsb-select {
@@ -131,6 +203,16 @@
 			.dtsb-dynroute__actions {
 				width: 100%;
 				justify-content: flex-end;
+			}
+
+			.dtsb-route-source__buttons {
+				display: grid;
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+				gap: 8px;
+			}
+
+			.dtsb-route-source__btn {
+				width: 100%;
 			}
 		}
 	</style>
@@ -269,6 +351,28 @@
 								<details class="c-route c-details js-route dtsb-dynroute" data-route="current_route_a"
 									open>
 									<summary class="c-details__summary">
+										<div class="dtsb-route-source dtsb-route-source--summary" aria-label="バス路線データ切替">
+											<span class="dtsb-route-source__title">バス路線データ</span>
+											<div id="busRouteSourceButtons" class="dtsb-route-source__buttons">
+												<button type="button"
+													class="c-btn__small c-btn__small-white dtsb-route-source__btn is-active"
+													data-bus-route-source="bus_route/baseline_transitSchedule_cr24_1.xml">
+													Baseline CR24
+												</button>
+												<button type="button" class="c-btn__small c-btn__small-white dtsb-route-source__btn"
+													data-bus-route-source="bus_route/brt_transitSchedule_brt24_2.xml">
+													BRT24
+												</button>
+												<button type="button" class="c-btn__small c-btn__small-white dtsb-route-source__btn"
+													data-bus-route-source="bus_route/net_expansion_transitSchedule_cr40_3.xml">
+													Net Expansion CR40
+												</button>
+												<button type="button" class="c-btn__small c-btn__small-white dtsb-route-source__btn"
+													data-bus-route-source="bus_route/output_transitSchedule_brt40_4.xml">
+													BRT40
+												</button>
+											</div>
+										</div>
 										<span>路線</span>
 										<span id="dynRouteSummaryBadge" class="dtsb-pill" data-state="empty">未選択</span>
 									</summary>
