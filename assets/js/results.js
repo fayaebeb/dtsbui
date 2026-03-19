@@ -1,4 +1,5 @@
 //ローディング
+const IS_RESULTS_HTML = /\/results\.html$/i.test(window.location.pathname || '');
 const urlParams = new URLSearchParams(window.location.search);
 const loading = urlParams.get('loading');
 const loadingElement = document.querySelector('.js-loading');
@@ -63,86 +64,89 @@ labelElements.forEach(labelElement => {
 // 賑わいの表示
 let nigiwaiLayer; // レイヤーを格納する変数
 let commentaryLayerGroup = L.layerGroup();
-fetch('assets/data/nigiwai.geojson') // GeoJSONファイルのパス
-	.then(response => response.json())
-	.then(data => {
-		nigiwaiLayer = L.geoJSON(data, {
-			pointToLayer: function (feature, latlng) {
-				// 賑わい度合いを画面上の半径の基本値に反映
-				var baseRadius = feature.properties.nigiwai * 25; // 基本となる半径（調整が必要）
-				var circleMarker = L.circle(latlng, {
-					radius: baseRadius, // ピクセル単位の半径
-					fillColor: "#F5813C",
-					color: false,
-					weight: 1,
-					opacity: 1,
-					fillOpacity: 0.5,
-					pane: 'circles' // 作成したレイヤーを指定
-				});
-				// コメントが存在する場合、Popupを追加
-				if (feature.properties.comment) {
-					circleMarker.bindPopup(feature.properties.comment);
-				}
-				return circleMarker;
-			},
-			onEachFeature: function (feature, layer) {
-				// 各フィーチャーに対してコメントレイヤーを作成
-				if (feature.properties.comment) {
-					var commentaryMarker = L.marker(layer.getLatLng(), {
-						icon: L.divIcon({
-							className: `l-contents__map-hide`,
-							html: `<div class="l-contents__map-comment nigiwai ${feature.properties.icon}">${feature.properties.comment}</div>`,
-							iconSize: [null, null], // 自動調整
-							iconAnchor: [0, 0] // テキストの左上を基準に配置
-						}),
-						pane: 'commentaryPane'
+if (!IS_RESULTS_HTML) {
+	fetch('assets/data/nigiwai.geojson') // GeoJSONファイルのパス
+		.then(response => response.json())
+		.then(data => {
+			nigiwaiLayer = L.geoJSON(data, {
+				pointToLayer: function (feature, latlng) {
+					// 賑わい度合いを画面上の半径の基本値に反映
+					var baseRadius = feature.properties.nigiwai * 25; // 基本となる半径（調整が必要）
+					var circleMarker = L.circle(latlng, {
+						radius: baseRadius, // ピクセル単位の半径
+						fillColor: "#F5813C",
+						color: false,
+						weight: 1,
+						opacity: 1,
+						fillOpacity: 0.5,
+						pane: 'circles' // 作成したレイヤーを指定
 					});
-					commentaryLayerGroup.addLayer(commentaryMarker);
+					// コメントが存在する場合、Popupを追加
+					if (feature.properties.comment) {
+						circleMarker.bindPopup(feature.properties.comment);
+					}
+					return circleMarker;
+				},
+				onEachFeature: function (feature, layer) {
+					// 各フィーチャーに対してコメントレイヤーを作成
+					if (feature.properties.comment) {
+						var commentaryMarker = L.marker(layer.getLatLng(), {
+							icon: L.divIcon({
+								className: `l-contents__map-hide`,
+								html: `<div class="l-contents__map-comment nigiwai ${feature.properties.icon}">${feature.properties.comment}</div>`,
+								iconSize: [null, null], // 自動調整
+								iconAnchor: [0, 0] // テキストの左上を基準に配置
+							}),
+							pane: 'commentaryPane'
+						});
+						commentaryLayerGroup.addLayer(commentaryMarker);
+					}
 				}
+			});
+			const bustleCheckbox = document.getElementById('data_bustle');
+			const commentaryCheckbox = document.getElementById('data_commentary');
+			if (!bustleCheckbox || !commentaryCheckbox) return;
+			// 初期表示
+			if (bustleCheckbox.checked && commentaryCheckbox.checked) {
+				nigiwaiLayer.addTo(map);
+				commentaryLayerGroup.addTo(map);
+			} else if (bustleCheckbox.checked) {
+				nigiwaiLayer.addTo(map);
+			} else if (commentaryCheckbox.checked) {
+				commentaryLayerGroup.addTo(map);
 			}
+			bustleCheckbox.addEventListener('change', function () {
+				const nigiwaiElements = document.querySelectorAll('.leaflet-commentary-pane .nigiwai');
+				// 賑わいレイヤーの表示/非表示
+				if (this.checked) {
+					if (!map.hasLayer(nigiwaiLayer)) {
+						map.addLayer(nigiwaiLayer);
+						nigiwaiElements.forEach(element => {
+							element.style.display = 'block';
+						});
+					}
+				} else {
+					if (map.hasLayer(nigiwaiLayer)) {
+						map.removeLayer(nigiwaiLayer);
+						nigiwaiElements.forEach(element => {
+							element.style.display = 'none';
+						});
+					}
+				}
+			});
+			commentaryCheckbox.addEventListener('change', function () {
+				if (this.checked) {
+					if (!map.hasLayer(commentaryLayerGroup)) {
+						map.addLayer(commentaryLayerGroup);
+					}
+				} else {
+					if (map.hasLayer(commentaryLayerGroup)) {
+						map.removeLayer(commentaryLayerGroup);
+					}
+				}
+			});
 		});
-		const bustleCheckbox = document.getElementById('data_bustle');
-		const commentaryCheckbox = document.getElementById('data_commentary');
-		// 初期表示
-		if (bustleCheckbox.checked && commentaryCheckbox.checked) {
-			nigiwaiLayer.addTo(map);
-			commentaryLayerGroup.addTo(map);
-		} else if (bustleCheckbox.checked) {
-			nigiwaiLayer.addTo(map);
-		} else if (commentaryCheckbox.checked) {
-			commentaryLayerGroup.addTo(map);
-		}
-		bustleCheckbox.addEventListener('change', function () {
-			const nigiwaiElements = document.querySelectorAll('.leaflet-commentary-pane .nigiwai');
-			// 賑わいレイヤーの表示/非表示
-			if (this.checked) {
-				if (!map.hasLayer(nigiwaiLayer)) {
-					map.addLayer(nigiwaiLayer);
-					nigiwaiElements.forEach(element => {
-						element.style.display = 'block';
-					});
-				}
-			} else {
-				if (map.hasLayer(nigiwaiLayer)) {
-					map.removeLayer(nigiwaiLayer);
-					nigiwaiElements.forEach(element => {
-						element.style.display = 'none';
-					});
-				}
-			}
-		});
-		commentaryCheckbox.addEventListener('change', function () {
-			if (this.checked) {
-				if (!map.hasLayer(commentaryLayerGroup)) {
-					map.addLayer(commentaryLayerGroup);
-				}
-			} else {
-				if (map.hasLayer(commentaryLayerGroup)) {
-					map.removeLayer(commentaryLayerGroup);
-				}
-			}
-		});
-	});
+}
 
 //メッシュ表示・ターゲット選択
 document.addEventListener('DOMContentLoaded', function () {
@@ -315,7 +319,9 @@ document.addEventListener('DOMContentLoaded', function () {
 		map.closePopup();
 		updateCharts(initialData);
 	}
-	displayMesh();
+	if (!IS_RESULTS_HTML) {
+		displayMesh();
+	}
 	//ターゲット選択
 	const targetButtons = document.querySelectorAll('.js-target');
 	const targetItems = document.querySelectorAll('.js-target-item');

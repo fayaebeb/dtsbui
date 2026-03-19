@@ -19,7 +19,9 @@ panes.forEach((pane, index) => {
 });
 
 let routeA;
+let busRoutesLayer = null;
 const routeCheckbox = document.getElementById('data_root');
+const selectedRouteToggle = document.getElementById('data_selected_route');
 const BUS_ROUTE_SOURCES = [
   'bus_route/baseline_transitSchedule_cr24_1.xml',
   'bus_route/brt_transitSchedule_brt24_2.xml',
@@ -33,9 +35,34 @@ const BUS_ROUTE_SOURCE_TO_SIM_ID = {
   'bus_route/output_transitSchedule_brt40_4.xml': '21f892bd-34a6-443d-82e4-1c41ab8bec82'
 };
 let currentBusRouteSource = BUS_ROUTE_SOURCES[0];
+const IS_RESULTS_PAGE = /\/results(?:_graph)?\.html$/i.test(window.location.pathname || '');
+const DISABLE_BASE_ROUTE_LAYER_ON_PAGE = /\/results\.html$/i.test(window.location.pathname || '');
+const DEFAULT_BUS_CRS = 'EPSG:6671';
+const BUS_CRS_FALLBACKS = [DEFAULT_BUS_CRS, 'EPSG:2445'];
+let currentBusCrs = DEFAULT_BUS_CRS;
+
+function readGlobalRouteParams() {
+  try {
+    return JSON.parse(localStorage.getItem('routeParams') || 'null');
+  } catch {
+    return null;
+  }
+}
+
+let persistedRouteParams = readGlobalRouteParams();
+if (persistedRouteParams?.sourcePath && BUS_ROUTE_SOURCES.includes(persistedRouteParams.sourcePath)) {
+  currentBusRouteSource = persistedRouteParams.sourcePath;
+}
 
 function getSimulationIdForCurrentBusSource() {
   return BUS_ROUTE_SOURCE_TO_SIM_ID[currentBusRouteSource] || null;
+}
+
+function shouldShowBusRoutesNow() {
+  const busToggle = document.getElementById('toggleBusRoutes');
+  if (busToggle) return !!busToggle.checked;
+  if (IS_RESULTS_PAGE) return selectedRouteToggle ? !!selectedRouteToggle.checked : true;
+  return false;
 }
 
 // ================================
@@ -45,6 +72,16 @@ let linkGeom = new Map();
 
 function normId(v) {
   return String(v ?? "").replace(/^link:/i, '').replace(/^pt_/, '').trim();
+}
+
+function ensureBusProjDefs() {
+  if (typeof proj4 !== 'function') return;
+  try {
+    // JGD2011 / Japan Plane Rectangular CS III
+    proj4.defs('EPSG:6671', '+proj=tmerc +lat_0=36 +lon_0=132.1666666666667 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs');
+    // JGD2000 / Japan Plane Rectangular CS III
+    proj4.defs('EPSG:2445', '+proj=tmerc +lat_0=36 +lon_0=132.1666666666667 +k=0.9999 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs');
+  } catch (e) { }
 }
 
 fetch("matsim_data/network_bus_and_rail_up.geojson")
@@ -75,7 +112,7 @@ fetch("matsim_data/network_bus_and_rail_up.geojson")
     });
 
     map.fitBounds(routeA.getBounds());
-    if (routeCheckbox?.checked) routeA.addTo(map);
+    if (!DISABLE_BASE_ROUTE_LAYER_ON_PAGE && routeCheckbox?.checked) routeA.addTo(map);
 
     busRouteLayerCache.clear();
     if (busRoutesLayer && map.hasLayer(busRoutesLayer)) {
@@ -83,20 +120,37 @@ fetch("matsim_data/network_bus_and_rail_up.geojson")
       busRoutesLayer = null;
       clearSelection();
     }
-    if (document.getElementById('toggleBusRoutes')?.checked) {
+    // Re-fit once real link geometry is ready (prevents sticking to fallback view).
+    busFitDone = false;
+    if (shouldShowBusRoutesNow()) {
       const source = currentBusRouteSource;
       buildBusRoutesLayer({ source, forceRebuild: true }).then(layer => {
         if (source !== currentBusRouteSource) return;
-        if (!document.getElementById('toggleBusRoutes')?.checked) return;
+        if (!shouldShowBusRoutesNow()) return;
         addBusLayerToMap(layer);
+        if (IS_RESULTS_PAGE) focusSavedRouteIfAny();
         updateBusRouteViewForTimeMode();
       });
     }
   });
 
 function routeCheckboxChange() {
-  if (routeCheckbox?.checked) routeA?.addTo(map);
+  if (DISABLE_BASE_ROUTE_LAYER_ON_PAGE) {
+    routeA?.remove();
+    return;
+  }
+
+  const checked = !!routeCheckbox?.checked;
+  if (checked) routeA?.addTo(map);
   else routeA?.remove();
+
+  if (!IS_RESULTS_PAGE) return;
+  if (checked) {
+    if (busRoutesLayer) addBusLayerToMap(busRoutesLayer);
+  } else if (busRoutesLayer && map.hasLayer(busRoutesLayer)) {
+    map.removeLayer(busRoutesLayer);
+    clearSelection();
+  }
 }
 routeCheckboxChange();
 routeCheckbox?.addEventListener('change', routeCheckboxChange);
@@ -219,7 +273,6 @@ renderRouteDetails(null);
 // ================================
 // Bus routes derived from transitSchedule
 // ================================
-let busRoutesLayer = null;
 let busFitDone = false;
 let selectedRouteLayer = null;
 let routeStatsMap = new Map();
@@ -290,6 +343,8 @@ function getBusTimeMode() {
 }
 
 function getBusFreq(info) {
+  const overridden = getOverriddenRouteFrequency(info);
+  if (overridden != null) return overridden;
   const mode = getBusTimeMode();
   if (mode === 'all') return info.countAll ?? info.count0609 ?? 0;
   return info.count0609 ?? info.countAll ?? 0;
@@ -313,18 +368,70 @@ function getBusTooltip(props) {
   const title = props.systemId ? `系統${props.systemId}` : (props.routeId || 'route');
   const label = getBusTimeMode() === 'all' ? '終日' : '06–09';
   const freq = getBusFreq(props);
+  const oldFreq = getSavedOldFrequency(props);
+  if (oldFreq != null && oldFreq !== freq) {
+    return `${title}<br>${label}: ${freq}本（変更前 ${oldFreq}本）`;
+  }
   return `${title}<br>${label}: ${freq}本`;
 }
 
 function getBusLineWeight(info) {
-  const freq = info.countAll ?? info.count0609 ?? 0;
+  const freq = getBusFreq(info);
   if (freq >= 100) return 16;      // very frequent
   if (freq >= 50) return 9;       // frequent
   if (freq >= 20) return 4;       // moderate
   return 1.5;                     // low frequency
 }
 
+const BUS_ROUTE_FAMILY_COLORS = {
+  brt: '#FF0000',
+  communitybus: '#008000',
+  erailwaybus: '#0000FF',
+  geiyo: '#0000FF',
+  jrbus: '#0000FF'
+};
+
+const HIDDEN_ROUTE_FAMILIES = new Set(['jrtrain', 'shinkansen']);
+
+function routeFamilyFromId(v) {
+  const m = String(v || '').trim().match(/^([A-Za-z]+)_/);
+  return m ? m[1].toLowerCase() : '';
+}
+
+function getBusRouteFamily(info) {
+  return routeFamilyFromId(info?.routeId) || routeFamilyFromId(info?.lineId) || '';
+}
+
+function getOverriddenRouteFrequency(info) {
+  const rp = persistedRouteParams;
+  if (!rp || rp.newFrequency == null) return null;
+  if (rp.sourcePath && rp.sourcePath !== currentBusRouteSource) return null;
+  const routeId = String(info?.routeId || '');
+  if (!routeId || routeId !== String(rp.routeId || '')) return null;
+  const n = Number(rp.newFrequency);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+function getSavedOldFrequency(info) {
+  const rp = persistedRouteParams;
+  if (!rp || rp.oldFrequency == null) return null;
+  if (rp.sourcePath && rp.sourcePath !== currentBusRouteSource) return null;
+  const routeId = String(info?.routeId || '');
+  if (!routeId || routeId !== String(rp.routeId || '')) return null;
+  const n = Number(rp.oldFrequency);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+function shouldShowBusRoute(info) {
+  const family = getBusRouteFamily(info);
+  return !HIDDEN_ROUTE_FAMILIES.has(family);
+}
+
 function getBusRouteColor(info) {
+  const family = getBusRouteFamily(info);
+  const fixedColor = BUS_ROUTE_FAMILY_COLORS[family];
+  if (fixedColor) return fixedColor;
+
   const key = String(info?.routeId || info?.lineId || info?.systemId || '');
   const palette = [
     '#E76F51', '#2A9D8F', '#1D3557', '#F4A261',
@@ -354,16 +461,27 @@ function updateBusRouteViewForTimeMode() {
   }
 }
 
-function km2deg(xy) {
+function km2deg(xy, sourceCrs = currentBusCrs || DEFAULT_BUS_CRS) {
   const [x, y] = xy;
-  if (typeof proj4 === 'function') {
-    try {
-      const [lon, lat] = proj4('EPSG:6671', 'EPSG:4326', [x, y]);
-      if (isFinite(lat) && isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) return [lat, lon];
-    } catch (e) { }
+  ensureBusProjDefs();
+  if (typeof proj4 === 'function' && isFinite(x) && isFinite(y)) {
+    const crsCandidates = [sourceCrs, ...BUS_CRS_FALLBACKS].filter((v, i, a) => v && a.indexOf(v) === i);
+    for (const crs of crsCandidates) {
+      try {
+        // Try [x,y] first, then swapped axis as a fallback.
+        const p1 = proj4(crs, 'EPSG:4326', [x, y]);
+        const p2 = proj4(crs, 'EPSG:4326', [y, x]);
+        const candidates = [[p1[1], p1[0]], [p2[1], p2[0]]];
+        for (const [lat, lon] of candidates) {
+          const finite = isFinite(lat) && isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
+          const nearJapan = lat >= 20 && lat <= 50 && lon >= 120 && lon <= 155;
+          if (finite && nearJapan) return [lat, lon];
+        }
+      } catch (e) { }
+    }
   }
   if (isFinite(x) && isFinite(y) && Math.abs(y) <= 90 && Math.abs(x) <= 180) return [y, x];
-  return [31.5, 132.5];
+  return null;
 }
 
 async function buildBusRoutesLayer(opts = {}) {
@@ -386,15 +504,23 @@ async function buildBusRoutesLayer(opts = {}) {
   }
   const xmlText = await resp.text();
   const dom = new DOMParser().parseFromString(xmlText, 'application/xml');
+  const xmlCrs = dom.querySelector('attributes > attribute[name="coordinateReferenceSystem"]')?.textContent?.trim();
+  if (xmlCrs) currentBusCrs = xmlCrs;
 
   const stops = new Map();
   const stopNodes = dom.querySelectorAll('transitStops > stopFacility, transitStops > transitStopFacility');
   stopNodes.forEach(node => {
     const id = String(node.getAttribute('id') || '');
     if (!id) return;
+    const linkRef = normId(node.getAttribute('linkRefId') || '');
     const x = parseFloat(node.getAttribute('x'));
     const y = parseFloat(node.getAttribute('y'));
-    const ll = km2deg([x, y]);
+    let ll = null;
+    if (linkRef) {
+      const seg = linkGeom.get(linkRef) || linkGeom.get(String(+linkRef)) || linkGeom.get(linkRef.replace(/^pt_/, ''));
+      if (seg && seg.length) ll = seg[Math.floor(seg.length / 2)];
+    }
+    if (!ll) ll = km2deg([x, y]);
     if (ll) stops.set(id, ll);
   });
   console.log("Parsed stops:", stops.size);
@@ -440,6 +566,7 @@ async function buildBusRoutesLayer(opts = {}) {
       if (mode !== 'bus') return;
 
       const routeId = String(rn.getAttribute('id') || '');
+      if (!shouldShowBusRoute({ routeId, lineId })) return;
       const systemMatch = routeId.match(/系統(\d+)/);
       const systemId = systemMatch ? systemMatch[1] : '';
 
@@ -519,12 +646,25 @@ async function buildBusRoutesLayer(opts = {}) {
 
 function addBusLayerToMap(layer) {
   if (!layer) return;
+  if (IS_RESULTS_PAGE) {
+    removeAllBusRouteLayersFromMap(layer);
+  }
   if (!map.hasLayer(layer)) layer.addTo(map);
   try { layer.bringToFront(); } catch (e) { }
   if (!busFitDone) {
     try {
       const b = layer.getBounds();
       if (b.isValid()) {
+        const c = b.getCenter();
+        const latSpan = Math.abs(b.getNorth() - b.getSouth());
+        const lngSpan = Math.abs(b.getEast() - b.getWest());
+        const nearFallbackCenter = Math.abs(c.lat - 31.5) < 0.05 && Math.abs(c.lng - 132.5) < 0.05;
+        const tinyExtent = latSpan < 0.05 && lngSpan < 0.05;
+        // Skip fitting to fallback-derived "ocean" bounds; wait for proper geometry.
+        if (nearFallbackCenter && tinyExtent) {
+          console.log("Skipping fallback bus-layer fit.");
+          return;
+        }
         console.log("Fitting to bus layer bounds:", b.toBBoxString());
         map.fitBounds(b, { padding: [20, 20] });
         busFitDone = true;
@@ -532,6 +672,26 @@ function addBusLayerToMap(layer) {
     } catch { }
   }
   console.log("Bus layer added?", map.hasLayer(layer));
+}
+
+function removeAllBusRouteLayersFromMap(exceptLayer = null) {
+  if (busRoutesLayer && busRoutesLayer !== exceptLayer && map.hasLayer(busRoutesLayer)) {
+    map.removeLayer(busRoutesLayer);
+  }
+
+  busRouteLayerCache.forEach(layer => {
+    if (layer && layer !== exceptLayer && map.hasLayer(layer)) {
+      map.removeLayer(layer);
+    }
+  });
+
+  const stray = [];
+  map.eachLayer(layer => {
+    if (layer && layer !== exceptLayer && layer.__sourcePath && BUS_ROUTE_SOURCES.includes(layer.__sourcePath)) {
+      stray.push(layer);
+    }
+  });
+  stray.forEach(layer => map.removeLayer(layer));
 }
 
 function renderRouteDetails(info) {
@@ -633,6 +793,18 @@ function selectRoute(layer, props) {
   renderRouteDetails(props);
 }
 
+function focusSavedRouteIfAny() {
+  if (!busRoutesLayer || !persistedRouteParams?.routeId) return;
+  const targetRouteId = String(persistedRouteParams.routeId);
+  let targetLayer = null;
+  busRoutesLayer.eachLayer(layer => {
+    if (targetLayer) return;
+    const rid = String(layer?.feature?.properties?.routeId || '');
+    if (rid === targetRouteId) targetLayer = layer;
+  });
+  if (targetLayer) selectRoute(targetLayer, targetLayer.feature?.properties || {});
+}
+
 map.on('click', (e) => {
   const hitShape = e.originalEvent.target.closest?.('.leaflet-interactive');
   if (!hitShape) clearSelection();
@@ -649,7 +821,23 @@ if (busToggle) {
       addBusLayerToMap(layer);
       updateBusRouteViewForTimeMode();
     } else {
-      if (busRoutesLayer) map.removeLayer(busRoutesLayer);
+      removeAllBusRouteLayersFromMap();
+      clearSelection();
+    }
+  });
+}
+
+if (selectedRouteToggle) {
+  selectedRouteToggle.addEventListener('change', async (e) => {
+    if (e.target.checked) {
+      const source = currentBusRouteSource;
+      const layer = await buildBusRoutesLayer({ source });
+      if (source !== currentBusRouteSource) return;
+      addBusLayerToMap(layer);
+      if (IS_RESULTS_PAGE) focusSavedRouteIfAny();
+      updateBusRouteViewForTimeMode();
+    } else {
+      removeAllBusRouteLayersFromMap();
       clearSelection();
     }
   });
@@ -658,7 +846,16 @@ if (busToggle) {
 // Build once; only add to map if the custom toggle is on
 initBusRouteSourceButtons();
 buildBusRoutesLayer({ source: currentBusRouteSource }).then(layer => {
-  if (document.getElementById('toggleBusRoutes')?.checked) addBusLayerToMap(layer);
+  const hasBusToggle = !!document.getElementById('toggleBusRoutes');
+  if (hasBusToggle) {
+    if (document.getElementById('toggleBusRoutes')?.checked) addBusLayerToMap(layer);
+    return;
+  }
+
+  if (IS_RESULTS_PAGE && shouldShowBusRoutesNow()) {
+    addBusLayerToMap(layer);
+    focusSavedRouteIfAny();
+  }
 });
 
 // ================================
