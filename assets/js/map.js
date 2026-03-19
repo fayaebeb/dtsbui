@@ -143,14 +143,6 @@ function routeCheckboxChange() {
   const checked = !!routeCheckbox?.checked;
   if (checked) routeA?.addTo(map);
   else routeA?.remove();
-
-  if (!IS_RESULTS_PAGE) return;
-  if (checked) {
-    if (busRoutesLayer) addBusLayerToMap(busRoutesLayer);
-  } else if (busRoutesLayer && map.hasLayer(busRoutesLayer)) {
-    map.removeLayer(busRoutesLayer);
-    clearSelection();
-  }
 }
 routeCheckboxChange();
 routeCheckbox?.addEventListener('change', routeCheckboxChange);
@@ -275,7 +267,6 @@ renderRouteDetails(null);
 // ================================
 let busFitDone = false;
 let selectedRouteLayer = null;
-let routeStatsMap = new Map();
 let busRouteLayerCache = new Map();
 
 function setActiveBusRouteSourceButton(sourcePath) {
@@ -354,14 +345,6 @@ function getBusSamples(info) {
   const mode = getBusTimeMode();
   if (mode === 'all') return (info.samplesAll || info.samples || []);
   return (info.samples0609 || info.samples || []);
-}
-
-function getBusFreqLabel() {
-  return getBusTimeMode() === 'all' ? '運行頻度（終日）' : '運行頻度（06:00–09:59）';
-}
-
-function getBusHourRangeLabel() {
-  return getBusTimeMode() === 'all' ? '終日' : '6～9時台';
 }
 
 function getBusTooltip(props) {
@@ -551,7 +534,6 @@ async function buildBusRoutesLayer(opts = {}) {
   }
 
   const features = [];
-  routeStatsMap.clear();
 
   const lineNodes = dom.getElementsByTagName('transitLine');
   console.log("Transit lines found:", lineNodes.length);
@@ -590,8 +572,6 @@ async function buildBusRoutesLayer(opts = {}) {
         lineId, routeId, systemId, countAll, count0609, samplesAll, samples0609,
         baseColor: getBusRouteColor({ routeId, lineId, systemId })
       };
-
-      routeStatsMap.set(routeId, stats);
 
       let latlngs = latlngsFromLinks(rn);
       if (!latlngs.length) latlngs = latlngsFromStops(rn);
