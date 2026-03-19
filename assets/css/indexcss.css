@@ -454,6 +454,26 @@ details.c-route>.c-route__setting {
     }
 }
 
+@media (max-width: 1440px) and (min-width: 960px) {
+    .c-btn.c-btn__contents {
+        min-width: 340px;
+    }
+
+    .c-area__btns.dtsb-actions {
+        grid-template-columns: minmax(160px, 220px) 1fr;
+        gap: 10px;
+    }
+
+    .dtsb-btn-compact.c-btn__contents {
+        --btnContentsFts: 1.4rem;
+        padding: 10px 12px;
+    }
+
+    .dtsb-pubsims {
+        padding: 9px 10px;
+    }
+}
+
 .l-contents__map-legends {
     border-radius: 12px;
 

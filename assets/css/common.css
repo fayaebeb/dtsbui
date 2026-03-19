@@ -2738,6 +2738,46 @@
 
   /* Aggregations: compact density for laptop viewports without changing panel width */
   @media screen and (max-width: 1440px) and (min-width: 960px) {
+    .l-container.p-simulation,
+    .l-container.p-result {
+      grid-template-columns: 180px 1fr;
+      font-size: 1.35rem;
+    }
+
+    .l-contents {
+      padding: min(3.90625vh, 30px) min(2.196193265vw, 30px);
+      row-gap: min(3.90625vh, 30px);
+    }
+
+    .l-header {
+      padding: min(2.8645833333vh, 22px) 0 0;
+    }
+
+    .l-header__title {
+      margin-bottom: clamp(1rem, 4vh, 2rem);
+    }
+
+    .l-header__title-en {
+      font-size: clamp(4.2rem, 5vw, 4.2rem);
+    }
+
+    .l-contents__tit {
+      font-size: 2.4rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .l-contents__main {
+      gap: min(2.6041666667vh, 20px) min(2.0497803807vw, 28px);
+    }
+
+    .l-contents__main-tit .tit {
+      font-size: 1.7rem;
+    }
+
+    .l-contents__map-data {
+      font-size: 1.2rem;
+    }
+
     .p-result__map {
       --mainColumn: 2.35fr 1.25fr;
     }
