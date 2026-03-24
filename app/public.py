@@ -11,7 +11,7 @@ from azure.storage.blob import generate_blob_sas, BlobSasPermissions
 from .models import list_simulations, get_simulation
 from .azure_utils import get_storage_context
 from .frequency_compare import compute_frequency_compare_aggregates
-from .station_counts import StationQuery
+from .station_counts import StationQuery, resolve_station_center
 from .station_jobs import enqueue_station_job, get_station_status
 from .person_cache import iter_cached_persons, read_cached_persons_sample
 from .aggregates import Aggregator
@@ -419,6 +419,25 @@ def public_frequency_compare(sim_id: str):
     except Exception:
         walk_coeff_per_sec = 0.5
 
+    station_name = str(payload.get("stationName") or "").strip()
+    station_radius = payload.get("radiusM")
+    station_bin_sec = payload.get("binSec")
+    station_center = None
+    if station_name:
+        try:
+            station_radius_m = float(station_radius if station_radius is not None else 500.0)
+            station_bin_sec_n = int(station_bin_sec if station_bin_sec is not None else 3600)
+        except Exception:
+            return jsonify({"error": "Invalid station payload"}), 400
+        if station_radius_m <= 0:
+            return jsonify({"error": "radiusM must be > 0"}), 400
+        if station_bin_sec_n <= 0 or station_bin_sec_n > 24 * 3600:
+            return jsonify({"error": "binSec out of range"}), 400
+        try:
+            station_center = resolve_station_center(sim_id, station_name)
+        except Exception as exc:
+            return jsonify({"error": str(exc)}), 400
+
     # Frequency compare requires multiple plans per person to allow plan switching.
     # If the simulation was parsed in selected-only mode, this will always show no change.
     peek = read_cached_persons_sample(cache_path, 3)
@@ -434,9 +453,14 @@ def public_frequency_compare(sim_id: str):
         walk_coeff_per_sec=walk_coeff_per_sec,
         changed_sample_n=50,
         include_most_impacted_steps=include_most_steps,
+        station_center_x=(station_center or {}).get("centerX"),
+        station_center_y=(station_center or {}).get("centerY"),
+        station_radius_m=(float(station_radius_m) if station_center else None),
+        station_bin_sec=(station_bin_sec_n if station_center else 3600),
+        station_name=(station_name if station_center else None),
     )
 
-    return jsonify({
+    out = {
         "sim_id": sim_id,
         "params": {
             "routeId": route_id,
@@ -450,7 +474,14 @@ def public_frequency_compare(sim_id: str):
         "mostImpacted": cmp.get("mostImpacted"),
         "pre": cmp.get("preAggregates") or {},
         "post": cmp.get("postAggregates") or {},
-    })
+    }
+    if station_center and cmp.get("stationArea"):
+        out["stationArea"] = {
+            **(cmp.get("stationArea") or {}),
+            "matchCount": int(station_center.get("matchCount") or 0),
+            "matchedStops": station_center.get("matchedStops") or [],
+        }
+    return jsonify(out)
 
 @public_bp.route("/api/simulations/<sim_id>/blob-url", methods=["GET"])
 def public_blob_url(sim_id):

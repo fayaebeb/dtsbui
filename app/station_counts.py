@@ -28,6 +28,12 @@ _FACILITY_CANDIDATES = (
     "output_facilities.xml",
     "facilities.xml",
 )
+_TRANSIT_SCHEDULE_CANDIDATES = (
+    "output_transitSchedule.xml.gz",
+    "output_transitSchedule.xml",
+    "transitSchedule.xml.gz",
+    "transitSchedule.xml",
+)
 
 
 def _find_first_existing(folder: str, candidates: Tuple[str, ...]) -> Optional[str]:
@@ -187,6 +193,109 @@ def _load_facilities_from_zip(zf: zipfile.ZipFile, dest_dir: str) -> Dict[str, T
     except Exception:
         current_app.logger.exception("[station] failed parsing facilities from zip member %s", mem)
         return {}
+
+
+def _normalize_station_aliases(name: str) -> List[str]:
+    base = str(name or "").strip()
+    if not base:
+        return []
+    compact = "".join(base.split())
+    aliases = {compact}
+    if compact.endswith("駅") and len(compact) > 1:
+        aliases.add(compact[:-1])
+    else:
+        aliases.add(f"{compact}駅")
+    return [a for a in aliases if a]
+
+
+def _iter_transit_stop_facilities(path: str) -> Iterable[Dict[str, Any]]:
+    with _open_maybe_gzip_path(path) as f:
+        context = ET.iterparse(f, events=("start",))
+        for _ev, elem in context:
+            if elem.tag != "stopFacility":
+                elem.clear()
+                continue
+            attrs = dict(elem.attrib) if elem.attrib else {}
+            elem.clear()
+            if not attrs:
+                continue
+            try:
+                x = float(attrs.get("x"))
+                y = float(attrs.get("y"))
+            except Exception:
+                continue
+            yield {
+                "id": attrs.get("id") or "",
+                "name": attrs.get("name") or "",
+                "x": x,
+                "y": y,
+            }
+
+
+def _resolve_station_center_from_schedule_path(path: str, station_name: str) -> Optional[Dict[str, Any]]:
+    aliases = {a for a in _normalize_station_aliases(station_name)}
+    if not aliases:
+        return None
+
+    matches: List[Dict[str, Any]] = []
+    for stop in _iter_transit_stop_facilities(path):
+        name = "".join(str(stop.get("name") or "").split())
+        if name in aliases:
+            matches.append(stop)
+
+    if not matches:
+        return None
+
+    center_x = sum(float(m["x"]) for m in matches) / len(matches)
+    center_y = sum(float(m["y"]) for m in matches) / len(matches)
+    return {
+        "stationName": station_name,
+        "centerX": center_x,
+        "centerY": center_y,
+        "matchCount": len(matches),
+        "matchedStops": matches[:20],
+    }
+
+
+def resolve_station_center(sim_id: str, station_name: str) -> Dict[str, Any]:
+    sim = get_simulation(sim_id)
+    if not sim:
+        raise LookupError("simulation not found")
+
+    station_name = str(station_name or "").strip()
+    if not station_name:
+        raise ValueError("station_name required")
+
+    folder = sim.get("path") or ""
+    if folder and os.path.isdir(folder):
+        path = _find_first_existing(folder, tuple(_TRANSIT_SCHEDULE_CANDIDATES))
+        if not path:
+            raise FileNotFoundError("transit schedule file not found in local folder")
+        resolved = _resolve_station_center_from_schedule_path(path, station_name)
+        if not resolved:
+            raise LookupError(f"station not found in transit schedule: {station_name}")
+        return resolved
+
+    blob_name = sim.get("blob_name")
+    if not blob_name:
+        raise FileNotFoundError("No path or blob available for transit schedule")
+
+    bsc, _account, container, _key = get_storage_context()
+    blob: BlobClient = bsc.get_blob_client(container, blob_name)
+    with tempfile.TemporaryDirectory(dir=current_app.config["STORAGE_ROOT"]) as tmpd:
+        tmp_zip = os.path.join(tmpd, "sim.zip")
+        current_app.logger.info("[station] downloading blob %s to %s (transit schedule)", blob_name, tmp_zip)
+        with open(tmp_zip, "wb") as handle:
+            blob.download_blob().readinto(handle)
+        with zipfile.ZipFile(tmp_zip, "r") as zf:
+            member = _locate_member(zf, tuple(_TRANSIT_SCHEDULE_CANDIDATES))
+            if not member:
+                raise FileNotFoundError("transit schedule file not found in zip")
+            path = _extract_member(zf, member, tmpd)
+            resolved = _resolve_station_center_from_schedule_path(path, station_name)
+            if not resolved:
+                raise LookupError(f"station not found in transit schedule: {station_name}")
+            return resolved
 
 
 def _iter_events(path: str) -> Iterable[Dict[str, str]]:

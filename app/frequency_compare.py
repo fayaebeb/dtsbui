@@ -98,6 +98,100 @@ def _argmax(values: List[float]) -> int:
     return best
 
 
+def _as_int_sec(value: Any) -> Optional[int]:
+    if value is None:
+        return None
+    try:
+        if isinstance(value, (int, float)):
+            return int(float(value))
+        if isinstance(value, str):
+            s = value.strip()
+            if not s:
+                return None
+            if ":" in s:
+                parts = s.split(":")
+                if len(parts) == 3:
+                    return int(int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2]))
+        return int(float(value))
+    except Exception:
+        return None
+
+
+def _ensure_len(lst: List[int], n: int) -> None:
+    if n <= len(lst):
+        return
+    lst.extend([0] * (n - len(lst)))
+
+
+def _accumulate_station_area_for_plan(
+    person_id: str,
+    plan: Dict[str, Any],
+    *,
+    center_x: float,
+    center_y: float,
+    radius_sq: float,
+    bin_sec: int,
+    present_by_bin: List[int],
+    unique_visitors: set[str],
+) -> int:
+    steps = plan.get("steps") or []
+    if not isinstance(steps, list):
+        return 0
+
+    mask = 0
+    saw_inside = False
+    max_time = 0
+
+    for step in steps:
+        if not isinstance(step, dict):
+            continue
+        if step.get("kind") != "activity":
+            continue
+        x = step.get("x")
+        y = step.get("y")
+        if x is None or y is None:
+            continue
+        try:
+            dx = float(x) - center_x
+            dy = float(y) - center_y
+        except Exception:
+            continue
+        if (dx * dx + dy * dy) > radius_sq:
+            continue
+
+        saw_inside = True
+
+        st = _as_int_sec(step.get("startTime"))
+        en = _as_int_sec(step.get("endTime"))
+        dur = _as_int_sec(step.get("durationSec"))
+        if st is None and en is None:
+            continue
+        if st is None and en is not None and dur is not None:
+            st = en - dur
+        if en is None and st is not None and dur is not None:
+            en = st + dur
+        if st is None or en is None or en < st:
+            continue
+
+        if en > max_time:
+            max_time = en
+
+        start_bin = st // bin_sec
+        end_bin = start_bin if en == st else (max(st, en - 1) // bin_sec)
+        for b in range(start_bin, end_bin + 1):
+            bit = 1 << b
+            if mask & bit:
+                continue
+            mask |= bit
+            _ensure_len(present_by_bin, b + 1)
+            present_by_bin[b] += 1
+
+    if saw_inside:
+        unique_visitors.add(person_id)
+
+    return max_time
+
+
 def compare_frequency(
     persons: Iterable[Dict[str, Any]],
     *,
@@ -185,6 +279,11 @@ def compute_frequency_compare_aggregates(
     walk_coeff_per_sec: float = 0.5,
     changed_sample_n: int = 50,
     include_most_impacted_steps: bool = False,
+    station_center_x: Optional[float] = None,
+    station_center_y: Optional[float] = None,
+    station_radius_m: Optional[float] = None,
+    station_bin_sec: int = 3600,
+    station_name: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Compute post-change aggregates (over all persons) for a frequency adjustment,
@@ -204,6 +303,20 @@ def compute_frequency_compare_aggregates(
     pre_total_utility = 0.0
     post_total_utility = 0.0
     utility_people = 0
+    station_enabled = (
+        station_center_x is not None
+        and station_center_y is not None
+        and station_radius_m is not None
+        and float(station_radius_m) > 0.0
+    )
+    station_r2 = float(station_radius_m or 0.0) * float(station_radius_m or 0.0)
+    station_bin_sec = max(1, int(station_bin_sec or 3600))
+    station_pre_present: List[int] = []
+    station_post_present: List[int] = []
+    station_pre_visitors: set[str] = set()
+    station_post_visitors: set[str] = set()
+    station_pre_max_time = 0
+    station_post_max_time = 0
 
     most_impacted: Optional[Dict[str, Any]] = None
     most_delta = float("-inf")
@@ -279,6 +392,33 @@ def compute_frequency_compare_aggregates(
         pre_agg.add_person_plan(pid, before_plan)
         post_plan = plans[after_idx] if 0 <= after_idx < len(plans) else plans[0]
         post_agg.add_person_plan(pid, post_plan)
+        if station_enabled:
+            station_pre_max_time = max(
+                station_pre_max_time,
+                _accumulate_station_area_for_plan(
+                    pid,
+                    before_plan,
+                    center_x=float(station_center_x),
+                    center_y=float(station_center_y),
+                    radius_sq=station_r2,
+                    bin_sec=station_bin_sec,
+                    present_by_bin=station_pre_present,
+                    unique_visitors=station_pre_visitors,
+                ),
+            )
+            station_post_max_time = max(
+                station_post_max_time,
+                _accumulate_station_area_for_plan(
+                    pid,
+                    post_plan,
+                    center_x=float(station_center_x),
+                    center_y=float(station_center_y),
+                    radius_sq=station_r2,
+                    bin_sec=station_bin_sec,
+                    present_by_bin=station_post_present,
+                    unique_visitors=station_post_visitors,
+                ),
+            )
         pre_total_utility += before_score
         post_total_utility += after_score
         utility_people += 1
@@ -291,6 +431,26 @@ def compute_frequency_compare_aggregates(
         post_out["totalUtility"] = post_total_utility
         post_out["avgUtility"] = post_total_utility / utility_people
 
+    station_area = None
+    if station_enabled:
+        station_area = {
+            "stationName": station_name or "",
+            "centerX": float(station_center_x),
+            "centerY": float(station_center_y),
+            "radiusM": float(station_radius_m),
+            "binSec": station_bin_sec,
+            "pre": {
+                "uniqueVisitors": len(station_pre_visitors),
+                "presentByBin": station_pre_present,
+                "maxTimeSec": station_pre_max_time,
+            },
+            "post": {
+                "uniqueVisitors": len(station_post_visitors),
+                "presentByBin": station_post_present,
+                "maxTimeSec": station_post_max_time,
+            },
+        }
+
     return {
         "routeId": route_id,
         "oldFrequency": old_f,
@@ -302,4 +462,5 @@ def compute_frequency_compare_aggregates(
         "mostImpacted": most_impacted,
         "preAggregates": pre_out,
         "postAggregates": post_out,
+        "stationArea": station_area,
     }

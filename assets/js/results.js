@@ -64,7 +64,9 @@ labelElements.forEach(labelElement => {
 // 賑わいの表示
 let nigiwaiLayer; // レイヤーを格納する変数
 let commentaryLayerGroup = L.layerGroup();
-if (!IS_RESULTS_HTML) {
+const bustleCheckbox = document.getElementById('data_bustle');
+const commentaryCheckbox = document.getElementById('data_commentary');
+if (bustleCheckbox || commentaryCheckbox) {
 	fetch('assets/data/nigiwai.geojson') // GeoJSONファイルのパス
 		.then(response => response.json())
 		.then(data => {
@@ -103,19 +105,16 @@ if (!IS_RESULTS_HTML) {
 					}
 				}
 			});
-			const bustleCheckbox = document.getElementById('data_bustle');
-			const commentaryCheckbox = document.getElementById('data_commentary');
-			if (!bustleCheckbox || !commentaryCheckbox) return;
 			// 初期表示
-			if (bustleCheckbox.checked && commentaryCheckbox.checked) {
+			if (bustleCheckbox?.checked && commentaryCheckbox?.checked) {
 				nigiwaiLayer.addTo(map);
 				commentaryLayerGroup.addTo(map);
-			} else if (bustleCheckbox.checked) {
+			} else if (bustleCheckbox?.checked) {
 				nigiwaiLayer.addTo(map);
-			} else if (commentaryCheckbox.checked) {
+			} else if (commentaryCheckbox?.checked) {
 				commentaryLayerGroup.addTo(map);
 			}
-			bustleCheckbox.addEventListener('change', function () {
+			bustleCheckbox?.addEventListener('change', function () {
 				const nigiwaiElements = document.querySelectorAll('.leaflet-commentary-pane .nigiwai');
 				// 賑わいレイヤーの表示/非表示
 				if (this.checked) {
@@ -134,7 +133,7 @@ if (!IS_RESULTS_HTML) {
 					}
 				}
 			});
-			commentaryCheckbox.addEventListener('change', function () {
+			commentaryCheckbox?.addEventListener('change', function () {
 				if (this.checked) {
 					if (!map.hasLayer(commentaryLayerGroup)) {
 						map.addLayer(commentaryLayerGroup);
@@ -154,6 +153,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	let meshLayer = null; // 表示範囲内のメッシュレイヤーを保持する変数
 	let outOfBoundsLayer = null; // 範囲外のメッシュレイヤーを保持する変数
 	const meshToggle = document.getElementById('data_mesh_heatmap');
+	const timeToggle = document.getElementById('data_time');
+	const passengersToggle = document.getElementById('data_passengers');
 	// 選択中のメッシュレイヤーを保持する変数
 	let selectedLayer = null;
 	window.currentMesh = null;
@@ -193,6 +194,63 @@ document.addEventListener('DOMContentLoaded', function () {
 		dataBCA: initialBCData[0], //B/C：現在
 		dataBCB: initialBCData[1], //B/C：入力
 	};
+	function getActiveMeshMetric() {
+		if (timeToggle?.checked) return 'time';
+		if (passengersToggle?.checked) return 'passengers';
+		return null;
+	}
+	function getTimeHeatColor(value) {
+		return value > 30 ? '#800026' :
+			value > 25 ? '#BD0026' :
+			value > 20 ? '#E31A1C' :
+			value > 15 ? '#FC4E2A' :
+			value > 10 ? '#FD8D3C' :
+			value > 5 ? '#FEB24C' : '#FED976';
+	}
+	function getPassengersHeatColor(value) {
+		return value > 40 ? '#08306B' :
+			value > 32 ? '#08519C' :
+			value > 24 ? '#2171B5' :
+			value > 16 ? '#4292C6' :
+			value > 8 ? '#6BAED6' :
+			value > 4 ? '#9ECAE1' : '#C6DBEF';
+	}
+	function getMeshFeatureStyle(feature) {
+		if (requiredProperties.some(prop => feature.properties[prop] === undefined || feature.properties[prop] === null)) {
+			return meshStyleDisabled;
+		}
+		const activeMetric = getActiveMeshMetric();
+		if (activeMetric === 'time') {
+			return {
+				color: '#FFFFFF',
+				weight: 0.5,
+				opacity: 0.6,
+				fillOpacity: 0.55,
+				fillColor: getTimeHeatColor(Number(feature.properties.dataTimeB) || 0)
+			};
+		}
+		if (activeMetric === 'passengers') {
+			return {
+				color: '#FFFFFF',
+				weight: 0.5,
+				opacity: 0.6,
+				fillOpacity: 0.55,
+				fillColor: getPassengersHeatColor(Number(feature.properties.dataPassengersB) || 0)
+			};
+		}
+		return meshStyle;
+	}
+	function refreshMeshStyles() {
+		[meshLayer, outOfBoundsLayer].forEach(group => {
+			if (!group) return;
+			group.eachLayer(layer => {
+				if (layer === selectedLayer) return;
+				const feature = layer.feature;
+				if (!feature?.properties) return;
+				layer.setStyle(getMeshFeatureStyle(feature));
+			});
+		});
+	}
 	function addDataToGeoJSON(data) {
 		data.features.forEach(feature => {
 			if (feature.properties && feature.properties.KEY_CODE) {
@@ -268,10 +326,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				let meshDetail = {
 					pane: 'meshPane',
 					style: function (feature) {
-						if (requiredProperties.some(prop => feature.properties[prop] === undefined || feature.properties[prop] === null)) {
-							return meshStyleDisabled;
-						}
-						return meshStyle;
+						return getMeshFeatureStyle(feature);
 					},
 					onEachFeature: function (feature, layer) {
 						if (requiredProperties.some(prop => feature.properties[prop] === undefined || feature.properties[prop] === null)) {
@@ -279,7 +334,7 @@ document.addEventListener('DOMContentLoaded', function () {
 						}
 						layer.on('click', function (e) {
 							if (selectedLayer) {
-								selectedLayer.setStyle(meshStyle);
+								selectedLayer.setStyle(getMeshFeatureStyle(selectedLayer.feature));
 							}
 							if (selectedLayer === layer) {
 								selectedLayer = null;
@@ -320,6 +375,20 @@ document.addEventListener('DOMContentLoaded', function () {
 		map.closePopup();
 		updateCharts(initialData);
 	}
+	function handleMeshMetricToggle(changedToggle, otherToggle) {
+		if (!changedToggle) return;
+		changedToggle.addEventListener('change', function () {
+			if (this.checked && otherToggle) {
+				otherToggle.checked = false;
+			}
+			if (this.checked && meshToggle && !meshToggle.checked) {
+				meshToggle.checked = true;
+				displayMesh();
+				return;
+			}
+			refreshMeshStyles();
+		});
+	}
 	if (IS_RESULTS_HTML && meshToggle) {
 		if (meshToggle.checked) {
 			displayMesh();
@@ -334,6 +403,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	} else if (!IS_RESULTS_HTML) {
 		displayMesh();
 	}
+	handleMeshMetricToggle(timeToggle, passengersToggle);
+	handleMeshMetricToggle(passengersToggle, timeToggle);
 	//ターゲット選択
 	const targetButtons = document.querySelectorAll('.js-target');
 	const targetItems = document.querySelectorAll('.js-target-item');

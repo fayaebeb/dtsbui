@@ -194,10 +194,11 @@ def parse_and_cache(sim_id):
     """Kick off or inspect a parse job for the given simulation."""
     # Default to a high server-side parse limit so calculations can
     # see many persons, while the frontend can still downsample for
-    # visualization.
+    # visualization. Parse all plans by default so frequency compare works
+    # without extra admin configuration.
     limit = int(request.args.get("limit", 1_000_000))
     force_flag = request.args.get("force", "0").lower() in {"1", "true", "yes"}
-    all_plans_flag = request.args.get("all_plans", "0").lower() in {"1", "true", "yes"}
+    all_plans_flag = request.args.get("all_plans", "1").lower() in {"1", "true", "yes"}
     selected_only = not all_plans_flag
     try:
         payload = enqueue_parse_job(sim_id, limit, force=force_flag, selected_only=selected_only)

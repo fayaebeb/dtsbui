@@ -89,6 +89,22 @@
 											<input type="checkbox" id="data_mesh_heatmap" name="data_mesh_heatmap">
 											<span class="btn">メッシュヒートマップ</span>
 										</label>
+										<label class="l-contents__map-btn">
+											<input type="checkbox" id="data_commentary" name="data_commentary">
+											<span class="btn">解説</span>
+										</label>
+										<label class="l-contents__map-btn">
+											<input type="checkbox" id="data_bustle" name="data_bustle">
+											<span class="btn">にぎわい</span>
+										</label>
+										<label class="l-contents__map-btn">
+											<input type="checkbox" id="data_time" name="data_time">
+											<span class="btn">所用時間</span>
+										</label>
+										<label class="l-contents__map-btn">
+											<input type="checkbox" id="data_passengers" name="data_passengers">
+											<span class="btn">乗降客数</span>
+										</label>
 									</dd>
 								</dl>
 								<div class="l-contents__map-population">
@@ -167,6 +183,7 @@
 					</div>
 					<div class="c-box c-area__scroll">
 						<div id="aggPanelMount" style="margin-bottom: 16px;"></div>
+						<div id="stationCompareMount" style="margin-bottom: 16px;"></div>
 						<details class="c-details" open>
 							<summary class="c-details__summary">結果</summary>
 							<small>※メッシュをクリックすると、メッシュごとの結果が表示されます。</small>
@@ -377,6 +394,7 @@
     <script src="assets/js/results.js"></script>
     <!-- <script src="assets/js/route_sim.js"></script> -->
     <script src="assets/js/aggregates.js"></script>
+	<script src="assets/js/station_compare.js"></script>
 	<script>
 		// 総合評価の初期化
 		const initialTotalDataA = [5, 4, 5, 4, 5, 2];

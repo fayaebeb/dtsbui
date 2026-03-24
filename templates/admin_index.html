@@ -51,11 +51,7 @@
           <p class="muted">Manage publication, parsing, and removal.</p>
         </div>
         <div style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;">
-          <label class="muted" style="display:flex; gap:.5rem; align-items:center;">
-            <input id="allPlansToggle" type="checkbox">
-            Parse all plans for frequency compare
-          </label>
-          <span class="muted">Adds route metadata during parse so route-based frequency compare can skip unaffected users.</span>
+          <span class="muted">Parsing now keeps all plans and route metadata so frequency compare can skip unaffected users.</span>
           <button id="refreshBtn" class="btn subtle">Refresh</button>
         </div>
       </header>
@@ -105,19 +101,6 @@
     };
     const activePolls = new Map();
     const POLL_DELAY_MS = 4000;
-
-    const allPlansToggle = document.getElementById('allPlansToggle');
-    try {
-      const saved = localStorage.getItem('admin_parse_all_plans');
-      if (allPlansToggle && saved === '1') allPlansToggle.checked = true;
-    } catch (_) {}
-    if (allPlansToggle) {
-      allPlansToggle.addEventListener('change', () => {
-        try {
-          localStorage.setItem('admin_parse_all_plans', allPlansToggle.checked ? '1' : '0');
-        } catch (_) {}
-      });
-    }
 
     function escapeHtml(value) {
       if (value === null || value === undefined) return '';
@@ -255,8 +238,7 @@
           try {
             // Always force a fresh parse so updated limits
             // (e.g., 1,000,000 persons) take effect.
-            const allPlans = allPlansToggle && allPlansToggle.checked ? 1 : 0;
-            const resp = await fetch(`/admin/api/simulations/${r.id}/parse?force=1&all_plans=${allPlans}`, {
+            const resp = await fetch(`/admin/api/simulations/${r.id}/parse?force=1`, {
               method: 'POST',
               headers: { ...(csrf ? { 'X-CSRFToken': csrf } : {}) },
               credentials: 'same-origin'
