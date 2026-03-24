@@ -10,8 +10,13 @@ from azure.storage.blob import generate_blob_sas, BlobSasPermissions
 
 from .models import list_simulations, get_simulation
 from .azure_utils import get_storage_context
-from .frequency_compare import compute_frequency_compare_aggregates
+from .frequency_compare import (
+    compute_frequency_compare_aggregates,
+    compute_frequency_compare_aggregates_from_affected,
+)
+from .frequency_route_cache import iter_route_cached_persons, load_bestscore_aggregate_state, load_route_manifest
 from .station_counts import StationQuery, resolve_station_center
+from .station_frequency_cache import get_station_baseline_profile
 from .station_jobs import enqueue_station_job, get_station_status
 from .person_cache import iter_cached_persons, read_cached_persons_sample
 from .aggregates import Aggregator
@@ -444,21 +449,70 @@ def public_frequency_compare(sim_id: str):
     if peek and all(isinstance(p.get("plans") or [], list) and len(p.get("plans") or []) <= 1 for p in peek):
         return jsonify({"error": "This simulation was parsed with selected-only plans. Re-parse with 'Parse all plans' to enable frequency compare."}), 400
 
-    cmp = compute_frequency_compare_aggregates(
-        islice(iter_cached_persons(cache_path), person_limit) if person_limit is not None else iter_cached_persons(cache_path),
-        route_id=route_id,
-        old_frequency=float(old_f),
-        new_frequency=float(new_f),
-        top_routes=12,
-        walk_coeff_per_sec=walk_coeff_per_sec,
-        changed_sample_n=50,
-        include_most_impacted_steps=include_most_steps,
-        station_center_x=(station_center or {}).get("centerX"),
-        station_center_y=(station_center or {}).get("centerY"),
-        station_radius_m=(float(station_radius_m) if station_center else None),
-        station_bin_sec=(station_bin_sec_n if station_center else 3600),
-        station_name=(station_name if station_center else None),
+    station_baseline = None
+    if station_center:
+        station_baseline = get_station_baseline_profile(sim_id, station_name, float(station_radius_m), int(station_bin_sec_n))
+
+    cmp = None
+    can_try_fast_path = (
+        person_limit is None
+        and bool(route_id)
+        and (station_center is None or isinstance(station_baseline, dict))
     )
+    if can_try_fast_path:
+        baseline_state = load_bestscore_aggregate_state(sim_id)
+        route_manifest = load_route_manifest(sim_id)
+        route_entry = ((route_manifest or {}).get("routes") or {}).get(route_id) if isinstance(route_manifest, dict) else None
+        route_count = int(route_entry.get("count") or 0) if isinstance(route_entry, dict) else 0
+        if isinstance(baseline_state, dict) and route_count > 0:
+            try:
+                cmp = compute_frequency_compare_aggregates_from_affected(
+                    iter_route_cached_persons(sim_id, route_id),
+                    baseline_state=baseline_state,
+                    route_id=route_id,
+                    old_frequency=float(old_f),
+                    new_frequency=float(new_f),
+                    top_routes=12,
+                    walk_coeff_per_sec=walk_coeff_per_sec,
+                    changed_sample_n=50,
+                    include_most_impacted_steps=include_most_steps,
+                    station_baseline=station_baseline,
+                    station_name=(station_name if station_center else None),
+                )
+                current_app.logger.info(
+                    "[frequency-compare] fast path sim=%s route=%s station=%s affected=%s",
+                    sim_id,
+                    route_id,
+                    station_name or "none",
+                    route_count,
+                )
+            except Exception:
+                current_app.logger.exception("[frequency-compare] route-cache fast path failed for %s/%s", sim_id, route_id)
+                cmp = None
+
+    if cmp is None:
+        current_app.logger.info(
+            "[frequency-compare] full scan sim=%s route=%s station=%s person_limit=%s",
+            sim_id,
+            route_id,
+            station_name or "none",
+            person_limit,
+        )
+        cmp = compute_frequency_compare_aggregates(
+            islice(iter_cached_persons(cache_path), person_limit) if person_limit is not None else iter_cached_persons(cache_path),
+            route_id=route_id,
+            old_frequency=float(old_f),
+            new_frequency=float(new_f),
+            top_routes=12,
+            walk_coeff_per_sec=walk_coeff_per_sec,
+            changed_sample_n=50,
+            include_most_impacted_steps=include_most_steps,
+            station_center_x=(station_center or {}).get("centerX"),
+            station_center_y=(station_center or {}).get("centerY"),
+            station_radius_m=(float(station_radius_m) if station_center else None),
+            station_bin_sec=(station_bin_sec_n if station_center else 3600),
+            station_name=(station_name if station_center else None),
+        )
 
     out = {
         "sim_id": sim_id,

@@ -104,7 +104,12 @@ body{
   border-bottom:1px dashed var(--border);
   margin-bottom:var(--space-16);
 }
-.table-wrap{overflow:auto; border:1px solid var(--border); border-radius:var(--radius-sm)}
+.table-wrap{overflow:auto; padding-bottom: 20vh; max-height: 60vh; border:1px solid var(--border); border-radius:var(--radius-sm)}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: 20px;
+}
 
 .table{
   border-collapse:collapse; width:100%; min-width:720px; background:transparent;

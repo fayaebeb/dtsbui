@@ -16,6 +16,8 @@ from .models import (
 )
 from .azure_utils import get_storage_context
 from .parse_jobs import enqueue_parse_job, get_parse_status
+from .frequency_route_cache import cleanup_frequency_route_cache
+from .station_frequency_cache import cleanup_station_baseline_cache
 from typing import cast
 
 admin_api_bp = Blueprint("admin_api", __name__, url_prefix="/admin/api")
@@ -173,6 +175,10 @@ def delete_sim(sim_id):
             shutil.rmtree(row["path"], ignore_errors=True)
         if row.get("cached_json_path") and os.path.isfile(row["cached_json_path"]):
             os.remove(row["cached_json_path"])
+        if row.get("cached_agg_path") and os.path.isfile(row["cached_agg_path"]):
+            os.remove(row["cached_agg_path"])
+        cleanup_frequency_route_cache(sim_id)
+        cleanup_station_baseline_cache(sim_id)
     except Exception:
         pass
 

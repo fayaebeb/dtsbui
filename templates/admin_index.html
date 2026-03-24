@@ -6,6 +6,88 @@
   <title>Admin Dashboard</title>
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <style>
+    #simsTable { min-width: 680px; }
+    #simsTable .sim-cell { min-width: 260px; max-width: 460px; }
+    #simsTable .actions-cell { width: 190px; white-space: nowrap; }
+    .sim-meta { display: flex; flex-direction: column; gap: 4px; }
+    .sim-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sim-id-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      width: 100%;
+      margin: 0;
+      padding: 2px 0;
+      border: 0;
+      background: none;
+      color: var(--muted);
+      font-size: .82rem;
+      text-align: left;
+      cursor: pointer;
+    }
+    .sim-id-row:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+      border-radius: 6px;
+    }
+    .sim-id-value {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    .sim-id-copy { margin-left: 2px; font-size: .78rem; opacity: .9; }
+    .sim-id-row:hover .sim-id-copy,
+    .sim-id-row:focus-visible .sim-id-copy { text-decoration: underline; }
+    .sim-id-row.copied .sim-id-copy { color: #8cf0c9; text-decoration: none; }
+    .badge.info { background: rgba(92, 200, 255, .14); color: #9ddfff; border-color: rgba(92, 200, 255, .35); }
+    .badge.danger { background: rgba(255, 92, 92, .14); color: #ffb0b0; border-color: rgba(255, 92, 92, .35); }
+    .row-actions { display: flex; justify-content: flex-start; align-items: center; gap: 8px; position: relative; }
+    .row-actions-primary { display: flex; align-items: center; min-height: 32px; }
+    .parsing-chip { min-width: 84px; text-align: center; pointer-events: none; user-select: none; }
+    .overflow { position: relative; }
+    .menu-toggle {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #1a2231;
+      color: var(--text);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .menu-toggle:hover { background: #243047; }
+    .menu-toggle[aria-expanded="true"] { box-shadow: var(--focus); border-color: transparent; }
+    .overflow-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      min-width: 140px;
+      padding: 6px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #111722;
+      box-shadow: var(--shadow);
+      z-index: 30;
+    }
+    .menu-item {
+      display: block;
+      width: 100%;
+      margin: 0;
+      padding: 8px 10px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      font-size: .86rem;
+      cursor: pointer;
+    }
+    .menu-item:hover { background: rgba(255,255,255,.06); }
+    .menu-item.danger { color: #ffb0b0; }
+    .menu-item.danger:hover { background: rgba(255, 92, 92, .14); }
+    .menu-item[disabled] { opacity: .6; cursor: not-allowed; }
+  </style>
 </head>
 <body class="bg-soft">
   <header class="topbar">
@@ -44,6 +126,7 @@
       </div>
     </section>
 
+    <!-- Parsing now keeps all plans and route metadata so frequency compare can skip unaffected users. -->
     <section class="card">
       <header class="section-header">
         <div>
@@ -51,22 +134,20 @@
           <p class="muted">Manage publication, parsing, and removal.</p>
         </div>
         <div style="display:flex; gap:.75rem; align-items:center; flex-wrap:wrap;">
-          <span class="muted">Parsing now keeps all plans and route metadata so frequency compare can skip unaffected users.</span>
           <button id="refreshBtn" class="btn subtle">Refresh</button>
         </div>
       </header>
 
       <div class="table-wrap">
-        <table class="table">
+        <table class="table" id="simsTable">
           <thead>
             <tr>
-              <th style="width:80px">ID</th>
-              <th>Name</th>
-              <th style="width:120px">Published</th>
+              <th style="width:320px">Simulation</th>
+              <th style="width:110px">Published</th>
               <th style="width:180px">Uploaded</th>
               <th style="width:120px">Size</th>
               <th style="width:160px">Parse Status</th>
-              <th style="width:260px">Actions</th>
+              <th style="width:190px">Actions</th>
             </tr>
           </thead>
           <tbody id="simsBody"></tbody>
@@ -114,28 +195,207 @@
     }
 
     function stopPolling(simId) {
-      const handle = activePolls.get(simId);
+      const key = String(simId);
+      const handle = activePolls.get(key);
       if (handle) {
         clearTimeout(handle);
       }
-      activePolls.delete(simId);
+      activePolls.delete(key);
     }
 
+    function getRowById(simId) {
+      const key = String(simId);
+      return [...document.querySelectorAll('#simsBody tr')].find((row) => row.dataset.simId === key);
+    }
+
+    function shortId(value) {
+      const id = String(value || '');
+      if (id.length <= 16) return id;
+      return `${id.slice(0, 8)}...${id.slice(-4)}`;
+    }
+
+    function parseTimestamp(value) {
+      if (value === null || value === undefined) return null;
+      const raw = String(value).trim();
+      if (!raw) return null;
+
+      const hasZone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(raw);
+      const looksIso = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(raw);
+      const normalized = looksIso && !hasZone ? `${raw}Z` : raw;
+      const dt = new Date(normalized);
+      return Number.isNaN(dt.getTime()) ? null : dt;
+    }
+
+    function formatUploadedAt(value) {
+      const raw = value === null || value === undefined ? '' : String(value);
+      const safeRaw = escapeHtml(raw);
+      const dt = parseTimestamp(raw);
+      if (!dt) {
+        return safeRaw || '-';
+      }
+
+      const datePart = dt.toLocaleDateString('en-US', {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric'
+      });
+      const timePart = dt.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+      return `
+        <div class="stack gap-xxs" title="${safeRaw}">
+          <div>${escapeHtml(datePart)}</div>
+          <small class="muted">${escapeHtml(timePart)}</small>
+        </div>
+      `;
+    }
+
+    function formatFileSize(value) {
+      const n = typeof value === 'number' ? value : Number(value);
+      if (!Number.isFinite(n) || n < 0) {
+        return value === null || value === undefined ? '-' : String(value);
+      }
+
+      const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+      let v = n;
+      let i = 0;
+      while (v >= 1024 && i < units.length - 1) {
+        v /= 1024;
+        i += 1;
+      }
+
+      const precision = v >= 100 ? 0 : (v >= 10 ? 1 : 2);
+      const rounded = v.toFixed(precision).replace(/\.0+$|(\.\d*[1-9])0+$/, '$1');
+      return `${rounded} ${units[i]}`;
+    }
+
+    async function copyToClipboard(value) {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(value);
+        return;
+      }
+      const ta = document.createElement('textarea');
+      ta.value = value;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const copied = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (!copied) throw new Error('copy failed');
+    }
+
+    function setCopyStatus(button, label, isCopied) {
+      const copyTextEl = button.querySelector('.sim-id-copy');
+      if (!copyTextEl) return;
+      if (button._copyTimer) clearTimeout(button._copyTimer);
+      button.classList.toggle('copied', Boolean(isCopied));
+      copyTextEl.textContent = label;
+      button._copyTimer = setTimeout(() => {
+        button.classList.remove('copied');
+        copyTextEl.textContent = 'Copy';
+      }, 1200);
+    }
+
+    function bindCopyId(button, fullId) {
+      button.addEventListener('click', async () => {
+        try {
+          await copyToClipboard(fullId);
+          setCopyStatus(button, 'Copied', true);
+        } catch (err) {
+          console.error('Copy failed', err);
+          setCopyStatus(button, 'Failed', false);
+        }
+      });
+    }
+
+    function isParsingStatus(status) {
+      return status === 'queued' || status === 'running';
+    }
+
+    function formatActionsCell(row, status) {
+      const parsing = isParsingStatus(status);
+      const publishLabel = row.published ? 'Unpublish' : 'Publish';
+      const parseLabel = status === 'succeeded' ? 'Re-parse' : (status === 'failed' ? 'Retry Parse' : 'Parse/Cache');
+      const primaryAction = parsing
+        ? '<span class="badge info parsing-chip" aria-label="Parsing in progress">Parsing...</span>'
+        : `<button class="btn small ${row.published ? 'warning' : 'secondary'}" data-act="publish">${publishLabel}</button>`;
+
+      const menuItems = [];
+      if (parsing) {
+        menuItems.push(`<button type="button" class="menu-item" data-act="publish">${publishLabel}</button>`);
+      } else {
+        menuItems.push(`<button type="button" class="menu-item" data-act="parse">${parseLabel}</button>`);
+      }
+      menuItems.push('<button type="button" class="menu-item danger" data-act="delete">Delete</button>');
+
+      return `
+        <div class="row-actions">
+          <div class="row-actions-primary">${primaryAction}</div>
+          <div class="overflow">
+            <button type="button" class="menu-toggle" data-act="menu-toggle" aria-haspopup="menu" aria-expanded="false" aria-label="More actions">⋯</button>
+            <div class="overflow-menu" role="menu" hidden>
+              ${menuItems.join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function closeAllActionMenus(exceptMenu = null) {
+      document.querySelectorAll('.overflow-menu').forEach((menu) => {
+        if (exceptMenu && menu === exceptMenu) return;
+        if (!menu.hidden) menu.hidden = true;
+        const parent = menu.parentElement;
+        const toggle = parent ? parent.querySelector('[data-act="menu-toggle"]') : null;
+        if (toggle) toggle.setAttribute('aria-expanded', 'false');
+      });
+    }
+
+    document.addEventListener('click', (evt) => {
+      const toggleBtn = evt.target.closest('[data-act="menu-toggle"]');
+      if (toggleBtn) {
+        evt.preventDefault();
+        evt.stopPropagation();
+        const wrap = toggleBtn.closest('.overflow');
+        const menu = wrap ? wrap.querySelector('.overflow-menu') : null;
+        if (!menu) return;
+        const willOpen = menu.hidden;
+        closeAllActionMenus();
+        menu.hidden = !willOpen;
+        toggleBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        return;
+      }
+
+      if (!evt.target.closest('.overflow')) {
+        closeAllActionMenus();
+      }
+    });
+
+    document.addEventListener('keydown', (evt) => {
+      if (evt.key === 'Escape') {
+        closeAllActionMenus();
+      }
+    });
+
     function pollStatus(simId) {
-      fetch(`/admin/api/simulations/${simId}/parse/status`, { credentials: 'same-origin' })
+      const key = String(simId);
+      fetch(`/admin/api/simulations/${encodeURIComponent(key)}/parse/status`, { credentials: 'same-origin' })
         .then((res) => (res.ok ? res.json() : Promise.reject(new Error('status fetch failed'))))
         .then((data) => {
           const status = (data && data.status) ? String(data.status).toLowerCase() : 'idle';
 
-          const tr = [...document.querySelectorAll("#simsBody tr")]
-            .find((r) => r.firstElementChild && r.firstElementChild.textContent.trim() === simId);
+          const tr = getRowById(key);
 
           if (tr && data && data.simulation) {
-            const parseCell = tr.querySelector("td:nth-child(6)");
+            const parseCell = tr.querySelector('.parse-cell');
             if (parseCell) {
               parseCell.innerHTML = formatParseCell(data.simulation);
             }
-            const parseBtn = tr.querySelector('td:nth-child(7) [data-act="parse"]');
+            const parseBtn = tr.querySelector('[data-act="parse"]');
             if (parseBtn) {
               if (status === 'queued' || status === 'running') {
                 parseBtn.disabled = true;
@@ -150,23 +410,24 @@
           }
 
           if (status === 'queued' || status === 'running') {
-            const handle = setTimeout(() => pollStatus(simId), POLL_DELAY_MS);
-            activePolls.set(simId, handle);
+            const handle = setTimeout(() => pollStatus(key), POLL_DELAY_MS);
+            activePolls.set(key, handle);
           } else {
-            stopPolling(simId);
+            stopPolling(key);
             refresh();
           }
         })
         .catch(() => {
-          stopPolling(simId);
+          stopPolling(key);
           refresh();
         });
     }
 
     function ensurePolling(simId) {
-      if (!activePolls.has(simId)) {
-        activePolls.set(simId, null);
-        pollStatus(simId);
+      const key = String(simId);
+      if (!activePolls.has(key)) {
+        activePolls.set(key, null);
+        pollStatus(key);
       }
     }
 
@@ -189,106 +450,124 @@
       if (!res.ok) return;
       const rows = await res.json();
       const tb = document.getElementById('simsBody');
+      closeAllActionMenus();
       tb.innerHTML = '';
       rows.forEach((r) => {
+        const simId = String(r.id ?? '');
+        const simPathId = encodeURIComponent(simId);
         const status = (r.parse_status || (r.cached_json_path ? 'succeeded' : 'idle')).toLowerCase();
         const tr = document.createElement('tr');
         const safeName = escapeHtml(r.name || '');
-        const sizeText = typeof r.size === 'number' ? numberFmt.format(r.size) : (r.size || '');
+        const safeId = escapeHtml(simId);
+        const shortSafeId = escapeHtml(shortId(simId));
+        const uploadedAtHtml = formatUploadedAt(r.uploaded_at);
+        const sizeText = formatFileSize(r.size);
+        const sizeNum = typeof r.size === 'number' ? r.size : Number(r.size);
+        const sizeTitle = Number.isFinite(sizeNum) ? `${numberFmt.format(sizeNum)} bytes` : String(r.size || '');
         const parseCell = formatParseCell(r);
-        const parseLabel = status === 'succeeded' ? 'Re-parse' : (status === 'failed' ? 'Retry Parse' : 'Parse/Cache');
+        const actionsHtml = formatActionsCell(r, status);
+        tr.dataset.simId = simId;
         tr.innerHTML = `
-          <td>${r.id}</td>
-          <td class="cell-ellipsis" title="${safeName}">${safeName}</td>
-          <td>${r.published ? '<span class="badge success">Yes</span>' : '<span class="badge">No</span>'}</td>
-          <td>${r.uploaded_at}</td>
-          <td>${sizeText}</td>
-          <td>${parseCell}</td>
-          <td>
-            <div class="actions">
-              <button class="btn small ${r.published ? 'warning' : 'secondary'}" data-act="publish">${r.published ? 'Unpublish' : 'Publish'}</button>
-              <button class="btn small secondary" data-act="parse">${parseLabel}</button>
-              <button class="btn small danger" data-act="delete">Delete</button>
+          <td class="sim-cell" title="${safeName} | ID: ${safeId}">
+            <div class="sim-meta">
+              <div class="sim-name" title="${safeName}">${safeName || '-'}</div>
+              <button type="button" class="sim-id-row" data-act="copy-id" title="ID: ${safeId}">
+                <span>ID</span>
+                <span class="sim-id-value">${shortSafeId}</span>
+                <span class="sim-id-copy">Copy</span>
+              </button>
             </div>
-          </td>`;
+          </td>
+          <td>${r.published ? '<span class="badge success">Yes</span>' : '<span class="badge">No</span>'}</td>
+          <td>${uploadedAtHtml}</td>
+          <td title="${escapeHtml(sizeTitle)}">${escapeHtml(sizeText)}</td>
+          <td class="parse-cell">${parseCell}</td>
+          <td class="actions-cell">${actionsHtml}</td>`;
 
-        const publishBtn = tr.querySelector('[data-act="publish"]');
-        const parseBtn = tr.querySelector('[data-act="parse"]');
-        const deleteBtn = tr.querySelector('[data-act="delete"]');
+        const publishBtns = tr.querySelectorAll('[data-act="publish"]');
+        const parseBtns = tr.querySelectorAll('[data-act="parse"]');
+        const deleteBtns = tr.querySelectorAll('[data-act="delete"]');
+        const copyIdBtn = tr.querySelector('[data-act="copy-id"]');
 
-        publishBtn.onclick = async () => {
-          const resp = await fetch(`/admin/api/simulations/${r.id}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(csrf ? { 'X-CSRFToken': csrf } : {})
-            },
-            body: JSON.stringify({ published: !r.published }),
-            credentials: 'same-origin'
-          });
-          if (!resp.ok) alert('Publish toggle failed');
-          refresh();
-        };
+        if (copyIdBtn) bindCopyId(copyIdBtn, simId);
 
-        parseBtn.onclick = async () => {
-          if (parseBtn.disabled) return;
-          const originalText = parseBtn.textContent;
-          parseBtn.disabled = true;
-          parseBtn.textContent = 'Starting...';
-          try {
-            // Always force a fresh parse so updated limits
-            // (e.g., 1,000,000 persons) take effect.
-            const resp = await fetch(`/admin/api/simulations/${r.id}/parse?force=1`, {
-              method: 'POST',
+        publishBtns.forEach((publishBtn) => {
+          publishBtn.onclick = async () => {
+            closeAllActionMenus();
+            const resp = await fetch(`/admin/api/simulations/${simPathId}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(csrf ? { 'X-CSRFToken': csrf } : {})
+              },
+              body: JSON.stringify({ published: !r.published }),
+              credentials: 'same-origin'
+            });
+            if (!resp.ok) alert('Publish toggle failed');
+            refresh();
+          };
+        });
+
+        parseBtns.forEach((parseBtn) => {
+          parseBtn.onclick = async () => {
+            if (parseBtn.disabled) return;
+            closeAllActionMenus();
+            const originalText = parseBtn.textContent;
+            parseBtn.disabled = true;
+            parseBtn.textContent = 'Starting...';
+            try {
+              // Always force a fresh parse so updated limits
+              // (e.g., 1,000,000 persons) take effect.
+              const resp = await fetch(`/admin/api/simulations/${simPathId}/parse?force=1`, {
+                method: 'POST',
+                headers: { ...(csrf ? { 'X-CSRFToken': csrf } : {}) },
+                credentials: 'same-origin'
+              });
+              let payload = null;
+              try { payload = await resp.json(); } catch (_) {}
+              if (!resp.ok) {
+                alert(payload?.error || 'Parse failed');
+                parseBtn.disabled = false;
+                parseBtn.textContent = originalText;
+                return;
+              }
+              const nextStatus = payload?.status ? String(payload.status).toLowerCase() : status;
+              if (nextStatus === 'queued' || nextStatus === 'running') {
+                ensurePolling(simId);
+              }
+              refresh();
+            } catch (err) {
+              console.error('Parse failed', err);
+              alert(err?.message || 'Parse failed');
+              parseBtn.disabled = false;
+              parseBtn.textContent = originalText;
+            }
+          };
+        });
+
+        deleteBtns.forEach((deleteBtn) => {
+          deleteBtn.onclick = async () => {
+            closeAllActionMenus();
+            if (!confirm('Delete this simulation?')) return;
+            stopPolling(simId);
+            const resp = await fetch(`/admin/api/simulations/${simPathId}`, {
+              method: 'DELETE',
               headers: { ...(csrf ? { 'X-CSRFToken': csrf } : {}) },
               credentials: 'same-origin'
             });
-            let payload = null;
-            try { payload = await resp.json(); } catch (_) {}
-            if (!resp.ok) {
-              alert(payload?.error || 'Parse failed');
-              parseBtn.disabled = false;
-              parseBtn.textContent = originalText;
-              return;
-            }
-            const nextStatus = payload?.status ? String(payload.status).toLowerCase() : status;
-            if (nextStatus === 'queued' || nextStatus === 'running') {
-              parseBtn.textContent = nextStatus === 'running' ? 'Parsing...' : 'Queued...';
-              ensurePolling(r.id);
-            } else if (nextStatus === 'succeeded') {
-              parseBtn.textContent = 'Re-parse';
-            } else if (nextStatus === 'failed') {
-              parseBtn.textContent = 'Retry Parse';
-            } else {
-              parseBtn.textContent = originalText;
-            }
+            if (!resp.ok) alert('Delete failed');
             refresh();
-          } catch (err) {
-            console.error('Parse failed', err);
-            alert(err?.message || 'Parse failed');
-            parseBtn.disabled = false;
-            parseBtn.textContent = originalText;
-          }
-        };
-
-        deleteBtn.onclick = async () => {
-          if (!confirm('Delete this simulation?')) return;
-          stopPolling(r.id);
-          const resp = await fetch(`/admin/api/simulations/${r.id}`, {
-            method: 'DELETE',
-            headers: { ...(csrf ? { 'X-CSRFToken': csrf } : {}) },
-            credentials: 'same-origin'
-          });
-          if (!resp.ok) alert('Delete failed');
-          refresh();
-        };
+          };
+        });
 
         if (status === 'queued' || status === 'running') {
-          parseBtn.disabled = true;
-          parseBtn.textContent = status === 'running' ? 'Parsing...' : 'Queued...';
-          ensurePolling(r.id);
+          parseBtns.forEach((parseBtn) => {
+            parseBtn.disabled = true;
+            parseBtn.textContent = status === 'running' ? 'Parsing...' : 'Queued...';
+          });
+          ensurePolling(simId);
         } else {
-          stopPolling(r.id);
+          stopPolling(simId);
         }
 
         tb.appendChild(tr);

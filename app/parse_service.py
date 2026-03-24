@@ -13,6 +13,17 @@ from .azure_utils import get_storage_context
 from .models import get_simulation, update_simulation
 from .parsing import iter_plans_to_persons
 from .aggregates import Aggregator
+from .frequency_route_cache import (
+    RouteCacheWriter,
+    cleanup_frequency_route_cache,
+    save_bestscore_aggregate_state,
+)
+from .station_frequency_cache import (
+    builders_to_payload,
+    cleanup_station_baseline_cache,
+    prepare_station_baseline_builders,
+    save_station_baseline_payload,
+)
 from .person_cache import write_ndjson_gz
 
 
@@ -22,6 +33,7 @@ class ParseError(Exception):
 
 _PLAN_CANDIDATES = ("output_plans.xml.gz", "output_plans.xml")
 _EVENT_CANDIDATES = ("output_events.xml.gz", "output_events.xml", "events.xml.gz", "events.xml")
+_SCHEDULE_CANDIDATES = ("output_transitSchedule.xml.gz", "output_transitSchedule.xml", "transitSchedule.xml.gz", "transitSchedule.xml")
 _FACILITY_CANDIDATES = (
     "output_facilities.xml.gz",
     "facilities.xml.gz",
@@ -56,7 +68,14 @@ def _locate_member(zf: zipfile.ZipFile, wanted: Tuple[str, ...]) -> Optional[str
     return None
 
 
-def _parse_and_cache(sim_id: str, plans_path: str, facilities_path: Optional[str], limit: int, selected_only: bool) -> Dict[str, Any]:
+def _parse_and_cache(
+    sim_id: str,
+    plans_path: str,
+    facilities_path: Optional[str],
+    limit: int,
+    selected_only: bool,
+    schedule_path: Optional[str] = None,
+) -> Dict[str, Any]:
     people_iter = iter_plans_to_persons(
         plans_path,
         facilities_path,
@@ -67,12 +86,45 @@ def _parse_and_cache(sim_id: str, plans_path: str, facilities_path: Optional[str
     os.makedirs(parsed_dir, exist_ok=True)
     out_path = os.path.join(parsed_dir, f"{sim_id}.ndjson.gz")
 
+    cleanup_frequency_route_cache(sim_id)
+    cleanup_station_baseline_cache(sim_id)
+
     # Stream persons to disk and compute aggregates on the fly to avoid OOM.
     agg = Aggregator()
+    bestscore_agg = Aggregator() if not selected_only else None
+    route_cache_writer = RouteCacheWriter(sim_id) if not selected_only else None
+    station_baseline_builders = prepare_station_baseline_builders(schedule_path) if not selected_only else []
     sample: list[dict[str, Any]] = []
     sample_limit = int(os.getenv("PUBLIC_MAX_PERSONS", "1000") or "1000")
     sample_limit = max(1, sample_limit)
     count = 0
+
+    def _best_plan_index(plans: list[dict[str, Any]], hinted_idx: Any) -> int:
+        if isinstance(hinted_idx, int) and 0 <= hinted_idx < len(plans):
+            return hinted_idx
+        best_idx = 0
+        best_val = float(plans[0].get("serverScore") or 0.0)
+        for i in range(1, len(plans)):
+            val = float(plans[i].get("serverScore") or 0.0)
+            if val > best_val:
+                best_val = val
+                best_idx = i
+        return best_idx
+
+    def _person_route_ids(person: Dict[str, Any], plans: list[dict[str, Any]]) -> list[str]:
+        route_ids = person.get("routeIds")
+        if isinstance(route_ids, list):
+            return [str(rid).strip() for rid in route_ids if str(rid or "").strip()]
+        found: set[str] = set()
+        for plan in plans:
+            plan_route_ids = plan.get("routeIds")
+            if not isinstance(plan_route_ids, list):
+                continue
+            for rid in plan_route_ids:
+                rid_str = str(rid or "").strip()
+                if rid_str:
+                    found.add(rid_str)
+        return sorted(found)
 
     def _iter_and_accumulate():
         nonlocal count
@@ -87,12 +139,33 @@ def _parse_and_cache(sim_id: str, plans_path: str, facilities_path: Optional[str
                     plan = plans[sel_idx] if 0 <= sel_idx < len(plans) else (plans[0] if plans else None)
                     if isinstance(plan, dict):
                         agg.add_person_plan(pid, plan)
+                    if bestscore_agg is not None:
+                        best_idx = _best_plan_index(plans, p.get("bestServerScorePlanIndex"))
+                        best_plan = plans[best_idx] if 0 <= best_idx < len(plans) else plans[0]
+                        if isinstance(best_plan, dict):
+                            bestscore_agg.add_person_plan(pid, best_plan)
+                            for builder in station_baseline_builders:
+                                builder.add_person_plan(pid, best_plan)
+                    if route_cache_writer is not None:
+                        for rid in _person_route_ids(p, plans):
+                            route_cache_writer.append_person(rid, p)
                 if len(sample) < sample_limit:
                     sample.append(p)
                 count += 1
                 yield p
 
-    write_ndjson_gz(out_path, _iter_and_accumulate())
+    try:
+        write_ndjson_gz(out_path, _iter_and_accumulate())
+        if route_cache_writer is not None:
+            route_cache_writer.finalize()
+        if bestscore_agg is not None:
+            save_bestscore_aggregate_state(sim_id, bestscore_agg.to_state())
+        if station_baseline_builders:
+            save_station_baseline_payload(sim_id, builders_to_payload(sim_id, station_baseline_builders))
+    except Exception:
+        cleanup_frequency_route_cache(sim_id)
+        cleanup_station_baseline_cache(sim_id)
+        raise
 
     # Precompute aggregates for charts so the browser doesn't need all persons.
     agg_path: Optional[str] = os.path.join(parsed_dir, f"{sim_id}.aggregates.json")
@@ -133,7 +206,8 @@ def run_parse(sim_id: str, limit: int, selected_only: bool = True) -> Dict[str, 
             raise ParseError("plans file not found in local folder")
         facilities_path = _find_first_existing(folder, tuple(_FACILITY_CANDIDATES))
         events_path = _find_first_existing(folder, tuple(_EVENT_CANDIDATES))
-        result = _parse_and_cache(sim_id, plans_path, facilities_path, limit, selected_only)
+        schedule_path = _find_first_existing(folder, tuple(_SCHEDULE_CANDIDATES))
+        result = _parse_and_cache(sim_id, plans_path, facilities_path, limit, selected_only, schedule_path=schedule_path)
 
         if facilities_path:
             try:
@@ -170,13 +244,21 @@ def run_parse(sim_id: str, limit: int, selected_only: bool = True) -> Dict[str, 
                 raise ParseError("plans file not found in zip")
             fac_member = _locate_member(zf, tuple(_FACILITY_CANDIDATES))
             ev_member = _locate_member(zf, tuple(_EVENT_CANDIDATES))
+            sch_member = _locate_member(zf, tuple(_SCHEDULE_CANDIDATES))
 
             plans_path = _extract_member(zf, plan_member, tmpd)
             facilities_path = _extract_member(zf, fac_member, tmpd) if fac_member else None
             events_path = _extract_member(zf, ev_member, tmpd) if ev_member else None
+            schedule_path = _extract_member(zf, sch_member, tmpd) if sch_member else None
 
-            logger.info("[parse] found plans=%s facilities=%s events=%s", plan_member, fac_member or "none", ev_member or "none")
-            result = _parse_and_cache(sim_id, plans_path, facilities_path, limit, selected_only)
+            logger.info(
+                "[parse] found plans=%s facilities=%s events=%s schedule=%s",
+                plan_member,
+                fac_member or "none",
+                ev_member or "none",
+                sch_member or "none",
+            )
+            result = _parse_and_cache(sim_id, plans_path, facilities_path, limit, selected_only, schedule_path=schedule_path)
 
             # Cache facilities locally so station-count queries can avoid zip access.
             if facilities_path:

@@ -115,6 +115,22 @@
     return !!document.getElementById('stationOverlayToggle')?.checked;
   }
 
+  function buildStationRing(lat, lng, radiusM, steps = 64) {
+    const out = [];
+    const latRadius = radiusM / 111320;
+    const lngScale = Math.max(0.1, Math.cos((lat * Math.PI) / 180));
+    const lngRadius = radiusM / (111320 * lngScale);
+    const n = Math.max(16, Number(steps) || 64);
+    for (let i = 0; i < n; i += 1) {
+      const theta = (Math.PI * 2 * i) / n;
+      out.push([
+        lat + (Math.sin(theta) * latRadius),
+        lng + (Math.cos(theta) * lngRadius),
+      ]);
+    }
+    return out;
+  }
+
   function renderStationOverlay(station) {
     clearStationOverlay();
     if (!station || !window.L || !window.map) return;
@@ -126,9 +142,9 @@
 
     const radius = Number(station.radiusM || DEFAULT_RADIUS);
     const label = `${station.stationName || DEFAULT_STATION} / ${radius}m`;
+    const ring = buildStationRing(Number(latlng[0]), Number(latlng[1]), radius);
     const group = L.layerGroup();
-    const circle = L.circle(latlng, {
-      radius,
+    const area = L.polygon(ring, {
       color: '#F5813C',
       weight: 2,
       opacity: 0.95,
@@ -145,12 +161,12 @@
       pane: 'selectStop',
     });
 
-    circle.bindTooltip(label, { permanent: false, direction: 'top', className: 'l-contents__map-route' });
+    area.bindTooltip(label, { permanent: false, direction: 'top', className: 'l-contents__map-route' });
     center.bindTooltip(label, { permanent: false, direction: 'top', className: 'l-contents__map-route' });
-    group.addLayer(circle);
+    group.addLayer(area);
     group.addLayer(center);
     group.addTo(window.map);
-    try { circle.bringToFront(); center.bringToFront(); } catch { }
+    try { area.bringToFront(); center.bringToFront(); } catch { }
     stationOverlay = group;
   }
 
@@ -160,7 +176,8 @@
     const latlng = window.km2deg([Number(station.centerX), Number(station.centerY)]);
     if (!Array.isArray(latlng) || latlng.length !== 2) return;
     const radius = Number(station.radiusM || DEFAULT_RADIUS);
-    const bounds = L.circle(latlng, { radius }).getBounds();
+    const ring = buildStationRing(Number(latlng[0]), Number(latlng[1]), radius);
+    const bounds = L.latLngBounds(ring);
     try { window.map.fitBounds(bounds.pad(0.35)); } catch { }
   }
 
