@@ -153,6 +153,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	//メッシュ表示
 	let meshLayer = null; // 表示範囲内のメッシュレイヤーを保持する変数
 	let outOfBoundsLayer = null; // 範囲外のメッシュレイヤーを保持する変数
+	const meshToggle = document.getElementById('data_mesh_heatmap');
 	// 選択中のメッシュレイヤーを保持する変数
 	let selectedLayer = null;
 	window.currentMesh = null;
@@ -319,7 +320,18 @@ document.addEventListener('DOMContentLoaded', function () {
 		map.closePopup();
 		updateCharts(initialData);
 	}
-	if (!IS_RESULTS_HTML) {
+	if (IS_RESULTS_HTML && meshToggle) {
+		if (meshToggle.checked) {
+			displayMesh();
+		}
+		meshToggle.addEventListener('change', function () {
+			if (this.checked) {
+				displayMesh();
+			} else {
+				removeMesh();
+			}
+		});
+	} else if (!IS_RESULTS_HTML) {
 		displayMesh();
 	}
 	//ターゲット選択

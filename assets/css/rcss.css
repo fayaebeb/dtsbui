@@ -29,6 +29,21 @@
 		    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 		}
 
+		.p-result .l-contents__map-view dd {
+		    flex-wrap: nowrap;
+		}
+
+		.p-result .l-contents__map-view .l-contents__map-btn {
+		    width: auto;
+		    flex: 0 0 auto;
+		}
+
+		.p-result .l-contents__map-view .l-contents__map-btn .btn {
+		    width: auto;
+		    white-space: nowrap;
+		    padding-inline: 0.9em;
+		}
+
 		/* Show only the AI tile */
 		.p-result__story-target>li:not(#aiStoryItem) {
 		    display: none;
