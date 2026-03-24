@@ -91,6 +91,59 @@ def score_plan(steps: List[Dict[str, Any]], weights=DEFAULT_WEIGHTS) -> float:
     return score
 
 
+def _plan_pt_metadata(steps: List[Dict[str, Any]]) -> tuple[bool, List[str]]:
+    has_pt = False
+    route_ids: set[str] = set()
+    for step in steps:
+        if not isinstance(step, dict):
+            continue
+        if step.get("kind") != "leg" or step.get("mode") not in ("pt", "bus"):
+            continue
+        has_pt = True
+        rid = step.get("transitRouteId") or step.get("transitLineId") or step.get("ptStartLink")
+        if rid not in (None, ""):
+            route_ids.add(str(rid))
+    return has_pt, sorted(route_ids)
+
+
+def _annotate_person_metadata(person: Dict[str, Any]) -> None:
+    plans = person.get("plans") or []
+    if not isinstance(plans, list) or not plans:
+        return
+
+    best_idx = 0
+    best_val = float("-inf")
+    has_pt = False
+    person_route_ids: set[str] = set()
+
+    for idx, plan in enumerate(plans):
+        if not isinstance(plan, dict):
+            continue
+
+        score = float(plan.get("serverScore") or 0.0)
+        if score > best_val:
+            best_val = score
+            best_idx = idx
+
+        plan_has_pt = plan.get("hasPt")
+        plan_route_ids = plan.get("routeIds")
+        if not isinstance(plan_has_pt, bool) or not isinstance(plan_route_ids, list):
+            plan_has_pt, route_ids = _plan_pt_metadata(plan.get("steps") or [])
+            plan["hasPt"] = plan_has_pt
+            plan["routeIds"] = route_ids
+            plan_route_ids = route_ids
+
+        if plan_has_pt:
+            has_pt = True
+        for rid in plan_route_ids:
+            if rid not in (None, ""):
+                person_route_ids.add(str(rid))
+
+    person["bestServerScorePlanIndex"] = best_idx
+    person["hasPt"] = has_pt
+    person["routeIds"] = sorted(person_route_ids)
+
+
 def parse_plans_to_json(
     path_or_stream: Union[str, io.BufferedReader],
     facilities: Optional[Union[str, io.BufferedReader]] = None,
@@ -252,12 +305,15 @@ def parse_plans_to_json(
                             tt_s = parse_time_to_seconds(s.get("travelTime"))
                             s["durationSec"] = tt_s if tt_s is not None else None
                     server_score = score_plan(steps, DEFAULT_WEIGHTS)
+                    plan_has_pt, plan_route_ids = _plan_pt_metadata(steps)
                     if current_person is not None:
                         plan_obj = {
                             "selected": plan_selected_flag,
                             "matsimScore": plan_matsim_score,
                             "serverScore": server_score,
-                            "steps": steps
+                            "steps": steps,
+                            "hasPt": plan_has_pt,
+                            "routeIds": plan_route_ids,
                         }
                         if selected_only_flag:
                             if first_plan_obj is None:
@@ -279,6 +335,7 @@ def parse_plans_to_json(
                         if plan_obj is not None:
                             current_person["plans"] = [plan_obj]
                             current_person["selectedPlanIndex"] = 0
+                            _annotate_person_metadata(current_person)
                             persons.append(current_person)
                     else:
                         sel_idx = 0
@@ -288,6 +345,7 @@ def parse_plans_to_json(
                                 break
                         current_person["selectedPlanIndex"] = sel_idx
                         if current_person["plans"]:
+                            _annotate_person_metadata(current_person)
                             persons.append(current_person)
                     current_person = None
                     elem.clear()
@@ -451,12 +509,15 @@ def iter_plans_to_persons(
                             s["durationSec"] = tt_s if tt_s is not None else None
 
                     server_score = score_plan(steps, DEFAULT_WEIGHTS)
+                    plan_has_pt, plan_route_ids = _plan_pt_metadata(steps)
                     if current_person is not None:
                         plan_obj = {
                             "selected": plan_selected_flag,
                             "matsimScore": plan_matsim_score,
                             "serverScore": server_score,
                             "steps": steps,
+                            "hasPt": plan_has_pt,
+                            "routeIds": plan_route_ids,
                         }
                         if selected_only_flag:
                             if first_plan_obj is None:
@@ -480,6 +541,7 @@ def iter_plans_to_persons(
                         if plan_obj is not None:
                             current_person["plans"] = [plan_obj]
                             current_person["selectedPlanIndex"] = 0
+                            _annotate_person_metadata(current_person)
                             yield current_person
                             yielded += 1
                     else:
@@ -490,6 +552,7 @@ def iter_plans_to_persons(
                                 break
                         current_person["selectedPlanIndex"] = sel_idx
                         if current_person.get("plans"):
+                            _annotate_person_metadata(current_person)
                             yield current_person
                             yielded += 1
 

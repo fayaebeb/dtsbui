@@ -78,6 +78,16 @@
     return `${rid}|${oldF}|${newF}|${mode}|${ts}|${lim}`;
   }
 
+  function simulationDisplayName(name) {
+    const labelMap = {
+      'output_curr_2024.zip': 'CURR24',
+      'output_BRT_2024.zip': 'BRT24',
+      'output_curr_2040.zip': 'CURR40',
+      '2040_BRT_v2.zip': 'BRT40',
+    };
+    return labelMap[String(name || '')] || name || 'Simulation';
+  }
+
   function resolveFrequencySimulationId(params, eligible, fallbackId) {
     const fromSource = params?.sourcePath ? ROUTE_SOURCE_TO_SIM_ID[String(params.sourcePath)] : null;
     const simId = params?.simulationId || fromSource || fallbackId || null;
@@ -423,7 +433,7 @@
       items.forEach(s => {
         const opt = document.createElement('option');
         opt.value = s.id;
-        opt.textContent = `${s.name} — ${s.id.slice(0, 8)}`;
+        opt.textContent = `${simulationDisplayName(s.name)} — ${s.id.slice(0, 8)}`;
         sel.appendChild(opt);
       });
     }
@@ -480,7 +490,7 @@
         setMode('frequency');
         preSel.value = cached.simId;
 
-        const name = eligible.find(s => s.id === cached.simId)?.name || 'Simulation';
+        const name = simulationDisplayName(eligible.find(s => s.id === cached.simId)?.name);
         renderCharts(cached.data.pre, cached.data.post, {
           preName: `${name} (before)`,
           postName: `${name} (after)`,
@@ -498,8 +508,8 @@
         preSel.value = cached.preId;
         postSel.value = cached.postId;
 
-        const preName = eligible.find(s => s.id === cached.preId)?.name || 'Pre';
-        const postName = eligible.find(s => s.id === cached.postId)?.name || 'Post';
+        const preName = simulationDisplayName(eligible.find(s => s.id === cached.preId)?.name) || 'Pre';
+        const postName = simulationDisplayName(eligible.find(s => s.id === cached.postId)?.name) || 'Post';
         renderCharts(cached.data.pre, cached.data.post, { preName, postName });
         if (status) status.textContent = `Cached (people used: ${cached.data.pre?.totalPeople ?? 0})`;
       }
@@ -508,8 +518,8 @@
     async function run() {
       const preId = preSel.value;
       const postId = postSel.value;
-      const preName = eligible.find(s => s.id === preId)?.name || 'Pre';
-      const postName = eligible.find(s => s.id === postId)?.name || 'Post';
+      const preName = simulationDisplayName(eligible.find(s => s.id === preId)?.name) || 'Pre';
+      const postName = simulationDisplayName(eligible.find(s => s.id === postId)?.name) || 'Post';
       const personLimit = (() => {
         const raw = (limitSel && limitSel.value) ? String(limitSel.value) : '';
         const n = parseInt(raw, 10);
@@ -539,7 +549,7 @@
           const sig = routeSignature(params, personLimit);
           const cached = getCachedCompare();
           if (cached && cached.mode === 'frequency' && cached.simId === freqSimId && cached.sig === sig && cached.personLimit === personLimit && cached.data?.pre && cached.data?.post) {
-            const name = eligible.find(s => s.id === freqSimId)?.name || 'Simulation';
+            const name = simulationDisplayName(eligible.find(s => s.id === freqSimId)?.name);
             renderCharts(cached.data.pre, cached.data.post, {
               preName: `${name} (before)`,
               postName: `${name} (after)`,
@@ -565,7 +575,7 @@
             oldFrequency: params.oldFrequency,
             newFrequency: params.newFrequency,
           }, personLimit);
-          const name = eligible.find(s => s.id === freqSimId)?.name || 'Simulation';
+          const name = simulationDisplayName(eligible.find(s => s.id === freqSimId)?.name);
           renderCharts(resp.pre, resp.post, {
             preName: `${name} (before)`,
             postName: `${name} (after)`,

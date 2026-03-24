@@ -31,7 +31,31 @@ def _supports_transit_route_ids(steps: List[Dict[str, Any]]) -> bool:
     return False
 
 
+def _best_index_for_person(person: Dict[str, Any], plans: List[Dict[str, Any]]) -> int:
+    idx = person.get("bestServerScorePlanIndex")
+    if isinstance(idx, int) and 0 <= idx < len(plans):
+        return idx
+    return _best_index_by_server_score(plans)
+
+
+def _plan_cached_route_ids(plan: Dict[str, Any]) -> List[str]:
+    route_ids = plan.get("routeIds")
+    if isinstance(route_ids, list):
+        return [str(rid) for rid in route_ids if rid not in (None, "")]
+    return []
+
+
 def _plan_affected_by_route(plan: Dict[str, Any], route_id: str) -> bool:
+    route_ids = _plan_cached_route_ids(plan)
+    if route_ids:
+        if not route_id:
+            return True
+        return route_id in route_ids
+
+    has_pt = plan.get("hasPt")
+    if isinstance(has_pt, bool) and not has_pt:
+        return False
+
     steps = plan.get("steps") or []
     if not isinstance(steps, list):
         return False
@@ -42,6 +66,24 @@ def _plan_affected_by_route(plan: Dict[str, Any], route_id: str) -> bool:
         return has_any_pt
     has_exact = any(_is_pt_leg(s) and s.get("transitRouteId") == route_id for s in steps)
     return has_exact if supports_ids else has_any_pt
+
+
+def _person_may_be_affected(person: Dict[str, Any], plans: List[Dict[str, Any]], route_id: str) -> bool:
+    route_ids = person.get("routeIds")
+    if isinstance(route_ids, list) and route_ids:
+        route_id_set = {str(rid) for rid in route_ids if rid not in (None, "")}
+        if not route_id:
+            return True
+        return route_id in route_id_set
+
+    has_pt = person.get("hasPt")
+    if isinstance(has_pt, bool):
+        if not has_pt:
+            return False
+        if not route_id:
+            return True
+
+    return any(_plan_affected_by_route(plan, route_id) for plan in plans)
 
 
 def _argmax(values: List[float]) -> int:
@@ -90,7 +132,12 @@ def compare_frequency(
             continue
 
         # Use the same objective for baseline and post-change selection.
-        before_idx = _best_index_by_server_score(plans)
+        before_idx = _best_index_for_person(p, plans)
+
+        if not _person_may_be_affected(p, plans, route_id) or abs(delta_score) < 1e-12:
+            before_indices[pid] = before_idx
+            after_indices[pid] = before_idx
+            continue
 
         plan_affected: List[bool] = []
         adjusted_scores: List[float] = []
@@ -173,18 +220,9 @@ def compute_frequency_compare_aggregates(
             continue
 
         # Use the same objective for baseline and post-change selection.
-        before_idx = _best_index_by_server_score(plans)
+        before_idx = _best_index_for_person(p, plans)
 
-        plan_affected: List[bool] = []
-        adjusted_scores: List[float] = []
-        for pl in plans:
-            base = float(pl.get("serverScore") or 0.0)
-            affected = _plan_affected_by_route(pl, route_id)
-            plan_affected.append(affected)
-            adjusted_scores.append(base + delta_score if affected else base)
-
-        any_affected = any(plan_affected)
-        if not any_affected or abs(delta_score) < 1e-12:
+        if not _person_may_be_affected(p, plans, route_id) or abs(delta_score) < 1e-12:
             after_idx = before_idx
             best_val = (
                 float(plans[before_idx].get("serverScore") or 0.0)
@@ -192,8 +230,25 @@ def compute_frequency_compare_aggregates(
                 else 0.0
             )
         else:
-            after_idx = _argmax(adjusted_scores)
-            best_val = adjusted_scores[after_idx] if 0 <= after_idx < len(adjusted_scores) else 0.0
+            plan_affected: List[bool] = []
+            adjusted_scores: List[float] = []
+            for pl in plans:
+                base = float(pl.get("serverScore") or 0.0)
+                affected = _plan_affected_by_route(pl, route_id)
+                plan_affected.append(affected)
+                adjusted_scores.append(base + delta_score if affected else base)
+
+            any_affected = any(plan_affected)
+            if not any_affected:
+                after_idx = before_idx
+                best_val = (
+                    float(plans[before_idx].get("serverScore") or 0.0)
+                    if 0 <= before_idx < len(plans)
+                    else 0.0
+                )
+            else:
+                after_idx = _argmax(adjusted_scores)
+                best_val = adjusted_scores[after_idx] if 0 <= after_idx < len(adjusted_scores) else 0.0
 
         before_score = float(plans[before_idx].get("serverScore") or 0.0) if 0 <= before_idx < len(plans) else 0.0
         after_score = float(best_val or 0.0)
