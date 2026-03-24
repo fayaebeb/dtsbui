@@ -564,7 +564,6 @@ def _compare_story_facts(
         if pre_pt_users is not None and post_pt_users is not None:
             fact = f"全体PT利用者{pre_pt_users}人→{post_pt_users}人"
             approved.append(fact)
-            must_use.append(fact)
 
         pre_avg_sec = _as_int(pre.get("avgTravelSec"))
         post_avg_sec = _as_int(post.get("avgTravelSec"))
@@ -576,8 +575,6 @@ def _compare_story_facts(
         changed_people = _as_int(compare_ctx.get("changedPeople"))
         if changed_people is not None:
             approved.append(f"経路変更人数{changed_people}人")
-            if changed_people > 0:
-                must_use.append(f"経路変更人数{changed_people}人")
 
         if mode == "frequency":
             params = compare_ctx.get("params") or {}
@@ -653,6 +650,21 @@ def _sanitize_one_liner(text: str, approved_facts: List[str]) -> str:
     text = text.replace(" ，", "、").replace(" 。", "。").strip(" 　")
     return text.strip()
 
+def _normalize_first_person_ja(text: str) -> str:
+    s = _sanitize_inline(text)
+    replacements = [
+        ("この人物は", "私は"),
+        ("この人は", "私は"),
+        ("この人物の", "私の"),
+        ("この人の", "私の"),
+    ]
+    for src, dst in replacements:
+        if s.startswith(src):
+            s = dst + s[len(src):]
+            break
+    s = s.replace("この人物", "私").replace("この人", "私")
+    return s
+
 def _sanitize_inline(s: str) -> str:
     s = re.sub(r"[\r\n\t]+", " ", s or "")
     s = re.sub(r"\s{2,}", " ", s).strip()
@@ -675,11 +687,19 @@ def _ensure_must_use_facts(text: str, must_use: List[str], *, min_count: int = 2
     if not base or not facts or min_count <= 0:
         return base
 
-    present = [f for f in facts if f in base]
+    def _fact_is_present(fact: str, body: str) -> bool:
+        if fact in body:
+            return True
+        nums = re.findall(r"\d{1,7}", fact)
+        if len(nums) >= 2 and all(n in body for n in nums[:2]):
+            return True
+        return False
+
+    present = [f for f in facts if _fact_is_present(f, base)]
     if len(present) >= min_count:
         return base
 
-    missing = [f for f in facts if f not in base]
+    missing = [f for f in facts if not _fact_is_present(f, base)]
     need = max(0, min_count - len(present))
     inject = missing[:need]
     if not inject:
@@ -800,10 +820,13 @@ def generate_story():
         sys_msg = {
             "role": "system",
             "content": (
-                "You write short, concrete, data-grounded day-in-the-life blurbs "
+                "You write short, concrete, data-grounded first-person day-in-the-life blurbs "
                 "grounded ONLY in the given simulation data. "
                 f"Language: {sys_lang}. Audience: general public. "
                 "Style: concise and specific. Do not use line breaks. "
+                "Write as if the selected traveler is speaking about their own day and how it changed. "
+                "Use first person voice in Japanese, such as '私は' or an implied first-person subject. "
+                "Do not write analyst/report prose like 'この人物は', 'この人は', or 'personId'. "
                 "Avoid generic phrasing and avoid repeating the same fact twice. "
                 "Do not introduce numeric values (times, counts, minutes) that are not listed as MUST-USE facts."
             ),
@@ -824,7 +847,8 @@ def generate_story():
                 "Task: Return JSON {title, one_liner, bubble} only.\n"
                 "- title ≤20 chars, punchy and neutral.\n"
                 "- one_liner: exactly 2 sentences, 60–200 chars, NO line breaks. "
-                "Sentence 1 should describe the person's day and change. Sentence 2 should describe the simulation implication.\n"
+                "Sentence 1 should describe my day in first person. Sentence 2 should explain how the service change affected my travel in first person.\n"
+                "Prefer personal before/after change facts over whole-system metrics. Whole-system metrics are optional background only.\n"
                 "Weave at least TWO of the MUST-USE facts naturally (use numbers/times exactly as written).\n"
                 "- bubble: pick EXACTLY one from APPROVED facts.\n"
             ),
@@ -920,6 +944,8 @@ def generate_story():
     payload = _validate_payload(obj)
     try:
         clean_one = _sanitize_one_liner(payload["one_liner"], approved_facts)
+        if lang == "ja":
+            clean_one = _normalize_first_person_ja(clean_one)
         clean_one = _ensure_must_use_facts(clean_one, must_use, min_count=2, max_len=200)
         # keep length floor if cleanup shortened it too much: lightly pad with safe facts
         if len(clean_one) < 60:
