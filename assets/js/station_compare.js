@@ -3,12 +3,23 @@
   function onReady(fn) { if (document.readyState !== 'loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
 
   const CACHE_KEY = 'dtsb.stationCompareCache.v1';
+  const AGG_CACHE_KEY = 'dtsb.aggCompareCache.v2';
   const DEFAULT_STATION = '西条駅';
   const DEFAULT_RADIUS = 500;
   const DEFAULT_BIN_SEC = 3600;
+  const ROUTE_SOURCE_TO_SIM_ID = {
+    'bus_route/baseline_transitSchedule_cr24_1.xml': '096896b54be24ffbb0cbee53dde6fd9f',
+    'bus_route/brt_transitSchedule_brt24_2.xml': '67eb5392da3a4202906f46f7b808b888',
+    'bus_route/net_expansion_transitSchedule_cr40_3.xml': '18c774153bad4ee0aae34a8dcbb7f03b',
+    'bus_route/output_transitSchedule_brt40_4.xml': '10862aa9ea9d4fd18c1b91b980b66439'
+  };
+  const PEOPLE_BIN_STEP_MS = 1200;
+  const PEOPLE_MAX_MARKERS_PER_SERIES = 140;
   let latestCompareContext = null;
   let stationOverlay = null;
   let latestStationArea = null;
+  let peopleAnimationTimer = null;
+  let peopleAnimationState = null;
 
   function getCache() {
     try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}') || {}; } catch { return {}; }
@@ -16,6 +27,51 @@
 
   function setCache(cache) {
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache || {})); } catch { }
+  }
+
+  function getAggCache() {
+    try { return JSON.parse(localStorage.getItem(AGG_CACHE_KEY) || 'null'); } catch { return null; }
+  }
+
+  function loadRouteParams() {
+    try { return JSON.parse(localStorage.getItem('routeParams') || 'null'); } catch { return null; }
+  }
+
+  function buildStandaloneFrequencyContext() {
+    const params = loadRouteParams();
+    if (!params || params.oldFrequency == null || params.newFrequency == null) return null;
+    const routeId = String(params.routeId || '');
+    if (!routeId) return null;
+
+    const cached = getAggCache();
+    const simId = params.simulationId || ROUTE_SOURCE_TO_SIM_ID[String(params.sourcePath || '')] || cached?.simId || null;
+    if (!simId) return null;
+
+    const cachedParams = cached?.data?.params || {};
+    const cacheMatches =
+      cached &&
+      cached.mode === 'frequency' &&
+      cached.simId === simId &&
+      String(cachedParams.routeId || '') === routeId &&
+      Number(cachedParams.oldFrequency) === Number(params.oldFrequency) &&
+      Number(cachedParams.newFrequency) === Number(params.newFrequency);
+    const personLimit =
+      cacheMatches
+        ? (cached.personLimit ?? cached.data?.params?.personLimit ?? null)
+        : null;
+
+    return {
+      ready: true,
+      source: cached ? 'cache' : 'routeParams',
+      mode: 'frequency',
+      simId,
+      params: {
+        routeId,
+        oldFrequency: Number(params.oldFrequency),
+        newFrequency: Number(params.newFrequency),
+        personLimit,
+      },
+    };
   }
 
   function compareSignature(ctx, stationName, radiusM) {
@@ -60,8 +116,18 @@
               <input id="stationOverlayToggle" type="checkbox" checked>
               <span class="muted">Show on map</span>
             </label>
+            <label style="display:flex; gap:6px; align-items:center; min-width:0;">
+              <input id="stationPeopleToggle" type="checkbox" checked>
+              <span class="muted">People animation</span>
+            </label>
             <button id="stationCompareBtn" type="button" class="btn" disabled>Calculate</button>
-            <span id="stationCompareStatus" class="muted" style="min-width:0; flex:1 1 220px;">先にAggregationsで運航頻度変更前後のCompareを実行してください。</span>
+            <span id="stationCompareStatus" class="muted" style="min-width:0; flex:1 1 220px;">index.html で保存した運航頻度設定を使って単独で計算できます。</span>
+          </div>
+          <div id="stationPeopleLegend" class="muted" style="font-size:12px; margin-bottom:6px;"></div>
+          <div id="stationPeopleControls" class="station-people-controls" style="display:none;">
+            <button id="stationPeoplePlayPause" type="button" class="btn station-people-controls__play">Pause</button>
+            <input id="stationPeopleSlider" class="station-people-controls__slider" type="range" min="0" max="0" step="1" value="0" />
+            <span id="stationPeopleTimeLabel" class="station-people-controls__label">00:00</span>
           </div>
           <div id="stationCompareCards" style="display:flex; gap:12px; flex-wrap:wrap; margin:8px 0;"></div>
           <div style="height:240px; display:none;" id="stationCompareChartWrap">
@@ -106,6 +172,13 @@
   }
 
   function clearStationOverlay() {
+    if (peopleAnimationTimer) {
+      clearInterval(peopleAnimationTimer);
+      peopleAnimationTimer = null;
+    }
+    peopleAnimationState = null;
+    setPeopleControlsVisible(false);
+    setPeopleControlState({ hour: 0, bins: 1, playing: false });
     if (!stationOverlay || !window.map || typeof window.map.removeLayer !== 'function') return;
     try { window.map.removeLayer(stationOverlay); } catch { }
     stationOverlay = null;
@@ -113,6 +186,223 @@
 
   function isOverlayEnabled() {
     return !!document.getElementById('stationOverlayToggle')?.checked;
+  }
+
+  function isPeopleAnimationEnabled() {
+    return !!document.getElementById('stationPeopleToggle')?.checked;
+  }
+
+  function setPeopleControlsVisible(visible) {
+    const wrap = document.getElementById('stationPeopleControls');
+    if (!wrap) return;
+    wrap.style.display = visible ? 'grid' : 'none';
+  }
+
+  function setPeopleControlState(state) {
+    const slider = document.getElementById('stationPeopleSlider');
+    const label = document.getElementById('stationPeopleTimeLabel');
+    const btn = document.getElementById('stationPeoplePlayPause');
+    if (!slider || !label || !btn) return;
+
+    const bins = Math.max(1, toNonNegativeInt(state?.bins));
+    const hour = Math.max(0, toNonNegativeInt(state?.hour) % bins);
+    const playing = !!state?.playing;
+
+    slider.min = '0';
+    slider.max = String(Math.max(0, bins - 1));
+    slider.value = String(hour);
+    label.textContent = `${String(hour).padStart(2, '0')}:00`;
+    btn.textContent = playing ? 'Pause' : 'Play';
+  }
+
+  function stopPeopleAnimationTimer() {
+    if (!peopleAnimationTimer) return;
+    clearInterval(peopleAnimationTimer);
+    peopleAnimationTimer = null;
+  }
+
+  function startPeopleAnimationTimer() {
+    stopPeopleAnimationTimer();
+    if (!peopleAnimationState || !peopleAnimationState.playing || peopleAnimationState.bins <= 0) return;
+    peopleAnimationTimer = setInterval(() => {
+      if (!peopleAnimationState || !peopleAnimationState.playing) return;
+      const nextHour = (peopleAnimationState.hour + 1) % peopleAnimationState.bins;
+      renderPeopleFrame(nextHour);
+    }, PEOPLE_BIN_STEP_MS);
+  }
+
+  function setPeopleLegend(state) {
+    const el = document.getElementById('stationPeopleLegend');
+    if (!el) return;
+    if (!state || typeof state !== 'object') {
+      el.innerHTML = '';
+      return;
+    }
+    const bins = Math.max(1, toNonNegativeInt(state.bins));
+    const hour = Math.max(0, toNonNegativeInt(state.hour) % bins);
+    const preReal = toNonNegativeInt(state.preReal);
+    const postReal = toNonNegativeInt(state.postReal);
+    const preVisible = toNonNegativeInt(state.preVisible);
+    const postVisible = toNonNegativeInt(state.postVisible);
+    const preSample = preReal > preVisible ? `<span class="station-people-note">sample ${preVisible}/${preReal}</span>` : '';
+    const postSample = postReal > postVisible ? `<span class="station-people-note">sample ${postVisible}/${postReal}</span>` : '';
+    const delta = postReal - preReal;
+    const deltaSign = delta > 0 ? '+' : '';
+    const deltaClass = delta > 0 ? 'station-people-chip--up' : (delta < 0 ? 'station-people-chip--down' : '');
+    const progressPct = (((hour + 1) / bins) * 100).toFixed(2);
+
+    el.innerHTML = `
+      <div class="station-people-legend">
+        <span class="station-people-hour">${String(hour).padStart(2, '0')}:00</span>
+        <span class="station-people-chip station-people-chip--before">Before <strong>${preReal}</strong>${preSample}</span>
+        <span class="station-people-chip station-people-chip--after">After <strong>${postReal}</strong>${postSample}</span>
+        <span class="station-people-chip ${deltaClass}">Delta <strong>${deltaSign}${delta}</strong></span>
+      </div>
+      <span class="station-people-track"><span class="station-people-track-fill" style="width:${progressPct}%;"></span></span>
+    `;
+  }
+
+  function toNonNegativeInt(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    return Math.max(0, Math.round(n));
+  }
+
+  function peakCount(arr) {
+    return (Array.isArray(arr) ? arr : []).reduce((max, v) => Math.max(max, toNonNegativeInt(v)), 0);
+  }
+
+  function buildSeededRandom(seedText) {
+    const src = String(seedText || 'station-seed');
+    let seed = 0;
+    for (let i = 0; i < src.length; i += 1) seed = ((seed * 31) + src.charCodeAt(i)) >>> 0;
+    if (!seed) seed = 123456789;
+    return function seeded() {
+      seed = (1664525 * seed + 1013904223) >>> 0;
+      return seed / 4294967296;
+    };
+  }
+
+  function randomPointInRadius(lat, lng, radiusM, rand) {
+    const theta = (Math.PI * 2 * rand());
+    const distM = Math.sqrt(rand()) * radiusM;
+    const latDelta = (distM * Math.sin(theta)) / 111320;
+    const lngScale = Math.max(0.1, Math.cos((lat * Math.PI) / 180));
+    const lngDelta = (distM * Math.cos(theta)) / (111320 * lngScale);
+    return [lat + latDelta, lng + lngDelta];
+  }
+
+  function createPeoplePool(group, lat, lng, radiusM, count, seedLabel, className) {
+    if (!window.L || !group) return [];
+    const rand = buildSeededRandom(seedLabel);
+    const pool = [];
+    for (let i = 0; i < count; i += 1) {
+      const size = 5 + Math.floor(rand() * 5);
+      const pulseSec = (1.1 + rand() * 1.7).toFixed(2);
+      const delaySec = (-rand() * 2).toFixed(2);
+      const marker = L.marker(randomPointInRadius(lat, lng, radiusM, rand), {
+        pane: 'selectStop',
+        interactive: false,
+        keyboard: false,
+        opacity: 0,
+        icon: L.divIcon({
+          className: className,
+          iconSize: [size, size],
+          iconAnchor: [Math.round(size / 2), Math.round(size / 2)],
+          html: `<span class="station-person__dot" style="--pulse:${pulseSec}s; --delay:${delaySec}s;"><span class="station-person__core"></span></span>`,
+        }),
+      });
+      pool.push(marker);
+      group.addLayer(marker);
+    }
+    return pool;
+  }
+
+  function applyPeopleCount(pool, value) {
+    const visible = Math.min(pool.length, toNonNegativeInt(value));
+    for (let i = 0; i < pool.length; i += 1) pool[i].setOpacity(i < visible ? 1 : 0);
+    return visible;
+  }
+
+  function renderPeopleFrame(hour) {
+    if (!peopleAnimationState || !peopleAnimationState.bins) return;
+    const bins = peopleAnimationState.bins;
+    const normalizedHour = ((Number(hour) % bins) + bins) % bins;
+    peopleAnimationState.hour = normalizedHour;
+
+    const preReal = toNonNegativeInt(peopleAnimationState.preBins[normalizedHour] || 0);
+    const postReal = toNonNegativeInt(peopleAnimationState.postBins[normalizedHour] || 0);
+    const preVisible = applyPeopleCount(peopleAnimationState.prePool, preReal);
+    const postVisible = applyPeopleCount(peopleAnimationState.postPool, postReal);
+    setPeopleLegend({
+      hour: normalizedHour,
+      bins,
+      preReal,
+      postReal,
+      preVisible,
+      postVisible,
+    });
+    setPeopleControlState({
+      hour: normalizedHour,
+      bins,
+      playing: peopleAnimationState.playing,
+    });
+  }
+
+  function startPeopleAnimation(group, station, latlng, radiusM) {
+    const preBins = Array.isArray(station?.pre?.presentByBin) ? station.pre.presentByBin : [];
+    const postBins = Array.isArray(station?.post?.presentByBin) ? station.post.presentByBin : [];
+    const bins = Math.max(preBins.length, postBins.length);
+    if (!bins || !isPeopleAnimationEnabled()) {
+      setPeopleLegend(null);
+      setPeopleControlsVisible(false);
+      return;
+    }
+
+    const centerLat = Number(latlng[0]);
+    const centerLng = Number(latlng[1]);
+    const prePeak = peakCount(preBins);
+    const postPeak = peakCount(postBins);
+    const prePoolSize = Math.min(PEOPLE_MAX_MARKERS_PER_SERIES, prePeak || 0);
+    const postPoolSize = Math.min(PEOPLE_MAX_MARKERS_PER_SERIES, postPeak || 0);
+
+    const prePool = createPeoplePool(
+      group,
+      centerLat,
+      centerLng,
+      radiusM,
+      prePoolSize,
+      `${station.stationName || DEFAULT_STATION}:${radiusM}:pre`,
+      'station-person-marker station-person-marker--before',
+    );
+    const postPool = createPeoplePool(
+      group,
+      centerLat,
+      centerLng,
+      radiusM,
+      postPoolSize,
+      `${station.stationName || DEFAULT_STATION}:${radiusM}:post`,
+      'station-person-marker station-person-marker--after',
+    );
+
+    if (!prePool.length && !postPool.length) {
+      setPeopleLegend(null);
+      setPeopleControlsVisible(false);
+      return;
+    }
+
+    peopleAnimationState = {
+      preBins,
+      postBins,
+      prePool,
+      postPool,
+      bins,
+      hour: 0,
+      playing: true,
+    };
+    setPeopleControlsVisible(true);
+    renderPeopleFrame(0);
+    startPeopleAnimationTimer();
   }
 
   function buildStationRing(lat, lng, radiusM, steps = 64) {
@@ -143,30 +433,62 @@
     const radius = Number(station.radiusM || DEFAULT_RADIUS);
     const label = `${station.stationName || DEFAULT_STATION} / ${radius}m`;
     const ring = buildStationRing(Number(latlng[0]), Number(latlng[1]), radius);
+    const preBins = Array.isArray(station?.pre?.presentByBin) ? station.pre.presentByBin : [];
+    const postBins = Array.isArray(station?.post?.presentByBin) ? station.post.presentByBin : [];
+    const prePeak = peakCount(preBins);
+    const postPeak = peakCount(postBins);
+    const scalePeak = Math.max(prePeak, postPeak, 1);
+    const preAuraRadius = Math.max(radius * 0.24, radius * (0.24 + (0.66 * (prePeak / scalePeak))));
+    const postAuraRadius = Math.max(radius * 0.24, radius * (0.24 + (0.66 * (postPeak / scalePeak))));
     const group = L.layerGroup();
+    const beforeAura = L.circle(latlng, {
+      radius: preAuraRadius,
+      color: '#31599E',
+      weight: 1,
+      opacity: 0.45,
+      fillColor: '#31599E',
+      fillOpacity: 0.07,
+      interactive: false,
+      pane: 'selectStop',
+    });
+    const afterAura = L.circle(latlng, {
+      radius: postAuraRadius,
+      color: '#F5813C',
+      weight: 1,
+      opacity: 0.5,
+      fillColor: '#F5813C',
+      fillOpacity: 0.08,
+      interactive: false,
+      pane: 'selectStop',
+    });
     const area = L.polygon(ring, {
       color: '#F5813C',
       weight: 2,
-      opacity: 0.95,
+      opacity: 0.9,
+      dashArray: '10 6',
       fillColor: '#F5813C',
-      fillOpacity: 0.08,
+      fillOpacity: 0.05,
       pane: 'selectStop',
     });
     const center = L.circleMarker(latlng, {
-      radius: 6,
+      radius: 7,
       color: '#F5813C',
-      weight: 3,
+      weight: 2,
       fillColor: '#ffffff',
       fillOpacity: 1,
       pane: 'selectStop',
     });
 
-    area.bindTooltip(label, { permanent: false, direction: 'top', className: 'l-contents__map-route' });
+    area.bindTooltip(`${label} / peak ${prePeak}→${postPeak}`, { permanent: false, direction: 'top', className: 'l-contents__map-route' });
     center.bindTooltip(label, { permanent: false, direction: 'top', className: 'l-contents__map-route' });
+    group.addLayer(beforeAura);
+    group.addLayer(afterAura);
     group.addLayer(area);
     group.addLayer(center);
     group.addTo(window.map);
-    try { area.bringToFront(); center.bringToFront(); } catch { }
+    try { area.bringToFront(); } catch { }
+    startPeopleAnimation(group, station, latlng, radius);
+    try { center.bringToFront(); } catch { }
     stationOverlay = group;
   }
 
@@ -186,6 +508,7 @@
       renderStationOverlay(latestStationArea);
       return;
     }
+    setPeopleLegend(null);
     clearStationOverlay();
   }
 
@@ -281,14 +604,16 @@
   }
 
   async function runStationCompare() {
-    if (!latestCompareContext || latestCompareContext.mode !== 'frequency' || !latestCompareContext.simId) {
-      setStatus('運航頻度変更前後のCompare結果が必要です。');
+    const ctx = latestCompareContext || buildStandaloneFrequencyContext();
+    if (!ctx || ctx.mode !== 'frequency' || !ctx.simId) {
+      setStatus('index.html で運航頻度設定を保存してください。');
       return;
     }
+    latestCompareContext = ctx;
 
     const stationName = String(document.getElementById('stationCompareName')?.value || DEFAULT_STATION).trim() || DEFAULT_STATION;
     const radiusM = Number(document.getElementById('stationCompareRadius')?.value || DEFAULT_RADIUS);
-    const sig = compareSignature(latestCompareContext, stationName, radiusM);
+    const sig = compareSignature(ctx, stationName, radiusM);
     const btn = document.getElementById('stationCompareBtn');
 
     setStatus('Computing…');
@@ -301,7 +626,7 @@
         setStatus('Cached');
         return;
       }
-      const data = await fetchStationCompare(latestCompareContext, stationName, radiusM);
+      const data = await fetchStationCompare(ctx, stationName, radiusM);
       cache[sig] = data;
       setCache(cache);
       renderStationCompare(data);
@@ -310,12 +635,12 @@
       console.error(err);
       setStatus(err && err.message ? String(err.message) : 'Failed');
     } finally {
-      setButtonEnabled(!!(latestCompareContext && latestCompareContext.mode === 'frequency' && latestCompareContext.ready));
+      setButtonEnabled(!!((latestCompareContext || buildStandaloneFrequencyContext())?.simId));
     }
   }
 
   function onCompareReady(detail) {
-    latestCompareContext = detail && detail.ready ? detail : null;
+    latestCompareContext = (detail && detail.ready && detail.mode === 'frequency') ? detail : buildStandaloneFrequencyContext();
     const cards = document.getElementById('stationCompareCards');
     const meta = document.getElementById('stationCompareMeta');
     const wrap = document.getElementById('stationCompareChartWrap');
@@ -323,15 +648,17 @@
       if (cards) cards.innerHTML = '';
       if (meta) meta.textContent = '';
       if (wrap) wrap.style.display = 'none';
+      setPeopleLegend(null);
       latestStationArea = null;
       clearStationOverlay();
       setButtonEnabled(false);
-      setStatus('運航頻度変更前後のCompareを実行すると、西条駅周辺の before / after を計算できます。');
+      setStatus('index.html で運航頻度設定を保存すると、西条駅周辺の before / after を単独で計算できます。');
       return;
     }
     if (cards) cards.innerHTML = '';
     if (meta) meta.textContent = '';
     if (wrap) wrap.style.display = 'none';
+    setPeopleLegend(null);
     latestStationArea = null;
     clearStationOverlay();
     setButtonEnabled(true);
@@ -342,6 +669,25 @@
     ensurePanel();
     document.getElementById('stationCompareBtn')?.addEventListener('click', runStationCompare);
     document.getElementById('stationOverlayToggle')?.addEventListener('change', syncStationOverlay);
+    document.getElementById('stationPeopleToggle')?.addEventListener('change', syncStationOverlay);
+    document.getElementById('stationPeopleSlider')?.addEventListener('input', (ev) => {
+      if (!peopleAnimationState) return;
+      peopleAnimationState.playing = false;
+      stopPeopleAnimationTimer();
+      const hour = Number(ev?.target?.value || 0);
+      renderPeopleFrame(hour);
+    });
+    document.getElementById('stationPeoplePlayPause')?.addEventListener('click', () => {
+      if (!peopleAnimationState) return;
+      peopleAnimationState.playing = !peopleAnimationState.playing;
+      setPeopleControlState({
+        hour: peopleAnimationState.hour,
+        bins: peopleAnimationState.bins,
+        playing: peopleAnimationState.playing,
+      });
+      if (peopleAnimationState.playing) startPeopleAnimationTimer();
+      else stopPeopleAnimationTimer();
+    });
     window.addEventListener('dtsb:compare-ready', (ev) => onCompareReady(ev && ev.detail));
     if (window.__dtsbCompareReady && window.__dtsbCompareReady.ready) {
       onCompareReady(window.__dtsbCompareReady);
