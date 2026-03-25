@@ -282,7 +282,7 @@ def resolve_station_center(sim_id: str, station_name: str) -> Dict[str, Any]:
 
     bsc, _account, container, _key = get_storage_context()
     blob: BlobClient = bsc.get_blob_client(container, blob_name)
-    with tempfile.TemporaryDirectory(dir=current_app.config["STORAGE_ROOT"]) as tmpd:
+    with tempfile.TemporaryDirectory(dir=current_app.config.get("TEMP_ROOT") or current_app.config["STORAGE_ROOT"]) as tmpd:
         tmp_zip = os.path.join(tmpd, "sim.zip")
         current_app.logger.info("[station] downloading blob %s to %s (transit schedule)", blob_name, tmp_zip)
         with open(tmp_zip, "wb") as handle:
@@ -488,7 +488,7 @@ def compute_station_counts(sim_id: str, q: StationQuery) -> Dict[str, Any]:
             if blob_name:
                 bsc, _account, container, _key = get_storage_context()
                 blob: BlobClient = bsc.get_blob_client(container, blob_name)
-                with tempfile.TemporaryDirectory(dir=current_app.config["STORAGE_ROOT"]) as tmpd:
+                with tempfile.TemporaryDirectory(dir=current_app.config.get("TEMP_ROOT") or current_app.config["STORAGE_ROOT"]) as tmpd:
                     tmp_zip = os.path.join(tmpd, "sim.zip")
                     current_app.logger.info("[station] downloading blob %s to %s (facilities)", blob_name, tmp_zip)
                     with open(tmp_zip, "wb") as handle:
@@ -508,7 +508,7 @@ def compute_station_counts(sim_id: str, q: StationQuery) -> Dict[str, Any]:
         bsc, _account, container, _key = get_storage_context()
         blob: BlobClient = bsc.get_blob_client(container, blob_name)
 
-        with tempfile.TemporaryDirectory(dir=current_app.config["STORAGE_ROOT"]) as tmpd:
+        with tempfile.TemporaryDirectory(dir=current_app.config.get("TEMP_ROOT") or current_app.config["STORAGE_ROOT"]) as tmpd:
             tmp_zip = os.path.join(tmpd, "sim.zip")
             current_app.logger.info("[station] downloading blob %s to %s", blob_name, tmp_zip)
             with open(tmp_zip, "wb") as handle:

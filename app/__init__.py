@@ -50,9 +50,18 @@ def create_app():
     # Limit how much form data is kept in memory during parsing (Werkzeug 3.x).
     app.config["MAX_FORM_MEMORY_SIZE"] = 64 * 1024 * 1024      # 64 MB
 
-    # ---- Temp dir for spooling (Windows-friendly) ----
-    # Put temp files on the same large drive as STORAGE_ROOT to avoid filling user profile temp.
-    spool_dir = os.path.join(storage_root, "tmp")
+    # ---- Temp dir for spooling ----
+    # On Azure App Service for Linux, /home/site/storage is typically an Azure Files mount
+    # and is much slower than the instance-local ephemeral disk. Use /tmp by default there,
+    # while keeping the old behavior for local/Windows setups unless TEMP_ROOT is set.
+    temp_root_env = os.getenv("TEMP_ROOT", "").strip()
+    if temp_root_env:
+        spool_dir = temp_root_env
+    elif os.name != "nt" and storage_root.startswith("/home/site/storage"):
+        spool_dir = "/tmp/dtsb"
+    else:
+        spool_dir = os.path.join(storage_root, "tmp")
+    app.config["TEMP_ROOT"] = spool_dir
     os.makedirs(spool_dir, exist_ok=True)
     # Make Python/Werkzeug use it:
     for var in ("TMP", "TEMP", "TMPDIR"):

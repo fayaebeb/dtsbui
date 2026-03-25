@@ -95,7 +95,8 @@ def import_from_blob():
     dest_folder = os.path.join(uploads_root, sim_id)
     os.makedirs(dest_folder, exist_ok=True)
 
-    with tempfile.TemporaryDirectory(dir=storage_root) as tmpd:
+    temp_root = current_app.config.get("TEMP_ROOT") or storage_root
+    with tempfile.TemporaryDirectory(dir=temp_root) as tmpd:
         tmp_zip = os.path.join(tmpd, "upload.zip")
         with open(tmp_zip, "wb") as f:
             downloader = blob.download_blob(max_concurrency=4)

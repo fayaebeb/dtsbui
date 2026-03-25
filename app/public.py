@@ -428,6 +428,7 @@ def public_frequency_compare(sim_id: str):
     station_radius = payload.get("radiusM")
     station_bin_sec = payload.get("binSec")
     station_center = None
+    station_baseline = None
     if station_name:
         try:
             station_radius_m = float(station_radius if station_radius is not None else 500.0)
@@ -438,20 +439,26 @@ def public_frequency_compare(sim_id: str):
             return jsonify({"error": "radiusM must be > 0"}), 400
         if station_bin_sec_n <= 0 or station_bin_sec_n > 24 * 3600:
             return jsonify({"error": "binSec out of range"}), 400
-        try:
-            station_center = resolve_station_center(sim_id, station_name)
-        except Exception as exc:
-            return jsonify({"error": str(exc)}), 400
+        station_baseline = get_station_baseline_profile(sim_id, station_name, float(station_radius_m), int(station_bin_sec_n))
+        if isinstance(station_baseline, dict):
+            station_center = {
+                "stationName": station_baseline.get("stationName") or station_name,
+                "centerX": station_baseline.get("centerX"),
+                "centerY": station_baseline.get("centerY"),
+                "matchCount": int(station_baseline.get("matchCount") or 0),
+                "matchedStops": station_baseline.get("matchedStops") or [],
+            }
+        else:
+            try:
+                station_center = resolve_station_center(sim_id, station_name)
+            except Exception as exc:
+                return jsonify({"error": str(exc)}), 400
 
     # Frequency compare requires multiple plans per person to allow plan switching.
     # If the simulation was parsed in selected-only mode, this will always show no change.
     peek = read_cached_persons_sample(cache_path, 3)
     if peek and all(isinstance(p.get("plans") or [], list) and len(p.get("plans") or []) <= 1 for p in peek):
         return jsonify({"error": "This simulation was parsed with selected-only plans. Re-parse with 'Parse all plans' to enable frequency compare."}), 400
-
-    station_baseline = None
-    if station_center:
-        station_baseline = get_station_baseline_profile(sim_id, station_name, float(station_radius_m), int(station_bin_sec_n))
 
     cmp = None
     can_try_fast_path = (
