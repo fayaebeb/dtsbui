@@ -101,11 +101,11 @@
           <summary class="c-details__summary">西条駅周辺人数</summary>
           <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0;">
             <label style="display:flex; gap:6px; align-items:center; min-width:0;">
-              <span class="muted">Station</span>
+              <span class="muted">駅名</span>
               <input id="stationCompareName" class="c-input" type="text" value="${DEFAULT_STATION}" style="min-width:0; width:140px;" />
             </label>
             <label style="display:flex; gap:6px; align-items:center; min-width:0;">
-              <span class="muted">Radius</span>
+              <span class="muted">半径</span>
               <select id="stationCompareRadius" class="c-input" style="min-width:0; width:120px;">
                 <option value="300">300 m</option>
                 <option value="500" selected>500 m</option>
@@ -114,18 +114,18 @@
             </label>
             <label style="display:flex; gap:6px; align-items:center; min-width:0;">
               <input id="stationOverlayToggle" type="checkbox" checked>
-              <span class="muted">Show on map</span>
+              <span class="muted">地図に表示</span>
             </label>
             <label style="display:flex; gap:6px; align-items:center; min-width:0;">
               <input id="stationPeopleToggle" type="checkbox" checked>
-              <span class="muted">People animation</span>
+              <span class="muted">人数アニメーション</span>
             </label>
-            <button id="stationCompareBtn" type="button" class="btn" disabled>Calculate</button>
+            <button id="stationCompareBtn" type="button" class="btn" disabled>計算する</button>
             <span id="stationCompareStatus" class="muted" style="min-width:0; flex:1 1 220px;">index.html で保存した運航頻度設定を使って単独で計算できます。</span>
           </div>
           <div id="stationPeopleLegend" class="muted" style="font-size:12px; margin-bottom:6px;"></div>
           <div id="stationPeopleControls" class="station-people-controls" style="display:none;">
-            <button id="stationPeoplePlayPause" type="button" class="btn station-people-controls__play">Pause</button>
+            <button id="stationPeoplePlayPause" type="button" class="btn station-people-controls__play">一時停止</button>
             <input id="stationPeopleSlider" class="station-people-controls__slider" type="range" min="0" max="0" step="1" value="0" />
             <span id="stationPeopleTimeLabel" class="station-people-controls__label">00:00</span>
           </div>
@@ -212,7 +212,7 @@
     slider.max = String(Math.max(0, bins - 1));
     slider.value = String(hour);
     label.textContent = `${String(hour).padStart(2, '0')}:00`;
-    btn.textContent = playing ? 'Pause' : 'Play';
+    btn.textContent = playing ? '一時停止' : '再生';
   }
 
   function stopPeopleAnimationTimer() {
@@ -244,8 +244,8 @@
     const postReal = toNonNegativeInt(state.postReal);
     const preVisible = toNonNegativeInt(state.preVisible);
     const postVisible = toNonNegativeInt(state.postVisible);
-    const preSample = preReal > preVisible ? `<span class="station-people-note">sample ${preVisible}/${preReal}</span>` : '';
-    const postSample = postReal > postVisible ? `<span class="station-people-note">sample ${postVisible}/${postReal}</span>` : '';
+    const preSample = preReal > preVisible ? `<span class="station-people-note">表示 ${preVisible}/${preReal}</span>` : '';
+    const postSample = postReal > postVisible ? `<span class="station-people-note">表示 ${postVisible}/${postReal}</span>` : '';
     const delta = postReal - preReal;
     const deltaSign = delta > 0 ? '+' : '';
     const deltaClass = delta > 0 ? 'station-people-chip--up' : (delta < 0 ? 'station-people-chip--down' : '');
@@ -254,9 +254,9 @@
     el.innerHTML = `
       <div class="station-people-legend">
         <span class="station-people-hour">${String(hour).padStart(2, '0')}:00</span>
-        <span class="station-people-chip station-people-chip--before">Before <strong>${preReal}</strong>${preSample}</span>
-        <span class="station-people-chip station-people-chip--after">After <strong>${postReal}</strong>${postSample}</span>
-        <span class="station-people-chip ${deltaClass}">Delta <strong>${deltaSign}${delta}</strong></span>
+        <span class="station-people-chip station-people-chip--before">変更前 <strong>${preReal}</strong>${preSample}</span>
+        <span class="station-people-chip station-people-chip--after">変更後 <strong>${postReal}</strong>${postSample}</span>
+        <span class="station-people-chip ${deltaClass}">差分 <strong>${deltaSign}${delta}</strong></span>
       </div>
       <span class="station-people-track"><span class="station-people-track-fill" style="width:${progressPct}%;"></span></span>
     `;
@@ -479,7 +479,7 @@
       pane: 'selectStop',
     });
 
-    area.bindTooltip(`${label} / peak ${prePeak}→${postPeak}`, { permanent: false, direction: 'top', className: 'l-contents__map-route' });
+    area.bindTooltip(`${label} / ピーク ${prePeak}→${postPeak}`, { permanent: false, direction: 'top', className: 'l-contents__map-route' });
     center.bindTooltip(label, { permanent: false, direction: 'top', className: 'l-contents__map-route' });
     group.addLayer(beforeAura);
     group.addLayer(afterAura);
@@ -528,9 +528,9 @@
     const peak = (arr) => arr.reduce((max, v) => Math.max(max, Number(v) || 0), 0);
 
     cards.innerHTML = '';
-    cards.appendChild(card('Unique visitors', `${Number(pre.uniqueVisitors || 0)} → ${Number(post.uniqueVisitors || 0)}`));
-    cards.appendChild(card('Peak present / hour', `${peak(preBins)} → ${peak(postBins)}`));
-    cards.appendChild(card('Matched stops', `${Number(station.matchCount || 0)}`));
+    cards.appendChild(card('訪問者数', `${Number(pre.uniqueVisitors || 0)} → ${Number(post.uniqueVisitors || 0)}`));
+    cards.appendChild(card('時間帯ピーク人数', `${peak(preBins)} → ${peak(postBins)}`));
+    cards.appendChild(card('一致した停留所数', `${Number(station.matchCount || 0)}`));
     latestStationArea = station || null;
     syncStationOverlay();
     fitMapToStation(station);
@@ -543,7 +543,7 @@
           labels,
           datasets: [
             {
-              label: 'Before',
+              label: '変更前',
               data: labels.map((_, i) => Number(preBins[i] || 0)),
               borderColor: '#31599E',
               backgroundColor: 'rgba(49,89,158,0.15)',
@@ -551,7 +551,7 @@
               fill: false,
             },
             {
-              label: 'After',
+              label: '変更後',
               data: labels.map((_, i) => Number(postBins[i] || 0)),
               borderColor: '#F5813C',
               backgroundColor: 'rgba(245,129,60,0.18)',
@@ -575,8 +575,8 @@
     const stopNames = matchedStops.slice(0, 4).map((s) => String(s.name || s.id || '')).filter(Boolean);
     meta.textContent = [
       `${station.stationName || DEFAULT_STATION} / 半径 ${Number(station.radiusM || DEFAULT_RADIUS)}m`,
-      stopNames.length ? `resolved from: ${stopNames.join(', ')}` : '',
-      latestCompareContext?.params?.personLimit ? `persons sample: ${latestCompareContext.params.personLimit}` : '',
+      stopNames.length ? `参照停留所: ${stopNames.join(', ')}` : '',
+      latestCompareContext?.params?.personLimit ? `サンプル人数: ${latestCompareContext.params.personLimit}` : '',
     ].filter(Boolean).join(' / ');
   }
 
@@ -598,8 +598,8 @@
       body: JSON.stringify(body),
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.error || 'station compare failed');
-    if (!data || !data.stationArea) throw new Error('stationArea missing in response');
+    if (!res.ok) throw new Error(data?.error || '駅周辺比較に失敗しました。');
+    if (!data || !data.stationArea) throw new Error('応答に stationArea がありません。');
     return data;
   }
 
@@ -616,24 +616,24 @@
     const sig = compareSignature(ctx, stationName, radiusM);
     const btn = document.getElementById('stationCompareBtn');
 
-    setStatus('Computing…');
+      setStatus('計算中…');
     if (btn) btn.disabled = true;
     try {
       const cache = getCache();
       const cached = cache[sig];
       if (cached && cached.stationArea) {
         renderStationCompare(cached);
-        setStatus('Cached');
+        setStatus('キャッシュを表示中');
         return;
       }
       const data = await fetchStationCompare(ctx, stationName, radiusM);
       cache[sig] = data;
       setCache(cache);
       renderStationCompare(data);
-      setStatus('OK');
+      setStatus('計算完了');
     } catch (err) {
       console.error(err);
-      setStatus(err && err.message ? String(err.message) : 'Failed');
+      setStatus(err && err.message ? String(err.message) : '失敗しました');
     } finally {
       setButtonEnabled(!!((latestCompareContext || buildStandaloneFrequencyContext())?.simId));
     }
@@ -652,7 +652,7 @@
       latestStationArea = null;
       clearStationOverlay();
       setButtonEnabled(false);
-      setStatus('index.html で運航頻度設定を保存すると、西条駅周辺の before / after を単独で計算できます。');
+      setStatus('index.html で運航頻度設定を保存すると、西条駅周辺の変更前後を単独で計算できます。');
       return;
     }
     if (cards) cards.innerHTML = '';
@@ -662,7 +662,7 @@
     latestStationArea = null;
     clearStationOverlay();
     setButtonEnabled(true);
-    setStatus('Ready. radius を選んで Calculate を押してください。');
+    setStatus('準備完了。半径を選んで「計算する」を押してください。');
   }
 
   onReady(() => {

@@ -27,7 +27,7 @@
       })
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.error || 'compare failed');
+    if (!res.ok) throw new Error(data?.error || '比較に失敗しました。');
     return data;
   }
 
@@ -41,7 +41,7 @@
       })
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.error || 'frequency compare failed');
+    if (!res.ok) throw new Error(data?.error || '運航頻度比較に失敗しました。');
     return data;
   }
 
@@ -85,7 +85,7 @@
       'output_curr_2040.zip': 'CURR40',
       '2040_BRT_v2.zip': 'BRT40',
     };
-    return labelMap[String(name || '')] || name || 'Simulation';
+    return labelMap[String(name || '')] || name || 'シミュレーション';
   }
 
   function resolveFrequencySimulationId(params, eligible, fallbackId) {
@@ -113,7 +113,7 @@
     host.innerHTML = `
     <div class="c-box">
       <details id="aggDetails" class="c-details" open>
-        <summary class="c-details__summary">Aggregations</summary>
+        <summary class="c-details__summary">集計比較</summary>
 
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:8px 0;">
           <label style="display:flex; gap:6px; align-items:center;">
@@ -128,21 +128,21 @@
 
         <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0;">
           <label id="aggPreWrap" style="display:flex; gap:6px; align-items:center; min-width:0; flex:1 1 260px;">
-            <span class="muted">Pre</span>
+            <span class="muted">比較前</span>
             <select id="aggPreSelect" class="c-input" style="min-width:0; width:100%;"></select>
           </label>
           <label id="aggPostWrap" style="display:flex; gap:6px; align-items:center; min-width:0; flex:1 1 260px;">
-            <span class="muted">Post</span>
+            <span class="muted">比較後</span>
             <select id="aggPostSelect" class="c-input" style="min-width:0; width:100%;"></select>
           </label>
           <label style="display:flex; gap:6px; align-items:center; min-width:0; flex:0 1 160px;">
-            <span class="muted">Persons</span>
+            <span class="muted">対象人数</span>
             <select id="aggPersonLimit" class="c-input" style="min-width:0; width:100%;">
-              <option value="">All</option>
+              <option value="">全員</option>
               <option value="1000">1000</option>
             </select>
           </label>
-          <button id="aggCompareBtn" type="button" class="btn">Compare</button>
+          <button id="aggCompareBtn" type="button" class="btn">比較する</button>
           <span id="aggStatus" class="muted" style="min-width:0; flex:1 1 180px;"></span>
         </div>
 
@@ -242,18 +242,18 @@
     cards.innerHTML = '';
     if (charts) charts.style.display = 'grid';
 
-    const preName = meta?.preName || 'Pre';
-    const postName = meta?.postName || 'Post';
+    const preName = meta?.preName || '比較前';
+    const postName = meta?.postName || '比較後';
     const fmt = (n) => (typeof n === 'number' ? n : 0);
     const hasChangedPeople = Number.isFinite(Number(meta?.changedPeople));
     if (hasChangedPeople) {
-      cards.appendChild(card('Changed people', `${fmt(Number(meta.changedPeople))}`));
+      cards.appendChild(card('影響を受けた人数', `${fmt(Number(meta.changedPeople))}`));
     } else {
-      cards.appendChild(card('People', `${fmt(pre.totalPeople)} → ${fmt(post.totalPeople)}`));
+      cards.appendChild(card('人数', `${fmt(pre.totalPeople)} → ${fmt(post.totalPeople)}`));
     }
-    cards.appendChild(card('Avg travel / person', `${hhmmss(fmt(pre.avgTravelSec))} → ${hhmmss(fmt(post.avgTravelSec))}`));
-    cards.appendChild(card('Avg utility / person', `${fmt(pre.avgUtility).toFixed(2)} → ${fmt(post.avgUtility).toFixed(2)}`));
-    cards.appendChild(card('PT users', `${fmt(pre.ptUsers)} → ${fmt(post.ptUsers)}`));
+    cards.appendChild(card('1人あたり平均移動時間', `${hhmmss(fmt(pre.avgTravelSec))} → ${hhmmss(fmt(post.avgTravelSec))}`));
+    cards.appendChild(card('1人あたり平均効用', `${fmt(pre.avgUtility).toFixed(2)} → ${fmt(post.avgUtility).toFixed(2)}`));
+    cards.appendChild(card('公共交通利用者数', `${fmt(pre.ptUsers)} → ${fmt(post.ptUsers)}`));
 
     const actLabels = unionKeys(pre.actStats, post.actStats);
     const actPeoplePre = actLabels.map(k => fmt(pre.actStats?.[k]?.people));
@@ -297,42 +297,42 @@
     upsertChart('chartActPeople', {
       ...commonBar,
       data: { labels: actLabels, datasets: [
-        { label: `${preName}: People`, data: actPeoplePre, backgroundColor: '#31599E' },
-        { label: `${postName}: People`, data: actPeoplePost, backgroundColor: '#F5813C' },
+        { label: `${preName}: 人数`, data: actPeoplePre, backgroundColor: '#31599E' },
+        { label: `${postName}: 人数`, data: actPeoplePost, backgroundColor: '#F5813C' },
       ] }
     });
     upsertChart('chartActTime', {
       ...commonBar,
       data: { labels: actLabels, datasets: [
-        { label: `${preName}: Activity time (h)`, data: actTimePre, backgroundColor: '#31599E' },
-        { label: `${postName}: Activity time (h)`, data: actTimePost, backgroundColor: '#F5813C' },
+        { label: `${preName}: 活動時間 (h)`, data: actTimePre, backgroundColor: '#31599E' },
+        { label: `${postName}: 活動時間 (h)`, data: actTimePost, backgroundColor: '#F5813C' },
       ] }
     });
     upsertChart('chartActAvg', {
       ...commonBar,
       data: { labels: actLabels, datasets: [
-        { label: `${preName}: Avg act time/person (h)`, data: actAvgPre, backgroundColor: '#31599E' },
-        { label: `${postName}: Avg act time/person (h)`, data: actAvgPost, backgroundColor: '#F5813C' },
+        { label: `${preName}: 1人あたり平均活動時間 (h)`, data: actAvgPre, backgroundColor: '#31599E' },
+        { label: `${postName}: 1人あたり平均活動時間 (h)`, data: actAvgPost, backgroundColor: '#F5813C' },
       ] }
     });
     upsertChart('chartModeTime', {
       ...commonBar,
       data: { labels: modeLabels, datasets: [
-        { label: `${preName}: Travel time (h)`, data: modeTimePre, backgroundColor: '#8E44AD' },
-        { label: `${postName}: Travel time (h)`, data: modeTimePost, backgroundColor: '#27ae60' },
+        { label: `${preName}: 移動時間 (h)`, data: modeTimePre, backgroundColor: '#8E44AD' },
+        { label: `${postName}: 移動時間 (h)`, data: modeTimePost, backgroundColor: '#27ae60' },
       ] }
     });
     upsertChart('chartModeAvg', {
       ...commonBar,
       data: { labels: modeLabels, datasets: [
-        { label: `${preName}: Avg time/person (h)`, data: modeAvgPre, backgroundColor: '#8E44AD' },
-        { label: `${postName}: Avg time/person (h)`, data: modeAvgPost, backgroundColor: '#27ae60' },
+        { label: `${preName}: 1人あたり平均時間 (h)`, data: modeAvgPre, backgroundColor: '#8E44AD' },
+        { label: `${postName}: 1人あたり平均時間 (h)`, data: modeAvgPost, backgroundColor: '#27ae60' },
       ] }
     });
     upsertChart('chartPt', {
       type: 'bar',
       data: {
-        labels: ['PT users', 'Non-PT'],
+        labels: ['公共交通利用', '非利用'],
         datasets: [
           { label: preName, data: [fmt(pre.ptUsers), Math.max(0, fmt(pre.totalPeople) - fmt(pre.ptUsers))], backgroundColor: '#31599E' },
           { label: postName, data: [fmt(post.ptUsers), Math.max(0, fmt(post.totalPeople) - fmt(post.ptUsers))], backgroundColor: '#F5813C' },
@@ -363,16 +363,16 @@
         .slice(0, 12);
 
       if (!rows.length) {
-        ptHost.innerHTML = '<div style="color:#666; padding:8px;">PT per-route counts unavailable.</div>';
+        ptHost.innerHTML = '<div style="color:#666; padding:8px;">路線別の公共交通利用集計は利用できません。</div>';
       } else {
         const html = [
           '<table class="u-en" style="width:100%; border-collapse:collapse; font-size:12px;">',
           `<thead><tr>
-            <th style="text-align:left; padding:6px; border-bottom:1px solid #eee;">PT Route</th>
-            <th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">${preName} Users</th>
-            <th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">${postName} Users</th>
-            <th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">${preName} Trips</th>
-            <th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">${postName} Trips</th>
+            <th style="text-align:left; padding:6px; border-bottom:1px solid #eee;">公共交通路線</th>
+            <th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">${preName} 利用者数</th>
+            <th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">${postName} 利用者数</th>
+            <th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">${preName} 乗車回数</th>
+            <th style="text-align:right; padding:6px; border-bottom:1px solid #eee;">${postName} 乗車回数</th>
           </tr></thead>`,
           '<tbody>' + rows.map(r => `<tr>
             <td style="padding:6px; border-bottom:1px solid #f5f5f5;">${r.rid}</td>
@@ -417,14 +417,14 @@
     } catch (e) {
       console.error(e);
       if (charts) charts.style.display = 'none';
-      host.querySelector('#aggCards').innerHTML = '<div style="color:#666;">Failed to load simulations list.</div>';
+      host.querySelector('#aggCards').innerHTML = '<div style="color:#666;">シミュレーション一覧の読み込みに失敗しました。</div>';
       return;
     }
 
     const eligible = sims.filter(s => s.has_cache);
     if (!eligible.length) {
       if (charts) charts.style.display = 'none';
-      host.querySelector('#aggCards').innerHTML = '<div style="color:#666;">No parsed simulations available.</div>';
+      host.querySelector('#aggCards').innerHTML = '<div style="color:#666;">解析済みのシミュレーションがありません。</div>';
       return;
     }
 
@@ -441,7 +441,7 @@
     fillSelect(preSel, eligible);
     fillSelect(postSel, eligible);
     if (eligible.length >= 2) postSel.value = eligible[1].id;
-    if (status) status.textContent = 'Ready.';
+    if (status) status.textContent = '準備完了';
 
     function getMode() {
       const picked = modeEls.find((r) => r.checked);
@@ -492,11 +492,11 @@
 
         const name = simulationDisplayName(eligible.find(s => s.id === cached.simId)?.name);
         renderCharts(cached.data.pre, cached.data.post, {
-          preName: `${name} (before)`,
-          postName: `${name} (after)`,
+          preName: `${name}（変更前）`,
+          postName: `${name}（変更後）`,
           changedPeople: Number(cached.data.changedPeople || 0),
         });
-        if (status) status.textContent = `Cached (people used: ${cached.data.pre?.totalPeople ?? 0}, changed: ${cached.data.changedPeople ?? 0})`;
+        if (status) status.textContent = `キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人, 変更対象: ${cached.data.changedPeople ?? 0}人）`;
         return;
       }
 
@@ -508,24 +508,24 @@
         preSel.value = cached.preId;
         postSel.value = cached.postId;
 
-        const preName = simulationDisplayName(eligible.find(s => s.id === cached.preId)?.name) || 'Pre';
-        const postName = simulationDisplayName(eligible.find(s => s.id === cached.postId)?.name) || 'Post';
+        const preName = simulationDisplayName(eligible.find(s => s.id === cached.preId)?.name) || '比較前';
+        const postName = simulationDisplayName(eligible.find(s => s.id === cached.postId)?.name) || '比較後';
         renderCharts(cached.data.pre, cached.data.post, { preName, postName });
-        if (status) status.textContent = `Cached (people used: ${cached.data.pre?.totalPeople ?? 0})`;
+        if (status) status.textContent = `キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人）`;
       }
     })();
 
     async function run() {
       const preId = preSel.value;
       const postId = postSel.value;
-      const preName = simulationDisplayName(eligible.find(s => s.id === preId)?.name) || 'Pre';
-      const postName = simulationDisplayName(eligible.find(s => s.id === postId)?.name) || 'Post';
+      const preName = simulationDisplayName(eligible.find(s => s.id === preId)?.name) || '比較前';
+      const postName = simulationDisplayName(eligible.find(s => s.id === postId)?.name) || '比較後';
       const personLimit = (() => {
         const raw = (limitSel && limitSel.value) ? String(limitSel.value) : '';
         const n = parseInt(raw, 10);
         return Number.isFinite(n) && n > 0 ? n : null;
       })();
-      if (status) status.textContent = 'Computing…';
+      if (status) status.textContent = '集計中…';
       emitCompareReady({ ready: false, reason: 'computing' });
       try {
         const mode = getMode();
@@ -533,14 +533,14 @@
         if (mode === 'frequency') {
           const params = loadRouteParams();
           if (!params || params.oldFrequency == null || params.newFrequency == null) {
-            throw new Error('routeParams not found. Save 運航頻度 in index.html first.');
+            throw new Error('routeParams が見つかりません。先に index.html で運航頻度を保存してください。');
           }
           const resolved = resolveFrequencySimulationId(params, eligible, preId);
           if (!resolved.simId) {
-            throw new Error('No simulation id found in routeParams for frequency compare.');
+            throw new Error('運航頻度比較に必要なシミュレーションIDが routeParams にありません。');
           }
           if (!resolved.isEligible) {
-            throw new Error(`Mapped simulation is unavailable or not parsed: ${resolved.simId}`);
+            throw new Error(`対応するシミュレーションが利用できないか未解析です: ${resolved.simId}`);
           }
           const freqSimId = resolved.simId;
           preSel.value = freqSimId;
@@ -551,11 +551,11 @@
           if (cached && cached.mode === 'frequency' && cached.simId === freqSimId && cached.sig === sig && cached.personLimit === personLimit && cached.data?.pre && cached.data?.post) {
             const name = simulationDisplayName(eligible.find(s => s.id === freqSimId)?.name);
             renderCharts(cached.data.pre, cached.data.post, {
-              preName: `${name} (before)`,
-              postName: `${name} (after)`,
+              preName: `${name}（変更前）`,
+              postName: `${name}（変更後）`,
               changedPeople: Number(cached.data.changedPeople || 0),
             });
-            if (status) status.textContent = `Cached (people used: ${cached.data.pre?.totalPeople ?? 0}, changed: ${cached.data.changedPeople ?? 0})`;
+            if (status) status.textContent = `キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人, 変更対象: ${cached.data.changedPeople ?? 0}人）`;
             emitCompareReady({
               ready: true,
               source: 'cache',
@@ -577,11 +577,11 @@
           }, personLimit);
           const name = simulationDisplayName(eligible.find(s => s.id === freqSimId)?.name);
           renderCharts(resp.pre, resp.post, {
-            preName: `${name} (before)`,
-            postName: `${name} (after)`,
+            preName: `${name}（変更前）`,
+            postName: `${name}（変更後）`,
             changedPeople: Number(resp.changedPeople || 0),
           });
-          if (status) status.textContent = `OK (people used: ${resp.pre?.totalPeople ?? 0}, changed: ${resp.changedPeople ?? 0})`;
+          if (status) status.textContent = `比較完了（使用人数: ${resp.pre?.totalPeople ?? 0}人, 変更対象: ${resp.changedPeople ?? 0}人）`;
           setCachedCompare({ mode: 'frequency', simId: freqSimId, sig, personLimit, data: resp, savedAt: Date.now() });
           emitCompareReady({
             ready: true,
@@ -602,7 +602,7 @@
         const cached = getCachedCompare();
         if (cached && cached.mode === 'sim' && cached.preId === preId && cached.postId === postId && cached.personLimit === personLimit && cached.data?.pre && cached.data?.post) {
           renderCharts(cached.data.pre, cached.data.post, { preName, postName });
-          if (status) status.textContent = `Cached (people used: ${cached.data.pre?.totalPeople ?? 0})`;
+          if (status) status.textContent = `キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人）`;
           emitCompareReady({
             ready: true,
             source: 'cache',
@@ -615,7 +615,7 @@
         }
         const cmp = await fetchCompare(preId, postId, personLimit);
         renderCharts(cmp.pre, cmp.post, { preName, postName });
-        if (status) status.textContent = `OK (people used: ${cmp.pre?.totalPeople ?? 0})`;
+        if (status) status.textContent = `比較完了（使用人数: ${cmp.pre?.totalPeople ?? 0}人）`;
         setCachedCompare({ mode: 'sim', preId, postId, personLimit, data: cmp, savedAt: Date.now() });
         emitCompareReady({
           ready: true,
@@ -627,8 +627,8 @@
         });
       } catch (e) {
         console.error(e);
-        if (status) status.textContent = e?.message || 'Failed';
-        emitCompareReady({ ready: false, reason: 'failed', error: e?.message || 'Failed' });
+        if (status) status.textContent = e?.message || '失敗しました';
+        emitCompareReady({ ready: false, reason: 'failed', error: e?.message || '失敗しました' });
       }
     }
 

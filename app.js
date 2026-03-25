@@ -274,20 +274,20 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify({ weights: getWeights() }),
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data?.error || "Summary failed");
+        if (!res.ok) throw new Error(data?.error || "集計に失敗しました。");
         const best = data?.bestBusPlan;
         if (!best) {
-          if (out) out.textContent = "No bus users found.";
+          if (out) out.textContent = "バス利用者は見つかりませんでした。";
           return;
         }
         const lines = [
-          `Person: ${best.personId}`,
-          `Plan Index: ${best.planIndex}`,
-          `Client Score: ${best.clientScore?.toFixed?.(2) ?? "-"}`,
-          `MATSim Score: ${best.matsimScore ?? "-"}`,
-          `Server Score: ${best.serverScore ?? "-"}`,
+          `人物ID: ${best.personId}`,
+          `プラン番号: ${best.planIndex}`,
+          `クライアントスコア: ${best.clientScore?.toFixed?.(2) ?? "-"}`,
+          `MATSimスコア: ${best.matsimScore ?? "-"}`,
+          `サーバースコア: ${best.serverScore ?? "-"}`,
           "",
-          "Behavior:",
+          "行動:",
         ];
         if (Array.isArray(best.steps)) {
           best.steps.forEach((s, idx) => {
@@ -315,7 +315,7 @@ async function fetchFullSummary(simId, weights) {
     body: JSON.stringify({ weights }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.error || "Summary failed");
+  if (!res.ok) throw new Error(data?.error || "集計に失敗しました。");
   return data;
 }
 
@@ -325,39 +325,39 @@ function renderFullSummary(summary) {
   if (!preEl) return;
 
   if (!summary || typeof summary !== "object") {
-    if (statusEl) statusEl.textContent = "Full summary unavailable.";
+    if (statusEl) statusEl.textContent = "全体集計を表示できません。";
     preEl.textContent = "";
     return;
   }
 
   const lines = [];
-  if (typeof summary.personCount === "number") lines.push(`Persons: ${summary.personCount}`);
-  if (typeof summary.selectedPlanCount === "number") lines.push(`Selected plans: ${summary.selectedPlanCount}`);
-  if (typeof summary.avgClientScore === "number") lines.push(`Avg client score (selected): ${summary.avgClientScore.toFixed(2)}`);
+  if (typeof summary.personCount === "number") lines.push(`人数: ${summary.personCount}`);
+  if (typeof summary.selectedPlanCount === "number") lines.push(`選択中プラン数: ${summary.selectedPlanCount}`);
+  if (typeof summary.avgClientScore === "number") lines.push(`平均クライアントスコア（選択中）: ${summary.avgClientScore.toFixed(2)}`);
 
   const best = summary.bestPlan;
   if (best) {
     lines.push("");
-    lines.push("Best plan (all persons):");
-    lines.push(`  Person: ${best.personId ?? "-"}`);
-    lines.push(`  Plan index: ${best.planIndex ?? "-"}`);
-    lines.push(`  Client score: ${best.clientScore?.toFixed?.(2) ?? "-"}`);
-    lines.push(`  MATSim score: ${best.matsimScore ?? "-"}`);
-    lines.push(`  Server score: ${best.serverScore ?? "-"}`);
+    lines.push("最良プラン（全員対象）:");
+    lines.push(`  人物ID: ${best.personId ?? "-"}`);
+    lines.push(`  プラン番号: ${best.planIndex ?? "-"}`);
+    lines.push(`  クライアントスコア: ${best.clientScore?.toFixed?.(2) ?? "-"}`);
+    lines.push(`  MATSimスコア: ${best.matsimScore ?? "-"}`);
+    lines.push(`  サーバースコア: ${best.serverScore ?? "-"}`);
   }
 
   const bestBus = summary.bestBusPlan;
   if (bestBus) {
     lines.push("");
-    lines.push("Best bus plan (all persons):");
-    lines.push(`  Person: ${bestBus.personId ?? "-"}`);
-    lines.push(`  Plan index: ${bestBus.planIndex ?? "-"}`);
-    lines.push(`  Client score: ${bestBus.clientScore?.toFixed?.(2) ?? "-"}`);
-    lines.push(`  MATSim score: ${bestBus.matsimScore ?? "-"}`);
-    lines.push(`  Server score: ${bestBus.serverScore ?? "-"}`);
+    lines.push("最良バスプラン（全員対象）:");
+    lines.push(`  人物ID: ${bestBus.personId ?? "-"}`);
+    lines.push(`  プラン番号: ${bestBus.planIndex ?? "-"}`);
+    lines.push(`  クライアントスコア: ${bestBus.clientScore?.toFixed?.(2) ?? "-"}`);
+    lines.push(`  MATSimスコア: ${bestBus.matsimScore ?? "-"}`);
+    lines.push(`  サーバースコア: ${bestBus.serverScore ?? "-"}`);
   }
 
-  if (statusEl) statusEl.textContent = "Full summary computed on backend.";
+  if (statusEl) statusEl.textContent = "全体集計を表示しました。";
   preEl.textContent = lines.join("\n");
 }
 
@@ -369,20 +369,20 @@ async function computeAndShowFullSummary() {
   if (!statusEl || !preEl) return;
 
   if (!simId) {
-    statusEl.textContent = "Select a simulation first.";
+    statusEl.textContent = "先にシミュレーションを選択してください。";
     preEl.textContent = "";
     return;
   }
 
-  statusEl.textContent = "Computing full summary on backend…";
+  statusEl.textContent = "バックエンドで全体集計を計算中…";
   preEl.textContent = "";
   try {
     const summary = await fetchFullSummary(simId, getWeights());
     renderFullSummary(summary);
   } catch (e) {
     console.error(e);
-    statusEl.textContent = "Full summary failed.";
-    preEl.textContent = e?.message || "Error";
+    statusEl.textContent = "全体集計に失敗しました。";
+    preEl.textContent = e?.message || "エラー";
   }
 }
 
@@ -444,9 +444,9 @@ function renderPersonsTable(persons) {
         <td>${p?.personId ?? "-"}</td>
         <td>-</td>
         <td>-</td>
-        <td><span class="badge">no plans</span></td>
-        <td class="muted">N/A</td>
-        <td class="muted">N/A</td>
+        <td><span class="badge">プランなし</span></td>
+        <td class="muted">該当なし</td>
+        <td class="muted">該当なし</td>
       `;
       plansTableBody.appendChild(tr);
       return;
@@ -462,8 +462,8 @@ function renderPersonsTable(persons) {
     p.plans.forEach((pl, i) => {
       const opt = document.createElement("option");
       opt.value = i;
-      const matsimScore = (pl.matsimScore != null) ? pl.matsimScore.toFixed(3) : "n/a";
-      opt.text = `#${i} (MATSim:${matsimScore}) ${pl.selected ? "[selected]" : ""}`;
+      const matsimScore = (pl.matsimScore != null) ? pl.matsimScore.toFixed(3) : "なし";
+      opt.text = `#${i} (MATSim:${matsimScore}) ${pl.selected ? "[選択中]" : ""}`;
       sel.appendChild(opt);
     });
     sel.value = String(selectedIdx);
@@ -484,7 +484,7 @@ function renderPersonsTable(persons) {
     const btnDraw = document.createElement("button");
     btnDraw.type = "button";
     btnDraw.className = "btn";
-    btnDraw.textContent = "Draw";
+    btnDraw.textContent = "地図表示";
     btnDraw.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -498,22 +498,22 @@ function renderPersonsTable(persons) {
     const btnDetails = document.createElement("button");
     btnDetails.type = "button";
     btnDetails.className = "btn secondary";
-    btnDetails.textContent = "Details";
+    btnDetails.textContent = "詳細";
     btnDetails.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
       const idx = Number(sel.value);
       const target = p.plans[idx];
       if (!target || !Array.isArray(target.steps)) {
-        alert(`Person: ${p.personId}\nPlan #${idx}\n(no steps)`);
+        alert(`人物ID: ${p.personId}\nプラン #${idx}\n（ステップなし）`);
         return;
       }
       const lines = [
-        `Person: ${p.personId}`,
-        `Plan #${idx}  MATSimScore: ${target.matsimScore?.toFixed?.(3) ?? "-"}`,
-        `ServerScore: ${target.serverScore?.toFixed?.(2) ?? "-"}`,
-        `ClientScore (current weights): ${computeScoreClient(target, getWeights()).toFixed(2)}`,
-        `Steps:`
+        `人物ID: ${p.personId}`,
+        `プラン #${idx}  MATSimスコア: ${target.matsimScore?.toFixed?.(3) ?? "-"}`,
+        `サーバースコア: ${target.serverScore?.toFixed?.(2) ?? "-"}`,
+        `クライアントスコア（現在の重み）: ${computeScoreClient(target, getWeights()).toFixed(2)}`,
+        `ステップ:`
       ];
       target.steps.forEach((s, i) => {
         if (!s) return;
@@ -538,7 +538,7 @@ function renderPersonsTable(persons) {
       <td>${p.personId}</td>
       <td>${selected?.matsimScore != null ? selected.matsimScore.toFixed(3) : "-"}</td>
       <td data-ourscore>${ourScore.toFixed(2)}</td>
-      <td>${selected?.selected ? '<span class="badge">selected=yes</span>' : ''}</td>
+      <td>${selected?.selected ? '<span class="badge">選択中</span>' : ''}</td>
     `;
     const tdPlans = document.createElement("td");
     tdPlans.appendChild(sel);
@@ -708,7 +708,7 @@ function updateDownloadButtonState() {
   const selected = sims.find((s) => s.id === selectedId);
   const canDownload = !!(selected && selected.has_blob);
   downloadSimulationBtn.disabled = !canDownload;
-  downloadSimulationBtn.title = canDownload ? 'Download the original simulation zip' : 'No Azure blob available for download';
+  downloadSimulationBtn.title = canDownload ? '元のシミュレーション zip をダウンロード' : 'ダウンロード可能な Azure Blob がありません';
 }
 
 if (simulationSelect) {
@@ -716,22 +716,22 @@ if (simulationSelect) {
 }
 
 if (downloadSimulationBtn) {
-  const originalDownloadLabel = downloadSimulationBtn.textContent || 'Download';
+  const originalDownloadLabel = downloadSimulationBtn.textContent || 'ダウンロード';
   downloadSimulationBtn.addEventListener('click', async () => {
     const selectedId = simulationSelect?.value;
     if (!selectedId) return;
     downloadSimulationBtn.disabled = true;
-    downloadSimulationBtn.textContent = 'Preparing...';
+    downloadSimulationBtn.textContent = '準備中...';
     try {
       const res = await fetch(`/api/simulations/${selectedId}/blob-url`);
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.downloadUrl) {
-        throw new Error(data?.error || 'Download link unavailable');
+        throw new Error(data?.error || 'ダウンロードリンクを取得できません。');
       }
       window.open(data.downloadUrl, '_blank', 'noopener');
     } catch (err) {
       console.error('Download link error', err);
-      alert(err?.message || 'Failed to retrieve download link.');
+      alert(err?.message || 'ダウンロードリンクの取得に失敗しました。');
     } finally {
       if (downloadSimulationBtn) {
         downloadSimulationBtn.textContent = originalDownloadLabel;
@@ -755,7 +755,7 @@ async function populateSimulationList() {
     if (!Array.isArray(list) || list.length === 0) {
       const opt = document.createElement('option');
       opt.value = '';
-      opt.textContent = 'No published simulations';
+      opt.textContent = '公開済みシミュレーションはありません';
       sel.appendChild(opt);
       updateDownloadButtonState();
       return;
@@ -796,7 +796,7 @@ async function populateSimulationList() {
 
 document.getElementById('loadSimulationBtn')?.addEventListener('click', async () => {
   const sel = document.getElementById('simulationSelect');
-  if (!sel || !sel.value) return alert('Select a simulation');
+  if (!sel || !sel.value) return alert('シミュレーションを選択してください。');
   const id = sel.value;
   const spinner = document.getElementById('loadSimSpinner');
   spinner && (spinner.style.display = 'inline');
@@ -807,15 +807,15 @@ document.getElementById('loadSimulationBtn')?.addEventListener('click', async ()
 
     if (!res.ok) {
       if (data?.error?.includes('No cached data')) {
-        alert('⚠️ Admin has not parsed this simulation yet.');
+        alert('⚠️ このシミュレーションはまだ管理者によって解析されていません。');
       } else {
-        alert(data?.error || 'Load failed.');
+        alert(data?.error || '読み込みに失敗しました。');
       }
       return;
     }
 
     const parsed = data;
-    if (!Array.isArray(parsed)) throw new Error('Server returned invalid JSON');
+    if (!Array.isArray(parsed)) throw new Error('サーバーが不正な JSON を返しました。');
     window.__PARSED__ = parsed;
     __ALL_PERSONS__ = parsed;
     const dsKey = `pub:${id}`;
@@ -823,12 +823,12 @@ document.getElementById('loadSimulationBtn')?.addEventListener('click', async ()
     UI.datasetKey = dsKey;
     Persist.saveUI(UI);
     applyFilterAndRender();
-    statusMsg.textContent = `Loaded ${__FILTERED_PERSONS__.length} of ${__ALL_PERSONS__.length} persons (filtered)`;
+    statusMsg.textContent = `${__ALL_PERSONS__.length}人中 ${__FILTERED_PERSONS__.length}人を読み込みました（フィルタ適用後）`;
     redrawMapFromFiltered();
     computeAndShowFullSummary();
   } catch (err) {
     console.error(err);
-    alert('Load failed.');
+    alert('読み込みに失敗しました。');
   } finally {
     spinner && (spinner.style.display = 'none');
   }
@@ -845,7 +845,7 @@ document.getElementById('loadSimulationBtn')?.addEventListener('click', async ()
         __ALL_PERSONS__ = cached;
 
         applyFilterAndRender();
-        statusMsg.textContent = `Restored ${__FILTERED_PERSONS__.length} of ${__ALL_PERSONS__.length} persons (cached). Click "Show on Map" to display.`;
+        statusMsg.textContent = `キャッシュから ${__ALL_PERSONS__.length}人中 ${__FILTERED_PERSONS__.length}人を復元しました。「地図に表示」で確認できます。`;
       }
     } else {
       applyFilterAndRender();
@@ -858,7 +858,7 @@ document.getElementById('loadSimulationBtn')?.addEventListener('click', async ()
 // Button to show currently loaded (or cached) persons on the map on demand
 showCachedSimulationBtn?.addEventListener("click", () => {
   if (!Array.isArray(__ALL_PERSONS__) || __ALL_PERSONS__.length === 0) {
-    alert("No simulation data loaded. Please Load a Published Simulation first.");
+    alert("シミュレーションデータが読み込まれていません。先に公開済みシミュレーションを読み込んでください。");
     return;
   }
   // Ensure filtered list exists
@@ -870,7 +870,7 @@ showCachedSimulationBtn?.addEventListener("click", () => {
     Array.isArray(__FILTERED_PERSONS__) ? __FILTERED_PERSONS__.length : 0,
     MAX_MAP_PERSONS,
   );
-  statusMsg.textContent = `Displayed ${shown} of ${__ALL_PERSONS__.length} persons on the map.`;
+  statusMsg.textContent = `${__ALL_PERSONS__.length}人中 ${shown}人を地図に表示しました。`;
 });
 
 // === Single button: Show/Clear toggle (top published sims) ===
@@ -966,10 +966,10 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
         body: JSON.stringify({ weights }),
       });
       const summary = await resSummary.json().catch(() => ({}));
-      if (!resSummary.ok) throw new Error(summary?.error || "Summary failed");
+      if (!resSummary.ok) throw new Error(summary?.error || "集計に失敗しました。");
       const best = summary?.bestPlan;
       if (!best || !Array.isArray(best.steps)) {
-        alert("No plans available.");
+        alert("利用可能なプランがありません。");
         return;
       }
       picked = {
@@ -992,9 +992,9 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
       }),
     });
     const story = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(story?.error || "AI story failed");
+    if (!res.ok) throw new Error(story?.error || "AIストーリー生成に失敗しました。");
     if (String(story?.one_liner || "").includes(STORY_FALLBACK_MARKER)) {
-      throw new Error("AI backend returned local fallback text. Story not saved.");
+      throw new Error("AIバックエンドがローカル代替テキストを返したため、ストーリーは保存しませんでした。");
     }
 
     const payload = {
@@ -1096,8 +1096,8 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
 
   pickBtn.addEventListener("click", () => {
     pickMode = !pickMode;
-    pickBtn.textContent = pickMode ? "Click the map…" : "Pick on map";
-    setStatus(pickMode ? "Click the map to set the station point." : "");
+    pickBtn.textContent = pickMode ? "地図をクリック…" : "地図から選択";
+    setStatus(pickMode ? "駅の位置を設定するには地図をクリックしてください。" : "");
   });
 
   if (window.map) {
@@ -1109,10 +1109,10 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
       latInput.value = String(lat);
       lonInput.value = String(lon);
       pickMode = false;
-      pickBtn.textContent = "Pick on map";
+      pickBtn.textContent = "地図から選択";
       persistStation();
       updateCircle();
-      setStatus("Station point updated.");
+      setStatus("駅の位置を更新しました。");
     });
   }
 
@@ -1137,22 +1137,22 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
 
     // Kick off (or hit cache)
     let { res, data } = await postJson(`/api/simulations/${simId}/station-counts`);
-    if (!res.ok) throw new Error(data?.error || "station-counts failed");
+    if (!res.ok) throw new Error(data?.error || "駅周辺人数の集計に失敗しました。");
 
     // If async job, poll status until result is ready.
     const startedAt = Date.now();
     while (true) {
       const status = String(data?.status || "");
       if (status === "succeeded" && data?.result) return data.result;
-      if (status === "failed") throw new Error(data?.error || "station-counts failed");
+      if (status === "failed") throw new Error(data?.error || "駅周辺人数の集計に失敗しました。");
 
       // 202 running/idle
       if (Date.now() - startedAt > 30 * 60 * 1000) {
-        throw new Error("station-counts timed out (still running)");
+        throw new Error("駅周辺人数の集計がタイムアウトしました。");
       }
       await new Promise(r => setTimeout(r, 1500));
       ({ res, data } = await postJson(`/api/simulations/${simId}/station-counts/status`));
-      if (!res.ok) throw new Error(data?.error || "station-counts status failed");
+      if (!res.ok) throw new Error(data?.error || "駅周辺人数の状態確認に失敗しました。");
     }
   }
 
@@ -1179,10 +1179,10 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
     const aPeak = peakInfo(b);
 
     const lines = [];
-    lines.push(`Unique visitors: before=${pv} after=${av} diff=${av - pv}`);
-    lines.push(`Peak present:    before=${pPeak.value} @${formatHHMM(pPeak.idx * binSec)} after=${aPeak.value} @${formatHHMM(aPeak.idx * binSec)}`);
+    lines.push(`訪問者数: 変更前=${pv} 変更後=${av} 差分=${av - pv}`);
+    lines.push(`ピーク人数: 変更前=${pPeak.value} @${formatHHMM(pPeak.idx * binSec)} 変更後=${aPeak.value} @${formatHHMM(aPeak.idx * binSec)}`);
     lines.push("");
-    lines.push("TimeBinStart,BeforePresent,AfterPresent,Diff");
+    lines.push("時刻,変更前人数,変更後人数,差分");
     for (let i = 0; i < n; i++) {
       const bv = Number(a[i] || 0);
       const nv = Number(b[i] || 0);
@@ -1196,7 +1196,7 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
     const beforeId = beforeSel?.value;
     const afterId = afterSel?.value;
     if (!beforeId || !afterId) {
-      alert("Select both Before and After simulations.");
+      alert("変更前と変更後のシミュレーションを両方選択してください。");
       return;
     }
 
@@ -1206,17 +1206,17 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
     const binSec = Number(binSel.value || 3600);
     const personLimit = personLimitSel.value ? Number(personLimitSel.value) : null;
     if (!isFinite(lat) || !isFinite(lon)) {
-      alert("Set station Lat/Lon (or use Pick on map).");
+      alert("駅の緯度・経度を設定してください（または地図から選択してください）。");
       return;
     }
     if (!isFinite(radiusM) || radiusM <= 0) {
-      alert("Radius must be > 0.");
+      alert("半径は 0 より大きい値にしてください。");
       return;
     }
 
     const [x, y] = wgs84ToAtlantis(lat, lon);
     if (x == null || y == null) {
-      alert("Coordinate conversion failed (proj4).");
+      alert("座標変換に失敗しました（proj4）。");
       return;
     }
 
@@ -1229,7 +1229,7 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
     UI.station.binSec = binSec;
     Persist.saveUI(UI);
 
-    setStatus(personLimit ? `Computing station counts (first ${personLimit} persons)…` : "Computing station counts from events…");
+    setStatus(personLimit ? `駅周辺人数を計算中（先頭 ${personLimit} 人）…` : "駅周辺人数をイベントから計算中…");
     outEl.textContent = "";
 
     try {
@@ -1238,11 +1238,11 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
         fetchStationCounts(afterId, x, y, radiusM, binSec, personLimit),
       ]);
       renderCompare(before, after);
-      setStatus("Done.");
+      setStatus("完了しました。");
     } catch (e) {
       console.error(e);
-      setStatus("Failed.");
-      outEl.textContent = e?.message || "Error";
+      setStatus("失敗しました。");
+      outEl.textContent = e?.message || "エラー";
     }
   });
 })();
