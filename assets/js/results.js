@@ -20,7 +20,7 @@ if (loadingElement && loading !== 'true') {
 }
 //棒グラフ基本設定
 const barLabels = ["現在", "入力"];
-const barBgColor = ["#31599E", "#F5813C"];
+const barBgColor = ["#4F64D9", "#8E4DD8"];
 const barX = {
 	beginAtZero: true,
 	grid: {
@@ -76,7 +76,7 @@ if (bustleCheckbox || commentaryCheckbox) {
 					var baseRadius = feature.properties.nigiwai * 25; // 基本となる半径（調整が必要）
 					var circleMarker = L.circle(latlng, {
 						radius: baseRadius, // ピクセル単位の半径
-						fillColor: "#F5813C",
+						fillColor: "#8E4DD8",
 						color: false,
 						weight: 1,
 						opacity: 1,
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	let selectedLayer = null;
 	window.currentMesh = null;
 	const meshStyle = { color: '#CCC', weight: 1, fillOpacity: 0.3, fillColor: '#49A7D1' };
-	const meshStyleCurrent = { color: '#F5813C', weight: 2, fillOpacity: 0.3, fillColor: '#F5813C' };
+	const meshStyleCurrent = { color: '#8E4DD8', weight: 2, fillOpacity: 0.3, fillColor: '#8E4DD8' };
 	const meshStyleDisabled = { color: '#CCC', weight: 1, fillOpacity: 0.3, fillColor: '#DDD' };
 	const requiredProperties = [
 		"dataTotalAA" , "dataTotalAB" , "dataTotalAC" , "dataTotalAD" , "dataTotalAE" , "dataTotalAF" ,"dataTotalBA" , "dataTotalBB" , "dataTotalBC" , "dataTotalBD" , "dataTotalBE" , "dataTotalBF" , "dataTimeA" , "dataTimeB" , "dataAccidentA" , "dataAccidentB" , "dataPassengersA" , "dataPassengersB" , "dataExchangeA" , "dataExchangeB" , "dataTripA" , "dataTripB" , "dataTrafficjamA" , "dataTrafficjamB" , "dataCostA" , "dataCostB" , "dataBCA" , "dataBCB"

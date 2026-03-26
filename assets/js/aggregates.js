@@ -107,15 +107,16 @@
 
     host = document.createElement('section');
     host.id = 'aggPanel';
+    host.className = 'dtsb-fun-panel dtsb-fun-panel--agg';
     host.style.marginTop = '16px';
     host.style.minWidth = '0';
 
     host.innerHTML = `
-    <div class="c-box">
+    <div class="c-box" style="padding:10px 12px;">
       <details id="aggDetails" class="c-details" open>
         <summary class="c-details__summary">集計比較</summary>
 
-        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:8px 0;">
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0;">
           <label style="display:flex; gap:6px; align-items:center;">
             <input type="radio" name="aggMode" value="frequency" checked>
             <span class="muted">運航頻度変更前後</span>
@@ -126,30 +127,30 @@
           </label>
         </div>
 
-        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0;">
-          <label id="aggPreWrap" style="display:flex; gap:6px; align-items:center; min-width:0; flex:1 1 260px;">
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0;">
+          <label id="aggPreWrap" style="display:flex; gap:6px; align-items:center; min-width:0; flex:1 1 220px;">
             <span class="muted">比較前</span>
             <select id="aggPreSelect" class="c-input" style="min-width:0; width:100%;"></select>
           </label>
-          <label id="aggPostWrap" style="display:flex; gap:6px; align-items:center; min-width:0; flex:1 1 260px;">
+          <label id="aggPostWrap" style="display:flex; gap:6px; align-items:center; min-width:0; flex:1 1 220px;">
             <span class="muted">比較後</span>
             <select id="aggPostSelect" class="c-input" style="min-width:0; width:100%;"></select>
           </label>
-          <label style="display:flex; gap:6px; align-items:center; min-width:0; flex:0 1 160px;">
-            <span class="muted">対象人数</span>
+          <label style="display:flex; gap:6px; align-items:center; min-width:0; flex:0 1 132px;">
+            <span class="muted" style="white-space: nowrap;">対象人数</span>
             <select id="aggPersonLimit" class="c-input" style="min-width:0; width:100%;">
               <option value="">全員</option>
               <option value="1000">1000</option>
             </select>
           </label>
           <button id="aggCompareBtn" type="button" class="btn">比較する</button>
-          <span id="aggStatus" class="muted" style="min-width:0; flex:1 1 180px;"></span>
+          <span id="aggStatus" class="muted" style="min-width:0; flex:1 1 120px;"></span>
         </div>
 
         <div id="aggCards"
-             style="display:flex; gap:12px; flex-wrap:wrap; margin:8px 0;"></div>
+             style="display:flex; gap:8px; flex-wrap:wrap; margin:6px 0;"></div>
 
-        <div id="aggCharts" style="display:none; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px; min-width:0;">
+        <div id="aggCharts" style="display:none; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px; min-width:0;">
           <div class="c-chart" style="--chartAspect:auto; height:220px;"><canvas id="chartActPeople"></canvas></div>
           <div class="c-chart" style="--chartAspect:auto; height:220px;"><canvas id="chartActTime"></canvas></div>
           <div class="c-chart" style="--chartAspect:auto; height:220px;"><canvas id="chartActAvg"></canvas></div>
@@ -190,7 +191,7 @@
         // Keep this container scrollable so expanded Aggregations won't overflow vertically.
         scrollBox.style.overflowY = 'auto';
         scrollBox.style.overflowX = 'hidden';
-        scrollBox.style.scrollbarGutter = 'stable both-edges';
+        scrollBox.style.scrollbarGutter = 'stable';
         scrollBox.style.webkitOverflowScrolling = 'touch';
         scrollBox.style.paddingBottom = '120px';
       }
@@ -214,9 +215,8 @@
 
   function card(label, value) {
     const div = document.createElement('div');
-    div.style.cssText =
-      'min-width:180px; padding:10px 12px; background:#fff; border:1px solid #e5e7f3; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,0.04);';
-    div.innerHTML = `<div style="font-size:12px; color:#666;">${label}</div><div class="u-en" style="font-size:18px; font-weight:700;">${value}</div>`;
+    div.className = 'dtsb-stat-card';
+    div.innerHTML = `<div class="dtsb-stat-card__label">${label}</div><div class="dtsb-stat-card__value u-en">${value}</div>`;
     return div;
   }
 
@@ -297,36 +297,36 @@
     upsertChart('chartActPeople', {
       ...commonBar,
       data: { labels: actLabels, datasets: [
-        { label: `${preName}: 人数`, data: actPeoplePre, backgroundColor: '#31599E' },
-        { label: `${postName}: 人数`, data: actPeoplePost, backgroundColor: '#F5813C' },
+        { label: `${preName}: 人数`, data: actPeoplePre, backgroundColor: '#4F64D9' },
+        { label: `${postName}: 人数`, data: actPeoplePost, backgroundColor: '#8E4DD8' },
       ] }
     });
     upsertChart('chartActTime', {
       ...commonBar,
       data: { labels: actLabels, datasets: [
-        { label: `${preName}: 活動時間 (h)`, data: actTimePre, backgroundColor: '#31599E' },
-        { label: `${postName}: 活動時間 (h)`, data: actTimePost, backgroundColor: '#F5813C' },
+        { label: `${preName}: 活動時間 (h)`, data: actTimePre, backgroundColor: '#4F64D9' },
+        { label: `${postName}: 活動時間 (h)`, data: actTimePost, backgroundColor: '#8E4DD8' },
       ] }
     });
     upsertChart('chartActAvg', {
       ...commonBar,
       data: { labels: actLabels, datasets: [
-        { label: `${preName}: 1人あたり平均活動時間 (h)`, data: actAvgPre, backgroundColor: '#31599E' },
-        { label: `${postName}: 1人あたり平均活動時間 (h)`, data: actAvgPost, backgroundColor: '#F5813C' },
+        { label: `${preName}: 1人あたり平均活動時間 (h)`, data: actAvgPre, backgroundColor: '#4F64D9' },
+        { label: `${postName}: 1人あたり平均活動時間 (h)`, data: actAvgPost, backgroundColor: '#8E4DD8' },
       ] }
     });
     upsertChart('chartModeTime', {
       ...commonBar,
       data: { labels: modeLabels, datasets: [
-        { label: `${preName}: 移動時間 (h)`, data: modeTimePre, backgroundColor: '#8E44AD' },
-        { label: `${postName}: 移動時間 (h)`, data: modeTimePost, backgroundColor: '#27ae60' },
+        { label: `${preName}: 移動時間 (h)`, data: modeTimePre, backgroundColor: '#6A52D6' },
+        { label: `${postName}: 移動時間 (h)`, data: modeTimePost, backgroundColor: '#9B63E9' },
       ] }
     });
     upsertChart('chartModeAvg', {
       ...commonBar,
       data: { labels: modeLabels, datasets: [
-        { label: `${preName}: 1人あたり平均時間 (h)`, data: modeAvgPre, backgroundColor: '#8E44AD' },
-        { label: `${postName}: 1人あたり平均時間 (h)`, data: modeAvgPost, backgroundColor: '#27ae60' },
+        { label: `${preName}: 1人あたり平均時間 (h)`, data: modeAvgPre, backgroundColor: '#6A52D6' },
+        { label: `${postName}: 1人あたり平均時間 (h)`, data: modeAvgPost, backgroundColor: '#9B63E9' },
       ] }
     });
     upsertChart('chartPt', {
@@ -334,8 +334,8 @@
       data: {
         labels: ['公共交通利用', '非利用'],
         datasets: [
-          { label: preName, data: [fmt(pre.ptUsers), Math.max(0, fmt(pre.totalPeople) - fmt(pre.ptUsers))], backgroundColor: '#31599E' },
-          { label: postName, data: [fmt(post.ptUsers), Math.max(0, fmt(post.totalPeople) - fmt(post.ptUsers))], backgroundColor: '#F5813C' },
+          { label: preName, data: [fmt(pre.ptUsers), Math.max(0, fmt(pre.totalPeople) - fmt(pre.ptUsers))], backgroundColor: '#4F64D9' },
+          { label: postName, data: [fmt(post.ptUsers), Math.max(0, fmt(post.totalPeople) - fmt(post.ptUsers))], backgroundColor: '#8E4DD8' },
         ]
       },
       options: {

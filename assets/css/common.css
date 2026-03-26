@@ -2857,7 +2857,7 @@
     }
 
     #aggPanel #aggCharts .c-chart {
-      height: 190px !important;
+      height: 220px !important;
       min-width: 0;
       overflow: hidden;
     }

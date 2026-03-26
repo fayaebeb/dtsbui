@@ -94,19 +94,20 @@
 
     host = document.createElement('section');
     host.id = 'stationComparePanel';
+    host.className = 'dtsb-fun-panel dtsb-fun-panel--station';
     host.style.minWidth = '0';
     host.innerHTML = `
-      <div class="c-box">
+      <div class="c-box" style="padding:10px 12px;">
         <details class="c-details" open>
           <summary class="c-details__summary">西条駅周辺人数</summary>
-          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0;">
+          <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0;">
             <label style="display:flex; gap:6px; align-items:center; min-width:0;">
               <span class="muted">駅名</span>
-              <input id="stationCompareName" class="c-input" type="text" value="${DEFAULT_STATION}" style="min-width:0; width:140px;" />
+              <input id="stationCompareName" class="c-input" type="text" value="${DEFAULT_STATION}" style="min-width:0; width:124px;" />
             </label>
             <label style="display:flex; gap:6px; align-items:center; min-width:0;">
               <span class="muted">半径</span>
-              <select id="stationCompareRadius" class="c-input" style="min-width:0; width:120px;">
+              <select id="stationCompareRadius" class="c-input" style="min-width:0; width:108px;">
                 <option value="300">300 m</option>
                 <option value="500" selected>500 m</option>
                 <option value="800">800 m</option>
@@ -121,7 +122,7 @@
               <span class="muted">人数アニメーション</span>
             </label>
             <button id="stationCompareBtn" type="button" class="btn" disabled>計算する</button>
-            <span id="stationCompareStatus" class="muted" style="min-width:0; flex:1 1 220px;">index.html で保存した運航頻度設定を使って単独で計算できます。</span>
+            <span id="stationCompareStatus" class="muted" style="min-width:0; flex:1 1 140px;">index.html で保存した運航頻度設定を使って単独で計算できます。</span>
           </div>
           <div id="stationPeopleLegend" class="muted" style="font-size:12px; margin-bottom:6px;"></div>
           <div id="stationPeopleControls" class="station-people-controls" style="display:none;">
@@ -129,7 +130,7 @@
             <input id="stationPeopleSlider" class="station-people-controls__slider" type="range" min="0" max="0" step="1" value="0" />
             <span id="stationPeopleTimeLabel" class="station-people-controls__label">00:00</span>
           </div>
-          <div id="stationCompareCards" style="display:flex; gap:12px; flex-wrap:wrap; margin:8px 0;"></div>
+          <div id="stationCompareCards" style="display:flex; gap:8px; flex-wrap:wrap; margin:6px 0;"></div>
           <div style="height:240px; display:none;" id="stationCompareChartWrap">
             <canvas id="stationCompareChart"></canvas>
           </div>
@@ -147,9 +148,8 @@
 
   function card(label, value) {
     const div = document.createElement('div');
-    div.style.cssText =
-      'min-width:180px; padding:10px 12px; background:#fff; border:1px solid #e5e7f3; border-radius:8px; box-shadow:0 1px 2px rgba(0,0,0,0.04);';
-    div.innerHTML = `<div style="font-size:12px; color:#666;">${label}</div><div class="u-en" style="font-size:18px; font-weight:700;">${value}</div>`;
+    div.className = 'dtsb-stat-card';
+    div.innerHTML = `<div class="dtsb-stat-card__label">${label}</div><div class="dtsb-stat-card__value u-en">${value}</div>`;
     return div;
   }
 
@@ -443,36 +443,36 @@
     const group = L.layerGroup();
     const beforeAura = L.circle(latlng, {
       radius: preAuraRadius,
-      color: '#31599E',
+      color: '#4F64D9',
       weight: 1,
       opacity: 0.45,
-      fillColor: '#31599E',
+      fillColor: '#4F64D9',
       fillOpacity: 0.07,
       interactive: false,
       pane: 'selectStop',
     });
     const afterAura = L.circle(latlng, {
       radius: postAuraRadius,
-      color: '#F5813C',
+      color: '#8E4DD8',
       weight: 1,
       opacity: 0.5,
-      fillColor: '#F5813C',
+      fillColor: '#8E4DD8',
       fillOpacity: 0.08,
       interactive: false,
       pane: 'selectStop',
     });
     const area = L.polygon(ring, {
-      color: '#F5813C',
+      color: '#8E4DD8',
       weight: 2,
       opacity: 0.9,
       dashArray: '10 6',
-      fillColor: '#F5813C',
+      fillColor: '#8E4DD8',
       fillOpacity: 0.05,
       pane: 'selectStop',
     });
     const center = L.circleMarker(latlng, {
       radius: 7,
-      color: '#F5813C',
+      color: '#8E4DD8',
       weight: 2,
       fillColor: '#ffffff',
       fillOpacity: 1,
@@ -545,16 +545,16 @@
             {
               label: '変更前',
               data: labels.map((_, i) => Number(preBins[i] || 0)),
-              borderColor: '#31599E',
-              backgroundColor: 'rgba(49,89,158,0.15)',
+              borderColor: '#4F64D9',
+              backgroundColor: 'rgba(79,100,217,0.16)',
               tension: 0.25,
               fill: false,
             },
             {
               label: '変更後',
               data: labels.map((_, i) => Number(postBins[i] || 0)),
-              borderColor: '#F5813C',
-              backgroundColor: 'rgba(245,129,60,0.18)',
+              borderColor: '#8E4DD8',
+              backgroundColor: 'rgba(142,77,216,0.16)',
               tension: 0.25,
               fill: false,
             },

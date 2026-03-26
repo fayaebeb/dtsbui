@@ -42,8 +42,8 @@
 		}
 
 		.dtsb-pill[data-state="selected"] {
-			border-color: rgba(0, 179, 255, 0.35);
-			background: rgba(0, 179, 255, 0.12);
+			border-color: rgba(var(--colorMainRgb), 0.45);
+			background: rgba(var(--colorMainRgb), 0.14);
 		}
 
 		.dtsb-dynroute__container {
@@ -133,11 +133,25 @@
 			box-shadow: 0 8px 18px rgba(var(--colorSubRgb), 0.14);
 		}
 
-		.dtsb-route-source--summary {
-			flex: 0 0 100%;
-			margin: 0 0 6px;
+		.dtsb-route-source--header {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			flex-wrap: nowrap;
+			margin: 0;
 			padding: 10px 12px;
-			border-bottom: 1px solid rgba(var(--colorSubRgb), 0.24);
+			align-self: center;
+			min-width: min(100%, 360px);
+		}
+
+		.dtsb-route-source--header .dtsb-route-source__title {
+			margin-bottom: 0;
+			white-space: nowrap;
+			flex: 0 0 auto;
+		}
+
+		.dtsb-route-source--header .dtsb-route-source__buttons {
+			flex: 1 1 auto;
 		}
 
 		.dtsb-route-source__title {
@@ -161,7 +175,7 @@
 			border: 1px solid rgba(var(--colorSubRgb), 0.42);
 			background: linear-gradient(180deg, #ffffff, rgba(var(--colorMainRgb), 0.1));
 			color: var(--colorSub);
-			font-family: "Poppins", "Noto Sans JP", sans-serif;
+			font-family: "Inter", "Noto Sans JP", sans-serif;
 			font-size: 1.1rem;
 			font-weight: 700;
 			line-height: 1.35;
@@ -215,6 +229,136 @@
 				width: 100%;
 			}
 		}
+
+		:root {
+			--fun-violet: #8e4dd8;
+			--fun-violet-deep: #6f37c7;
+			--fun-indigo: #4f64d9;
+			--fun-lilac: #d8c8ff;
+			--fun-ink: #22314f;
+			--fun-border: #d8e7ff;
+		}
+
+		body {
+			background:
+				radial-gradient(circle at 8% 10%, rgba(142, 77, 216, 0.17), transparent 28%),
+				radial-gradient(circle at 92% 10%, rgba(79, 100, 217, 0.15), transparent 30%),
+				linear-gradient(180deg, #f7f2ff 0%, #eef3ff 45%, #f7f3ff 100%);
+		}
+
+		.l-container.p-simulation {
+			margin: 10px;
+			border-radius: 24px;
+			overflow: hidden;
+			border: 2px solid #d7e6ff;
+			box-shadow: 0 24px 42px rgba(26, 62, 120, 0.16);
+		}
+
+		.l-container.p-simulation .l-header {
+			background: linear-gradient(180deg, #faf5ff, #f2e9ff);
+			border-right: 2px solid #e7dafc;
+		}
+
+		.l-container.p-simulation .l-contents__map-data,
+		.l-container.p-simulation .c-box,
+		.l-container.p-simulation .panel,
+		.l-container.p-simulation .card {
+			border-radius: 18px !important;
+			border: 2px solid var(--fun-border) !important;
+			background: rgba(255, 255, 255, 0.95) !important;
+			box-shadow: 0 10px 22px rgba(35, 66, 124, 0.12);
+		}
+
+		.l-container.p-simulation .c-details__summary {
+			background: linear-gradient(135deg, #eef3ff, #f1e8ff);
+			border-bottom: 1px solid #ddecff;
+			font-weight: 800;
+		}
+
+		.l-container.p-simulation .c-btn,
+		.l-container.p-simulation .c-btn__small,
+		.l-container.p-simulation .btn {
+			border-radius: 16px !important;
+			border: 2px solid rgba(43, 73, 130, 0.14);
+			box-shadow: 0 5px 0 rgba(36, 56, 99, 0.14);
+			font-weight: 800;
+			transition: transform 0.16s ease, box-shadow 0.2s ease;
+		}
+
+		.l-contents__map-btn .btn {
+			white-space: nowrap;
+		}
+
+		.l-container.p-simulation .c-btn:hover,
+		.l-container.p-simulation .c-btn__small:hover,
+		.l-container.p-simulation .btn:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 7px 0 rgba(36, 56, 99, 0.17);
+		}
+
+		.l-container.p-simulation .c-btn.blue {
+			background: linear-gradient(180deg, #9e67ea, #8e4dd8) !important;
+			border-color: rgba(99, 56, 173, 0.3);
+		}
+
+		.l-container.p-simulation .c-btn.black {
+			background: linear-gradient(180deg, #5f6fe4, #4f64d9) !important;
+			border-color: rgba(47, 63, 152, 0.3);
+		}
+
+		.dtsb-route-source__btn {
+			border-width: 2px;
+			border-radius: 999px;
+			box-shadow: 0 5px 0 rgba(43, 73, 130, 0.16);
+		}
+
+		.dtsb-route-source__btn.is-active {
+			background: linear-gradient(180deg, #a16ff2, #8e4dd8);
+			border-color: rgba(111, 55, 199, 0.45);
+		}
+
+		.l-contents__route-source {
+			min-width: 0;
+		}
+
+		#useful .l-fixed__setting>dt,
+		#useful .l-fixed__setting>dd {
+			font-size: 1.6rem;
+			line-height: 1.5;
+		}
+
+		#useful .l-fixed__setting>dt {
+			font-weight: 700;
+		}
+
+		#useful .c-input__file,
+		#useful .c-input__file::file-selector-button {
+			font-size: 1.5rem;
+		}
+
+		#analysisBlock .card h3 {
+			font-weight: 800;
+			color: var(--fun-ink);
+		}
+
+		@media (max-width: 959px) {
+			.l-container.p-simulation {
+				margin: 0;
+				border-radius: 0;
+				border-width: 0;
+			}
+
+			.dtsb-route-source--header {
+				display: block;
+				min-width: 0;
+				width: 100%;
+				margin-bottom: 12px;
+			}
+
+			.dtsb-route-source--header .dtsb-route-source__title {
+				margin-bottom: 8px;
+			}
+		}
 	</style>
 </head>
 
@@ -245,6 +389,30 @@
 					</nav>
 				</div>
 				<h1 class="l-contents__tit">入力</h1>
+				<div class="l-contents__route-source">
+					<div class="dtsb-route-source dtsb-route-source--header" aria-label="バス路線データ切替">
+						<span class="dtsb-route-source__title">バス路線データ</span>
+						<div id="busRouteSourceButtons" class="dtsb-route-source__buttons">
+							<button type="button"
+								class="c-btn__small c-btn__small-white dtsb-route-source__btn is-active"
+								data-bus-route-source="bus_route/baseline_transitSchedule_cr24_1.xml">
+								CURR24
+							</button>
+							<button type="button" class="c-btn__small c-btn__small-white dtsb-route-source__btn"
+								data-bus-route-source="bus_route/brt_transitSchedule_brt24_2.xml">
+								BRT24
+							</button>
+							<button type="button" class="c-btn__small c-btn__small-white dtsb-route-source__btn"
+								data-bus-route-source="bus_route/net_expansion_transitSchedule_cr40_3.xml">
+								CURR40
+							</button>
+							<button type="button" class="c-btn__small c-btn__small-white dtsb-route-source__btn"
+								data-bus-route-source="bus_route/output_transitSchedule_brt40_4.xml">
+								BRT40
+							</button>
+						</div>
+					</div>
+				</div>
 				<button type="button" class="l-fixed__open l-contents__useful c-btn js-fixed-open" data-fixed="useful">
 					便利機能
 				</button>
@@ -264,12 +432,12 @@
 								<dd>
 									<label class="l-contents__map-btn">
 										<input type="checkbox" id="loadMeshToggle">
-										<span class="btn">メッシュ表示</span>
+										<span class="btn">メッシュ</span>
 									</label>
 
 									<label class="l-contents__map-btn">
 										<input type="checkbox" id="toggleBusRoutes" checked>
-										<span class="btn">バス路線表示</span>
+										<span class="btn">バス路線</span>
 									</label>
 								</dd>
 							</dl>
@@ -335,28 +503,6 @@
 								<details class="c-route c-details js-route dtsb-dynroute" data-route="current_route_a"
 									open>
 									<summary class="c-details__summary">
-										<div class="dtsb-route-source dtsb-route-source--summary" aria-label="バス路線データ切替">
-											<span class="dtsb-route-source__title">バス路線データ</span>
-											<div id="busRouteSourceButtons" class="dtsb-route-source__buttons">
-												<button type="button"
-													class="c-btn__small c-btn__small-white dtsb-route-source__btn is-active"
-													data-bus-route-source="bus_route/baseline_transitSchedule_cr24_1.xml">
-													 CURR24
-												</button>
-												<button type="button" class="c-btn__small c-btn__small-white dtsb-route-source__btn"
-													data-bus-route-source="bus_route/brt_transitSchedule_brt24_2.xml">
-													BRT24
-												</button>
-												<button type="button" class="c-btn__small c-btn__small-white dtsb-route-source__btn"
-													data-bus-route-source="bus_route/net_expansion_transitSchedule_cr40_3.xml">
-													CURR40
-												</button>
-												<button type="button" class="c-btn__small c-btn__small-white dtsb-route-source__btn"
-													data-bus-route-source="bus_route/output_transitSchedule_brt40_4.xml">
-													BRT40
-												</button>
-											</div>
-										</div>
 										<span>路線</span>
 										<span id="dynRouteSummaryBadge" class="dtsb-pill" data-state="empty">未選択</span>
 									</summary>
