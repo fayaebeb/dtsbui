@@ -9,6 +9,17 @@
 	<link rel="stylesheet" href="assets/css/common.css" />
 
 	<style>
+		:root {
+			--fun-violet: #8e4dd8;
+			--fun-violet-deep: #6f37c7;
+			--fun-indigo: #4f64d9;
+			--fun-lilac: #d8c8ff;
+			--fun-ink: #1f2d4a;
+			--fun-card: #ffffff;
+			--fun-border: #dbe8ff;
+			--fun-shadow: 0 8px 0 rgba(36, 56, 99, 0.12), 0 16px 30px rgba(26, 56, 110, 0.12);
+		}
+
 		#map {
 			border-radius: 12px;
 			overflow: hidden;
@@ -23,6 +34,10 @@
 			border-radius: 12px;
 
 			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		}
+		
+		.l-contents__map-btn .btn {
+			white-space: nowrap;
 		}
 
 		/* Compact header sizing (match `results.html` look/spacing) */
@@ -85,13 +100,118 @@
 			justify-content: center;
 		}
 
+		.dtsb-fun-panel .c-box {
+			background:
+				radial-gradient(circle at 0% 0%, rgba(79, 100, 217, 0.11), transparent 44%),
+				linear-gradient(180deg, #ffffff, #f7fbff) !important;
+		}
+
+		#aggPanel,
+		#aggPanel *,
+		#stationComparePanel,
+		#stationComparePanel * {
+			font-family: "Inter", "Noto Sans JP", sans-serif;
+		}
+
+		.dtsb-stat-card {
+			min-width: 180px;
+			padding: 12px 14px;
+			background: linear-gradient(180deg, #ffffff, #f7fbff);
+			border: 2px solid #d9e8ff;
+			border-radius: 16px;
+			box-shadow: var(--fun-shadow);
+			animation: dtsb-pop-in .3s ease-out;
+		}
+
+		.dtsb-stat-card__label {
+			font-size: 12px;
+			color: #567;
+			font-weight: 700;
+		}
+
+		.dtsb-stat-card__value {
+			margin-top: 4px;
+			font-size: 22px;
+			font-weight: 800;
+			color: var(--fun-ink);
+		}
+
+		#aggPanel .c-chart,
+		#stationComparePanel .c-chart {
+			border-radius: 14px;
+			border: 2px solid #e3edff;
+			background: #fff;
+			padding: 6px;
+		}
+
+		@keyframes dtsb-pop-in {
+			from {
+				opacity: 0;
+				transform: translateY(8px) scale(0.98);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
 		.p-result__graph .l-contents__data .c-area__grid.c-area__scroll {
 			overflow-y: auto;
+			overflow-x: hidden;
 			scrollbar-gutter: stable;
+			min-height: 0;
 		}
 
 		.p-result__graph .l-contents__data .c-area__grid.c-area__scroll:hover {
 			overflow-y: auto;
+		}
+
+		.p-result__graph .l-contents__main {
+			--mainColumn: minmax(380px, 1.15fr) minmax(0, 1.45fr);
+			overflow: hidden;
+			align-items: stretch;
+			min-height: 0;
+		}
+
+		.p-result__graph .l-contents__main>*,
+		.p-result__graph .l-contents__map,
+		.p-result__graph .l-contents__data {
+			min-width: 0;
+		}
+
+		.p-result__graph .l-contents__map,
+		.p-result__graph .l-contents__data {
+			min-height: 100%;
+		}
+
+		.p-result__graph .l-contents__data {
+			grid-template-rows: auto minmax(0, 1fr) auto;
+			overflow: hidden;
+		}
+
+		.p-result__graph .l-contents__map-load {
+			min-height: 520px;
+		}
+
+		.p-result__graph .c-area__grid.column03 {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			align-items: stretch;
+		}
+
+		.p-result__graph .c-chart {
+			--chartAspect: 4 / 3;
+			min-height: 220px;
+		}
+
+		.p-result__graph .p-result__graph-total {
+			grid-column: 1 / -1;
+			min-height: 430px;
+		}
+
+		.p-result__graph .p-result__graph-total .c-chart {
+			--chartAspect: 16 / 7;
+			min-height: 320px;
 		}
 
 		@media (max-width: 959px) {
@@ -101,6 +221,27 @@
 
 			.p-result__graph .l-contents__dl {
 				width: 100%;
+			}
+
+			.p-result__graph .l-contents__main {
+				--mainColumn: 1fr;
+			}
+
+			.p-result__graph .c-area__grid.column03 {
+				grid-template-columns: 1fr;
+			}
+
+			.p-result__graph .c-chart,
+			.p-result__graph .p-result__graph-total .c-chart {
+				min-height: 240px;
+			}
+
+			.p-result__graph .p-result__graph-total {
+				min-height: 360px;
+			}
+
+			.p-result__graph .l-contents__map-load {
+				min-height: 360px;
 			}
 		}
 
@@ -186,102 +327,107 @@
 				<div class="l-contents__map">
 					<div class="l-contents__main-tit">
 						<h2 class="tit">地図</h2>
-						<!-- <label class="l-contents__main-mesh c-input__checkbox">メッシュ<i class="c-ico__loading js-mesh-loading hidden"></i><input class="js-mesh" type="checkbox" name="mesh" value="1"><i class="c-input__checkbox-switch"></i></label> -->
 					</div>
-					<div class="l-contents__map-load" id="map"></div>
-					<div class="l-contents__map-data">
-						<div class="scroll">
-							<button type="button" class="c-btn__small c-btn__small-black legends u-hover-op js-legends"
-								data-fixed="legends">
-								凡例
-							</button>
-							<dl class="l-contents__map-view">
-								<dt>表示切替</dt>
-								<dd>
+					<div class="l-contents__map-wrap">
+						<div class="l-contents__map-load" id="map"></div>
+						<div class="l-contents__map-data">
+							<div class="scroll">
+								<button type="button"
+									class="c-btn__small c-btn__small-black legends u-hover-op js-legends"
+									data-fixed="legends">
+									凡例
+								</button>
+								<dl class="l-contents__map-view">
+									<dt>表示切替</dt>
+									<dd>
+										<label class="l-contents__map-btn">
+											<input type="checkbox" id="data_selected_route" name="data_selected_route"
+												checked>
+											<span class="btn">選択路線</span>
+										</label>
+										<label class="l-contents__map-btn">
+											<input type="checkbox" id="data_mesh_heatmap" name="data_mesh_heatmap">
+											<span class="btn">メッシュ</span>
+										</label>
+										<label class="l-contents__map-btn">
+											<input type="checkbox" id="data_commentary" name="data_commentary">
+											<span class="btn">解説</span>
+										</label>
+										<label class="l-contents__map-btn">
+											<input type="checkbox" id="data_bustle" name="data_bustle">
+											<span class="btn">にぎわい</span>
+										</label>
+										<label class="l-contents__map-btn">
+											<input type="checkbox" id="data_time" name="data_time">
+											<span class="btn">所用時間</span>
+										</label>
+										<label class="l-contents__map-btn">
+											<input type="checkbox" id="data_passengers" name="data_passengers">
+											<span class="btn">乗降客数</span>
+										</label>
+									</dd>
+								</dl>
+								<div class="l-contents__map-population">
 									<label class="l-contents__map-btn">
-										<input type="checkbox" id="data_root" name="data_root" checked>
-										<span class="btn">路線</span>
+										<input type="checkbox" class="js-population" name="data_population">
+										<span class="btn">人口推計</span>
 									</label>
-									<label class="l-contents__map-btn">
-										<input type="checkbox" id="data_commentary" name="data_commentary" checked>
-										<span class="btn">解説</span>
-									</label>
-									<label class="l-contents__map-btn">
-										<input type="checkbox" id="data_bustle" name="data_bustle" checked>
-										<span class="btn">にぎわい</span>
-									</label>
-									<label class="l-contents__map-btn">
-										<input type="checkbox" id="data_time" name="data_time">
-										<span class="btn">所用時間</span>
-									</label>
-									<label class="l-contents__map-btn">
-										<input type="checkbox" id="data_passengers" name="data_passengers">
-										<span class="btn">乗降客数</span>
-									</label>
-								</dd>
-							</dl>
-							<div class="l-contents__map-population">
-								<label class="l-contents__map-btn">
-									<input type="checkbox" class="js-population" name="data_population">
-									<span class="btn">人口推計</span>
-								</label>
-								<label class="l-contents__map-year">
-									<span class="tit">年代</span>
-									<div class="range-wrap">
-										<div class="years u-en">
-											<span class="min-value js-year-min">2015</span>
-											<span class="current-value js-year-current">2025</span>
-											<span class="max-value js-year-max">2050</span>
+									<label class="l-contents__map-year">
+										<span class="tit">年代</span>
+										<div class="range-wrap">
+											<div class="years u-en">
+												<span class="min-value js-year-min">2015</span>
+												<span class="current-value js-year-current">2025</span>
+												<span class="max-value js-year-max">2050</span>
+											</div>
+											<div class="range-box">
+												<input class="range js-year" type="range" name="data_year" value="2025"
+													min="2015" max="2050" step="5" />
+												<ul class="scale">
+													<li class="min"></li>
+													<li></li>
+													<li></li>
+													<li></li>
+													<li></li>
+													<li></li>
+													<li></li>
+													<li class="max"></li>
+												</ul>
+											</div>
 										</div>
-										<div class="range-box">
-											<input class="range js-year" type="range" name="data_year" value="2025"
-												min="2015" max="2050" step="5" />
-											<ul class="scale">
-												<li class="min"></li>
-												<li></li>
-												<li></li>
-												<li></li>
-												<li></li>
-												<li></li>
-												<li></li>
-												<li class="max"></li>
-											</ul>
-										</div>
-									</div>
-								</label>
+									</label>
+								</div>
 							</div>
-						</div>
-						<div class="l-contents__map-legends js-legends-contents"
-							style="font-family: 'Segoe UI', sans-serif; font-size: 14px; color: #333; display: none;">
-							<i class="close js-legends-close"></i>
-							<!-- にぎわい Section -->
-							<dl style="margin-bottom: 12px;">
-								<dt style="margin-bottom: 6px; font-weight: bold;">にぎわい</dt>
-								<dd style="padding-left: 10px;">
-									<div
-										style="width: 20px; height: 20px; border-radius: 50%; background-color: #F5813C;">
-									</div>
-								</dd>
-							</dl>
-							<!-- 人口推計 Section -->
-							<dl>
-								<dt style="margin-bottom: 6px; font-weight: bold;">人口推計</dt>
-								<dd>
-									<ul class="population" style="list-style: none; padding-left: 0; margin: 0;">
-										<li><span>0 - 10</span></li>
-										<li><span>11 - 50</span></li>
-										<li><span>51 - 100</span></li>
-										<li><span>101 - 200</span></li>
-										<li><span>201 - 300</span></li>
-										<li><span>301 - 600</span></li>
-										<li><span>601 - 1000</span></li>
-										<li><span>1001 - 2000</span></li>
-										<li><span>2001 - 5000</span></li>
-										<li><span>5001 - 7000</span></li>
-										<li><span>7001 以上</span></li>
-									</ul>
-								</dd>
-							</dl>
+							<div class="l-contents__map-legends js-legends-contents"
+								style="font-family: 'Inter', 'Noto Sans JP', sans-serif; font-size: 14px; color: #333; display: none;">
+								<i class="close js-legends-close"></i>
+								<dl style="margin-bottom: 12px;">
+									<dt style="margin-bottom: 6px; font-weight: bold;">にぎわい</dt>
+									<dd style="padding-left: 10px;">
+										<div
+											style="width: 20px; height: 20px; border-radius: 50%; background-color: #8E4DD8;">
+										</div>
+									</dd>
+								</dl>
+								<dl>
+									<dt style="margin-bottom: 6px; font-weight: bold;">人口推計</dt>
+									<dd>
+										<ul class="population" style="list-style: none; padding-left: 0; margin: 0;">
+											<li><span>0 - 10</span></li>
+											<li><span>11 - 50</span></li>
+											<li><span>51 - 100</span></li>
+											<li><span>101 - 200</span></li>
+											<li><span>201 - 300</span></li>
+											<li><span>301 - 600</span></li>
+											<li><span>601 - 1000</span></li>
+											<li><span>1001 - 2000</span></li>
+											<li><span>2001 - 5000</span></li>
+											<li><span>5001 - 7000</span></li>
+											<li><span>7001 以上</span></li>
+										</ul>
+									</dd>
+								</dl>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -360,9 +506,9 @@
 							<div class="c-chart"><canvas id="costChart"></canvas></div>
 						</div>
 					</div>
-					<div class="c-area__btns column03 js-btns" style="display: flex; justify-content: flex-end;">
-						<a class="c-btn c-btn__contents black" href="./">入力に戻る</a>
-						<button class="c-btn c-btn__contents blue" type="submit">結果一覧に保存する</button>
+					<div class="c-area__btns column02 js-btns dtsb-quest-actions">
+						<a class="c-btn c-btn__contents black dtsb-quest-btn dtsb-quest-btn--blue" href="./">入力に戻る</a>
+						<button class="c-btn c-btn__contents blue dtsb-quest-btn dtsb-quest-btn--violet" type="submit">結果一覧に保存する</button>
 					</div>
 
 				</form>

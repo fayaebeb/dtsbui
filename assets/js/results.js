@@ -1,5 +1,4 @@
 //ローディング
-const IS_RESULTS_HTML = /\/results\.html$/i.test(window.location.pathname || '');
 const urlParams = new URLSearchParams(window.location.search);
 const loading = urlParams.get('loading');
 const loadingElement = document.querySelector('.js-loading');
@@ -389,7 +388,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			refreshMeshStyles();
 		});
 	}
-	if (IS_RESULTS_HTML && meshToggle) {
+	if (meshToggle) {
 		if (meshToggle.checked) {
 			displayMesh();
 		}
@@ -400,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				removeMesh();
 			}
 		});
-	} else if (!IS_RESULTS_HTML) {
+	} else {
 		displayMesh();
 	}
 	handleMeshMetricToggle(timeToggle, passengersToggle);
