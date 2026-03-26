@@ -267,10 +267,16 @@
 		.l-container.p-simulation .l-contents {
 			height: 100%;
 			min-height: 0;
+			padding: min(3.90625vh, 30px) min(2.196193265vw, 30px);
+			row-gap: min(2.6041666667vh, 20px);
 		}
 
 		.l-container.p-simulation>.l-header,
 		.l-container.p-simulation>.l-contents {
+			min-height: 0;
+		}
+
+		.l-container.p-simulation .l-contents__main {
 			min-height: 0;
 		}
 
@@ -325,7 +331,7 @@
 		}
 
 		.l-container.p-simulation .c-btn.blue {
-			background: linear-gradient(180deg, #9e67ea, #8e4dd8) !important;
+			background: linear-gradient(180deg, #a06df0, #8e4dd8) !important;
 			border-color: rgba(99, 56, 173, 0.3);
 		}
 
@@ -646,7 +652,7 @@
 							</button>
 
 							<button id="toggleAnalysisBtn" type="button"
-								class="c-btn c-btn__contents dtsb-btn-compact dtsb-actions__analysis">
+								class="c-btn c-btn__contents black dtsb-btn-compact dtsb-actions__analysis">
 								▼ 解析パネルを開く
 							</button>
 						</div>

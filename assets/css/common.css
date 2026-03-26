@@ -672,7 +672,7 @@
 
   .l-contents__map-data {
     position: absolute;
-    bottom: clamp(5px, 1.3020833333vh, 10px);
+    bottom: clamp(1px, 1vh, 1px);
     left: 10px;
     z-index: 2;
     font-size: clamp(12px, 0.9516837482vw, 13px);
