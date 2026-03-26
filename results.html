@@ -494,6 +494,12 @@
 			column-gap: 10px;
 		}
 
+		.dtsb-compare-field--pair-equal {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			align-items: end;
+			column-gap: 10px;
+		}
+
 		.dtsb-compare-subfield {
 			display: grid;
 			gap: 6px;
@@ -875,6 +881,7 @@
 			}
 
 			.dtsb-compare-field--pair,
+			.dtsb-compare-field--pair-equal,
 			.dtsb-compare-field--toggles {
 				grid-template-columns: 1fr;
 			}

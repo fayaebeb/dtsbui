@@ -129,25 +129,27 @@
             </label>
           </div>
 
-          <div class="dtsb-compare-controls">
-            <label id="aggPreWrap" class="dtsb-compare-field">
-              <span class="dtsb-compare-field__label">比較前</span>
-              <select id="aggPreSelect" class="dtsb-compare-field__input"></select>
-            </label>
-            <label id="aggPostWrap" class="dtsb-compare-field">
-              <span class="dtsb-compare-field__label">比較後</span>
-              <select id="aggPostSelect" class="dtsb-compare-field__input"></select>
-            </label>
-            <label class="dtsb-compare-field">
-              <span class="dtsb-compare-field__label">対象人数</span>
-              <select id="aggPersonLimit" class="dtsb-compare-field__input">
+          <div class="dtsb-compare-controls dtsb-compare-controls--compact">
+            <div id="aggSimPairWrap" class="dtsb-compare-field dtsb-compare-field--compact dtsb-compare-field--pair-equal">
+              <label id="aggPreWrap" class="dtsb-compare-subfield">
+                <span class="dtsb-compare-field__label dtsb-compare-field__label--compact">比較前</span>
+                <select id="aggPreSelect" class="dtsb-compare-field__input dtsb-compare-field__input--compact"></select>
+              </label>
+              <label id="aggPostWrap" class="dtsb-compare-subfield">
+                <span class="dtsb-compare-field__label dtsb-compare-field__label--compact">比較後</span>
+                <select id="aggPostSelect" class="dtsb-compare-field__input dtsb-compare-field__input--compact"></select>
+              </label>
+            </div>
+            <label class="dtsb-compare-field dtsb-compare-field--compact">
+              <span class="dtsb-compare-field__label dtsb-compare-field__label--compact">対象人数</span>
+              <select id="aggPersonLimit" class="dtsb-compare-field__input dtsb-compare-field__input--compact">
                 <option value="">全員</option>
                 <option value="1000">1000</option>
               </select>
             </label>
           </div>
 
-          <div class="dtsb-compare-actions">
+          <div class="dtsb-compare-actions dtsb-compare-actions--compact">
             <button id="aggCompareBtn" type="button" class="btn dtsb-compare-btn">比較する</button>
             <span id="aggStatus" class="dtsb-compare-status" data-tone="neutral"></span>
           </div>
@@ -491,6 +493,7 @@
   onReady(async () => {
     const host = ensurePanel();
     const charts = document.getElementById('aggCharts');
+    const simPairWrap = document.getElementById('aggSimPairWrap');
     const preWrap = document.getElementById('aggPreWrap');
     const postWrap = document.getElementById('aggPostWrap');
     const preSel = document.getElementById('aggPreSelect');
@@ -552,13 +555,11 @@
     function setControlsForMode(mode) {
       if (mode === 'frequency') {
         // Frequency compare uses one selected simulation internally; hide sim-vs-sim controls.
-        if (preWrap) preWrap.style.display = 'none';
-        if (postWrap) postWrap.style.display = 'none';
+        if (simPairWrap) simPairWrap.style.display = 'none';
         if (preSel) preSel.disabled = true;
         postSel.disabled = true;
       } else {
-        if (preWrap) preWrap.style.display = 'grid';
-        if (postWrap) postWrap.style.display = 'grid';
+        if (simPairWrap) simPairWrap.style.display = 'grid';
         if (preSel) preSel.disabled = false;
         postSel.disabled = false;
       }
