@@ -203,19 +203,39 @@
 				radial-gradient(circle at 12% 8%, rgba(142, 77, 216, 0.18), transparent 30%),
 				radial-gradient(circle at 88% 8%, rgba(79, 100, 217, 0.15), transparent 32%),
 				linear-gradient(180deg, #f7f2ff 0%, #edf2ff 42%, #f7f3ff 100%);
+			overflow: hidden;
 		}
 
 		.l-container.p-result {
 			margin: 10px;
+			height: calc(100svh - 20px);
 			border-radius: 24px;
 			overflow: hidden;
 			border: 2px solid #d7e7ff;
 			box-shadow: 0 24px 42px rgba(26, 62, 120, 0.16);
 		}
 
+		.l-container.p-result .l-contents {
+			height: 100%;
+			min-height: 0;
+		}
+
+		.l-container.p-result>.l-header,
+		.l-container.p-result>.l-contents {
+			min-height: 0;
+		}
+
 		.l-container.p-result .l-header {
+			height: 100%;
+			min-height: 0;
+			overflow: hidden;
 			background: linear-gradient(180deg, #faf5ff, #f2e9ff);
 			border-right: 2px solid #e7dafc;
+		}
+
+		.l-container.p-result .l-header__nav {
+			min-height: 0;
+			overflow-y: auto;
 		}
 
 		.l-container.p-result .c-box,
@@ -324,6 +344,7 @@
 		@media (max-width: 959px) {
 			.l-container.p-result {
 				margin: 0;
+				height: 100svh;
 				border-radius: 0;
 				border-width: 0;
 			}
