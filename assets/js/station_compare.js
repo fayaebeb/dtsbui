@@ -94,47 +94,73 @@
 
     host = document.createElement('section');
     host.id = 'stationComparePanel';
-    host.className = 'dtsb-fun-panel dtsb-fun-panel--station';
+    host.className = 'dtsb-fun-panel dtsb-fun-panel--station dtsb-compare-panel';
     host.style.minWidth = '0';
     host.innerHTML = `
-      <div class="c-box" style="padding:10px 12px;">
-        <details class="c-details" open>
+      <div class="c-box dtsb-compare-shell">
+        <details class="c-details dtsb-compare-details" open>
           <summary class="c-details__summary">西条駅周辺人数</summary>
-          <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0;">
-            <label style="display:flex; gap:6px; align-items:center; min-width:0;">
-              <span class="muted">駅名</span>
-              <input id="stationCompareName" class="c-input" type="text" value="${DEFAULT_STATION}" style="min-width:0; width:124px;" />
-            </label>
-            <label style="display:flex; gap:6px; align-items:center; min-width:0;">
-              <span class="muted">半径</span>
-              <select id="stationCompareRadius" class="c-input" style="min-width:0; width:108px;">
-                <option value="300">300 m</option>
-                <option value="500" selected>500 m</option>
-                <option value="800">800 m</option>
-              </select>
-            </label>
-            <label style="display:flex; gap:6px; align-items:center; min-width:0;">
-              <input id="stationOverlayToggle" type="checkbox" checked>
-              <span class="muted">地図に表示</span>
-            </label>
-            <label style="display:flex; gap:6px; align-items:center; min-width:0;">
-              <input id="stationPeopleToggle" type="checkbox" checked>
-              <span class="muted">人数アニメーション</span>
-            </label>
-            <button id="stationCompareBtn" type="button" class="btn" disabled>計算する</button>
-            <span id="stationCompareStatus" class="muted" style="min-width:0; flex:1 1 140px;">index.html で保存した運航頻度設定を使って単独で計算できます。</span>
+          <div class="dtsb-compare-panel__body">
+            <p class="dtsb-compare-panel__intro">駅周辺の滞在人数と時間帯ピークを見比べて、頻度変更の影響がどこに集中したかを確認できます。</p>
+
+            <div class="dtsb-compare-controls dtsb-compare-controls--compact">
+              <div class="dtsb-compare-field dtsb-compare-field--compact dtsb-compare-field--pair">
+                <label class="dtsb-compare-subfield">
+                  <span class="dtsb-compare-field__label dtsb-compare-field__label--compact">駅名</span>
+                  <input id="stationCompareName" class="dtsb-compare-field__input dtsb-compare-field__input--compact" type="text" value="${DEFAULT_STATION}" />
+                </label>
+                <label class="dtsb-compare-subfield">
+                  <span class="dtsb-compare-field__label dtsb-compare-field__label--compact">半径</span>
+                  <select id="stationCompareRadius" class="dtsb-compare-field__input dtsb-compare-field__input--compact">
+                    <option value="300">300 m</option>
+                    <option value="500" selected>500 m</option>
+                    <option value="800">800 m</option>
+                  </select>
+                </label>
+              </div>
+              <div class="dtsb-compare-field dtsb-compare-field--compact dtsb-compare-field--toggles">
+                <span class="dtsb-compare-field__label dtsb-compare-field__label--compact">表示</span>
+                <label class="dtsb-compare-toggle dtsb-compare-toggle--compact">
+                  <input id="stationOverlayToggle" type="checkbox" checked>
+                  <span class="dtsb-compare-toggle__switch" aria-hidden="true"></span>
+                  <span class="dtsb-compare-toggle__text dtsb-compare-toggle__text--compact">地図表示</span>
+                </label>
+                <label class="dtsb-compare-toggle dtsb-compare-toggle--compact">
+                  <input id="stationPeopleToggle" type="checkbox" checked>
+                  <span class="dtsb-compare-toggle__switch" aria-hidden="true"></span>
+                  <span class="dtsb-compare-toggle__text dtsb-compare-toggle__text--compact">人数アニメ</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="dtsb-compare-actions dtsb-compare-actions--compact">
+              <button id="stationCompareBtn" type="button" class="btn dtsb-compare-btn" disabled>計算する</button>
+              <span id="stationCompareStatus" class="dtsb-compare-status" data-tone="neutral">index.html で保存した運航頻度設定を使って単独で計算できます。</span>
+            </div>
+
+            <div id="stationPeopleLegend" class="muted"></div>
+            <div id="stationPeopleControls" class="station-people-controls" style="display:none;">
+              <button id="stationPeoplePlayPause" type="button" class="btn station-people-controls__play">一時停止</button>
+              <input id="stationPeopleSlider" class="station-people-controls__slider" type="range" min="0" max="0" step="1" value="0" />
+              <span id="stationPeopleTimeLabel" class="station-people-controls__label">00:00</span>
+            </div>
+
+            <div id="stationCompareCards" class="dtsb-compare-cards"></div>
+
+            <div id="stationCompareChartWrap" class="dtsb-chart-grid" style="display:none;">
+              <section class="dtsb-chart-card">
+                <div class="dtsb-chart-card__head">
+                  <span class="dtsb-chart-card__eyebrow">Station</span>
+                  <h3 class="dtsb-chart-card__title">時間帯ごとの周辺人数</h3>
+                </div>
+                <div class="dtsb-chart-card__body c-chart">
+                  <canvas id="stationCompareChart"></canvas>
+                </div>
+              </section>
+            </div>
+
+            <div id="stationCompareMeta"></div>
           </div>
-          <div id="stationPeopleLegend" class="muted" style="font-size:12px; margin-bottom:6px;"></div>
-          <div id="stationPeopleControls" class="station-people-controls" style="display:none;">
-            <button id="stationPeoplePlayPause" type="button" class="btn station-people-controls__play">一時停止</button>
-            <input id="stationPeopleSlider" class="station-people-controls__slider" type="range" min="0" max="0" step="1" value="0" />
-            <span id="stationPeopleTimeLabel" class="station-people-controls__label">00:00</span>
-          </div>
-          <div id="stationCompareCards" style="display:flex; gap:8px; flex-wrap:wrap; margin:6px 0;"></div>
-          <div style="height:240px; display:none;" id="stationCompareChartWrap">
-            <canvas id="stationCompareChart"></canvas>
-          </div>
-          <div id="stationCompareMeta" class="muted" style="margin-top:8px; font-size:12px;"></div>
         </details>
       </div>
     `;
@@ -146,16 +172,27 @@
     return host;
   }
 
-  function card(label, value) {
+  function card(label, value, note) {
     const div = document.createElement('div');
     div.className = 'dtsb-stat-card';
-    div.innerHTML = `<div class="dtsb-stat-card__label">${label}</div><div class="dtsb-stat-card__value u-en">${value}</div>`;
+    div.innerHTML = `<div class="dtsb-stat-card__label">${label}</div><div class="dtsb-stat-card__value u-en">${value}</div>${note ? `<div class="dtsb-stat-card__note">${note}</div>` : ''}`;
     return div;
   }
 
-  function setStatus(text) {
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function setStatus(text, tone) {
     const el = document.getElementById('stationCompareStatus');
-    if (el) el.textContent = text || '';
+    if (!el) return;
+    el.textContent = text || '';
+    el.dataset.tone = tone || 'neutral';
   }
 
   function setButtonEnabled(enabled) {
@@ -528,14 +565,14 @@
     const peak = (arr) => arr.reduce((max, v) => Math.max(max, Number(v) || 0), 0);
 
     cards.innerHTML = '';
-    cards.appendChild(card('訪問者数', `${Number(pre.uniqueVisitors || 0)} → ${Number(post.uniqueVisitors || 0)}`));
-    cards.appendChild(card('時間帯ピーク人数', `${peak(preBins)} → ${peak(postBins)}`));
-    cards.appendChild(card('一致した停留所数', `${Number(station.matchCount || 0)}`));
+    cards.appendChild(card('訪問者数', `${Number(pre.uniqueVisitors || 0)} → ${Number(post.uniqueVisitors || 0)}`, '駅周辺を訪れたユニーク人数'));
+    cards.appendChild(card('時間帯ピーク人数', `${peak(preBins)} → ${peak(postBins)}`, 'もっとも混雑した時間帯の人数'));
+    cards.appendChild(card('一致した停留所数', `${Number(station.matchCount || 0)}`, '周辺判定に使われた停留所'));
     latestStationArea = station || null;
     syncStationOverlay();
     fitMapToStation(station);
 
-    wrap.style.display = n ? 'block' : 'none';
+    wrap.style.display = n ? 'grid' : 'none';
     if (n) {
       upsertChart('stationCompareChart', {
         type: 'line',
@@ -547,25 +584,58 @@
               data: labels.map((_, i) => Number(preBins[i] || 0)),
               borderColor: '#4F64D9',
               backgroundColor: 'rgba(79,100,217,0.16)',
+              pointBackgroundColor: '#4F64D9',
+              pointBorderWidth: 0,
+              pointRadius: 2.5,
+              pointHoverRadius: 4,
               tension: 0.25,
-              fill: false,
+              fill: true,
             },
             {
               label: '変更後',
               data: labels.map((_, i) => Number(postBins[i] || 0)),
               borderColor: '#8E4DD8',
               backgroundColor: 'rgba(142,77,216,0.16)',
+              pointBackgroundColor: '#8E4DD8',
+              pointBorderWidth: 0,
+              pointRadius: 2.5,
+              pointHoverRadius: 4,
               tension: 0.25,
-              fill: false,
+              fill: true,
             },
           ],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: true } },
+          plugins: {
+            legend: {
+              display: true,
+              labels: {
+                usePointStyle: true,
+                pointStyle: 'circle',
+                boxWidth: 10,
+                padding: 14,
+                color: '#33425c',
+                font: { weight: '700' },
+              }
+            },
+            tooltip: {
+              backgroundColor: '#1f2d4a',
+              padding: 10,
+              cornerRadius: 12,
+            }
+          },
           scales: {
-            y: { beginAtZero: true, ticks: { precision: 0 } },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#5f6f88', maxRotation: 0, autoSkip: true },
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(95, 111, 228, 0.12)' },
+              ticks: { precision: 0, color: '#5f6f88' },
+            },
           },
         },
       });
@@ -573,11 +643,11 @@
 
     const matchedStops = Array.isArray(station.matchedStops) ? station.matchedStops : [];
     const stopNames = matchedStops.slice(0, 4).map((s) => String(s.name || s.id || '')).filter(Boolean);
-    meta.textContent = [
+    meta.innerHTML = [
       `${station.stationName || DEFAULT_STATION} / 半径 ${Number(station.radiusM || DEFAULT_RADIUS)}m`,
       stopNames.length ? `参照停留所: ${stopNames.join(', ')}` : '',
       latestCompareContext?.params?.personLimit ? `サンプル人数: ${latestCompareContext.params.personLimit}` : '',
-    ].filter(Boolean).join(' / ');
+    ].filter(Boolean).map((item) => `<span class="dtsb-meta-chip">${escapeHtml(item)}</span>`).join('');
   }
 
   async function fetchStationCompare(ctx, stationName, radiusM) {
@@ -616,24 +686,24 @@
     const sig = compareSignature(ctx, stationName, radiusM);
     const btn = document.getElementById('stationCompareBtn');
 
-      setStatus('計算中…');
+    setStatus('計算中…', 'loading');
     if (btn) btn.disabled = true;
     try {
       const cache = getCache();
       const cached = cache[sig];
       if (cached && cached.stationArea) {
         renderStationCompare(cached);
-        setStatus('キャッシュを表示中');
+        setStatus('キャッシュを表示中', 'neutral');
         return;
       }
       const data = await fetchStationCompare(ctx, stationName, radiusM);
       cache[sig] = data;
       setCache(cache);
       renderStationCompare(data);
-      setStatus('計算完了');
+      setStatus('計算完了', 'success');
     } catch (err) {
       console.error(err);
-      setStatus(err && err.message ? String(err.message) : '失敗しました');
+      setStatus(err && err.message ? String(err.message) : '失敗しました', 'error');
     } finally {
       setButtonEnabled(!!((latestCompareContext || buildStandaloneFrequencyContext())?.simId));
     }
@@ -652,7 +722,7 @@
       latestStationArea = null;
       clearStationOverlay();
       setButtonEnabled(false);
-      setStatus('index.html で運航頻度設定を保存すると、西条駅周辺の変更前後を単独で計算できます。');
+      setStatus('index.html で運航頻度設定を保存すると、西条駅周辺の変更前後を単独で計算できます。', 'neutral');
       return;
     }
     if (cards) cards.innerHTML = '';
@@ -662,7 +732,7 @@
     latestStationArea = null;
     clearStationOverlay();
     setButtonEnabled(true);
-    setStatus('準備完了。半径を選んで「計算する」を押してください。');
+    setStatus('準備完了。半径を選んで「計算する」を押してください。', 'ready');
   }
 
   onReady(() => {
