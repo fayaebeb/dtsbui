@@ -333,8 +333,10 @@
 
   .l-header__nav-link {
     display: grid;
-    grid-template-columns: 20px 1fr;
-    grid-gap: 10px;
+    grid-template-columns: 20px max-content;
+    column-gap: 10px;
+    align-items: center;
+    justify-content: center;
     border-bottom: 1px solid var(--commonGray);
     padding: min(2.6041666667vh, 20px) min(1.0980966325vw, 15px);
     color: var(--txtColor, var(--commonBlack));
@@ -366,7 +368,7 @@
 
   .l-header__nav-link:hover {
     --txtColor: var(--colorMain);
-    --bgColor: rgba(var(--colorMainRgb), 0.1) transform: translateX(4px);
+    --bgColor: rgba(var(--colorMainRgb), 0.1);
     box-shadow: var(--shadow-md);
   }
 
@@ -375,7 +377,6 @@
     --bgColor: linear-gradient(135deg, #a084e8, #6c4ab6);
     background: var(--bgColor);
     box-shadow: 0 4px 12px rgba(108, 74, 182, 0.4);
-    transform: translateX(4px);
     color: var(--);
   }
 
@@ -2513,14 +2514,12 @@
   }
 
   .modern-enhancement-nav-link:hover {
-    transform: translateX(4px);
     box-shadow: var(--shadow-md);
   }
 
   .modern-enhancement-nav-link.current {
     background: linear-gradient(135deg, var(--colorMain), var(--colorSub)) !important;
     box-shadow: var(--shadow-lg);
-    transform: translateX(4px);
   }
 
   .modern-enhancement-btn {
