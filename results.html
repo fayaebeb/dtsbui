@@ -270,10 +270,56 @@
 			box-shadow: 0 7px 0 rgba(36, 56, 99, 0.17);
 		}
 
+		.l-container.p-result .l-contents__map-data .c-btn__small.legends {
+			min-height: 0;
+			padding: 0.4166666667em 0.9em;
+			border: 2px solid rgba(255, 255, 255, 0.94);
+			border-radius: 999px;
+			background: linear-gradient(180deg, #5f6fe4, #4f64d9 100%);
+			box-shadow: 0 4px 0 #4f64d9, 0 8px 16px rgba(111, 55, 199, 0.08);
+			font-size: inherit;
+			line-height: 1.1;
+			color: #fff !important;
+		}
+
 		.l-container.p-result .c-btn.blue,
 		.l-container.p-result .btn.blue {
 			background: linear-gradient(180deg, #a06df0, #8e4dd8) !important;
 			border-color: rgba(99, 56, 173, 0.3);
+		}
+
+		.l-container.p-result .l-contents__main {
+			overflow: visible;
+		}
+
+		.l-container.p-result .l-contents__map {
+			z-index: 3;
+			row-gap: 12px;
+		}
+
+		.l-container.p-result .l-contents__data {
+			row-gap: 12px;
+		}
+
+		.l-container.p-result .l-contents__map-legends {
+			z-index: 20;
+		}
+
+		.l-container.p-result .l-contents__dl-dt {
+			padding: 10px 18px;
+		}
+
+		.l-container.p-result .l-contents__dl-dd {
+			padding: 10px 16px;
+		}
+
+		.l-container.p-result .l-contents__evaluation {
+			font-size: 1.8rem;
+			line-height: 1;
+		}
+
+		.l-container.p-result .l-contents__name-input {
+			padding: 0.15em 0;
 		}
 
 		.l-container.p-result .c-btn.black {
@@ -490,7 +536,7 @@
 		</header>
 		<main class="l-contents p-result__map">
 			<header class="l-contents__head">
-				<div class="breadcrumb-wrapper">
+				<div class="breadcrumb-wrapper dtsb-headnav">
 					<nav class="breadcrumb-arrow" aria-label="ページ階層">
 						<ul>
 							<li class="step step-input"><a href="index.html">入力</a></li>
@@ -498,9 +544,46 @@
 							<li class="step step-list"><a href="list.html">結果一覧</a></li>
 						</ul>
 					</nav>
+					<details class="dtsb-mission">
+						<summary class="dtsb-mission__toggle">
+							<span class="dtsb-mission__toggle-label">Results Quest</span>
+							<span class="dtsb-mission__toggle-value">STEP 2 / 3</span>
+						</summary>
+						<div class="dtsb-mission__popup">
+							<span class="dtsb-hero__eyebrow">Results Quest</span>
+							<div class="dtsb-mission__title">結果レビュー</div>
+							<p class="dtsb-mission__copy">地図、グラフ、AIストーリーで今回の変化をまとめて確認できます。</p>
+							<div class="dtsb-hero__meta">
+								<span class="dtsb-chip dtsb-chip--accent">スコア確認</span>
+								<span class="dtsb-chip">メッシュ比較</span>
+								<span class="dtsb-chip dtsb-chip--blue">AIストーリー</span>
+							</div>
+							<div class="dtsb-stage-grid" aria-label="レビュー項目">
+								<div class="dtsb-stage-card">
+									<strong>地図を見る</strong>
+									<span>路線とメッシュの変化を重ねて確認</span>
+								</div>
+								<div class="dtsb-stage-card">
+									<strong>グラフ比較</strong>
+									<span>主要指標の伸びと弱点を把握</span>
+								</div>
+								<div class="dtsb-stage-card">
+									<strong>ストーリー生成</strong>
+									<span>代表ユーザーの1日をAIで要約</span>
+								</div>
+							</div>
+							<div class="dtsb-progress" style="--progress: 68%;">
+								<div class="dtsb-progress__label">
+									<span>結果レビュー進行</span>
+									<strong>STEP 2 / 3</strong>
+								</div>
+								<div class="dtsb-progress__track">
+									<span class="dtsb-progress__fill"></span>
+								</div>
+							</div>
+						</div>
+					</details>
 				</div>
-
-
 				<h1 class="l-contents__tit">結果</h1>
 				<dl class="l-contents__dl">
 					<dt class="l-contents__dl-dt">総合評価</dt>
@@ -1249,7 +1332,7 @@
 				'bus_route/baseline_transitSchedule_cr24_1.xml': '096896b54be24ffbb0cbee53dde6fd9f',
 				'bus_route/brt_transitSchedule_brt24_2.xml': '67eb5392da3a4202906f46f7b808b888',
 				'bus_route/net_expansion_transitSchedule_cr40_3.xml': '18c774153bad4ee0aae34a8dcbb7f03b',
-				'bus_route/output_transitSchedule_brt40_4.xml': '1e42e937-c0d9-445b-ae12-ba7ac8a66924'
+				'bus_route/output_transitSchedule_brt40_4.xml': '10862aa9ea9d4fd18c1b91b980b66439'
 			};
 			const DEFAULT_WEIGHTS = {
 				act: { Home: 1.0, Work: 0.5, Business: 0.3, Shopping: 0.2, __other__: 0.1 },

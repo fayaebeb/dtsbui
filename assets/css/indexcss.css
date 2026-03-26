@@ -286,7 +286,7 @@ details.c-route>.c-route__setting {
 
 .dtsb-btn-compact.c-btn__contents {
     --btnContentsFts: 1.5rem;
-    padding: 12px 14px;
+    padding: 16px 14px;
     border-bottom-width: 4px;
 }
 
@@ -466,7 +466,7 @@ details.c-route>.c-route__setting {
 
     .dtsb-btn-compact.c-btn__contents {
         --btnContentsFts: 1.4rem;
-        padding: 10px 12px;
+        padding: 14px 16px;
     }
 
     .dtsb-pubsims {

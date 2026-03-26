@@ -44,73 +44,65 @@
 			font-size: 1.8rem;
 		}
 
-		/* 1. Make the header a compact horizontal row */
-.p-result__graph .l-contents__head {
-  display: flex;
-  align-items: center;
-  gap: 12px;          /* reduce horizontal spacing */
-  flex-wrap: nowrap; /* prevent wrapping */
-}
+		.p-result__graph .l-contents__head {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) max-content max-content;
+			align-items: start;
+			gap: 12px;
+		}
 
-/* 2. Prevent the title from breaking into 2 lines */
-.p-result__graph .l-contents__tit {
-  white-space: nowrap;
-  font-size: 2.2rem; /* slightly smaller than now */
-}
+		.p-result__graph .l-contents__tit {
+			margin: 0;
+			white-space: nowrap;
+			font-size: 2.2rem;
+		}
 
-/* 3. Stop 総合評価 / 名称 from stretching width */
-.p-result__graph .l-contents__dl {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 0 0 auto;
-}
-/* In a flex header, don't use bottom margin on the title */
-.p-result__graph .l-contents__tit{
-  margin: 0;              /* <-- change from margin-bottom */
-  white-space: nowrap;
-  font-size: 2.2rem;
-}
+		.p-result__graph .l-contents__dl {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			flex: 0 0 auto;
+		}
 
-/* Make DT/DD the same height + vertically centered */
-.p-result__graph .l-contents__dl{
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 0 0 auto;
-}
+		.p-result__graph .l-contents__dl-dt,
+		.p-result__graph .l-contents__dl-dd {
+			display: flex;
+			align-items: center;
+		}
 
-.p-result__graph .l-contents__dl-dt,
-.p-result__graph .l-contents__dl-dd{
-  display: flex;          /* <-- important */
-  align-items: center;    /* <-- important */
-}
+		.p-result__graph .l-contents__dl-dd.c-area__name {
+			gap: 8px;
+		}
 
-/* Fix 名称 dd (input + pencil) alignment */
-.p-result__graph .l-contents__dl-dd.c-area__name{
-  gap: 8px;
-}
+		.p-result__graph .c-area__name-input {
+			line-height: 1;
+			padding: 0;
+		}
 
-.p-result__graph .c-area__name-input{
-  line-height: 1;
-  padding: 0;             /* prevents “floating” baseline feel */
-}
+		.p-result__graph .l-contents__name-edit {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
 
-.p-result__graph .l-contents__name-edit{
-  display: flex;
-  align-items: center;
-  justify-content: center; /* centers the pencil */
-}
+		.p-result__graph .l-contents__data .c-area__grid.c-area__scroll {
+			overflow-y: auto;
+			scrollbar-gutter: stable;
+		}
 
-/* Always allow scrolling for the graph grid (results_graph.html) */
-.p-result__graph .l-contents__data .c-area__grid.c-area__scroll {
-	overflow-y: auto;
-	scrollbar-gutter: stable;
-}
+		.p-result__graph .l-contents__data .c-area__grid.c-area__scroll:hover {
+			overflow-y: auto;
+		}
 
-.p-result__graph .l-contents__data .c-area__grid.c-area__scroll:hover {
-	overflow-y: auto;
-}
+		@media (max-width: 959px) {
+			.p-result__graph .l-contents__head {
+				grid-template-columns: 1fr;
+			}
+
+			.p-result__graph .l-contents__dl {
+				width: 100%;
+			}
+		}
 
 	</style>
 </head>
@@ -132,6 +124,40 @@
 		</header>
 		<main class="l-contents p-result__graph">
 			<header class="l-contents__head">
+				<div class="breadcrumb-wrapper dtsb-headnav">
+					<nav class="breadcrumb-arrow" aria-label="ページ階層">
+						<ul>
+							<li class="step step-input"><a href="index.html">入力</a></li>
+							<li class="step step-results"><a href="results.html" aria-current="page">結果</a></li>
+							<li class="step step-list"><a href="list.html">結果一覧</a></li>
+						</ul>
+					</nav>
+					<details class="dtsb-mission">
+						<summary class="dtsb-mission__toggle">
+							<span class="dtsb-mission__toggle-label">Graph Lab</span>
+							<span class="dtsb-mission__toggle-value">DEEP DIVE</span>
+						</summary>
+						<div class="dtsb-mission__popup">
+							<span class="dtsb-hero__eyebrow">Graph Lab</span>
+							<div class="dtsb-mission__title">グラフ分析ステージ</div>
+							<p class="dtsb-mission__copy">地図とグラフを大きく表示して、改善ポイントを深く確認できます。</p>
+							<div class="dtsb-hero__meta">
+								<span class="dtsb-chip dtsb-chip--accent">フルサイズ分析</span>
+								<span class="dtsb-chip">地図 + グラフ</span>
+								<span class="dtsb-chip dtsb-chip--blue">保存前チェック</span>
+							</div>
+							<div class="dtsb-progress" style="--progress: 82%;">
+								<div class="dtsb-progress__label">
+									<span>グラフレビュー進行</span>
+									<strong>DEEP DIVE</strong>
+								</div>
+								<div class="dtsb-progress__track">
+									<span class="dtsb-progress__fill"></span>
+								</div>
+							</div>
+						</div>
+					</details>
+				</div>
 				<h1 class="l-contents__tit">シミュレーション結果</h1>
 				<dl class="l-contents__dl">
 					<dt class="l-contents__dl-dt">総合評価</dt>

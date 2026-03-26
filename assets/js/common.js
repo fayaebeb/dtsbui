@@ -153,7 +153,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	const closeButton = document.querySelector('.js-legends-close');
 	if (legendsButton && legendsContents && closeButton) {
 		legendsButton.addEventListener('click', function () {
-			legendsContents.style.display = 'block';
+			const isHidden = window.getComputedStyle(legendsContents).display === 'none';
+			legendsContents.style.display = isHidden ? 'block' : 'none';
 		});
 		closeButton.addEventListener('click', function () {
 			legendsContents.style.display = 'none';

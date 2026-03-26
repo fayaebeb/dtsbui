@@ -206,7 +206,9 @@
 		.dtsb-route-source__btn.is-active {
 			border-color: rgba(var(--colorSubRgb), 0.9);
 			background: linear-gradient(135deg, var(--colorMain), var(--colorSub));
-			color: #fff;
+			color: #fff !important;
+			-webkit-text-fill-color: #fff;
+			text-shadow: 0 1px 0 rgba(47, 30, 86, 0.2);
 			box-shadow: 0 10px 18px rgba(var(--colorSubRgb), 0.3);
 		}
 
@@ -330,6 +332,18 @@
 			box-shadow: 0 7px 0 rgba(36, 56, 99, 0.17);
 		}
 
+		.l-container.p-simulation .l-contents__map-data .c-btn__small.legends {
+			min-height: 0;
+			padding: 0.4166666667em 0.9em;
+			border: 2px solid rgba(255, 255, 255, 0.94);
+			border-radius: 999px;
+			background: linear-gradient(180deg, #5f6fe4, #4f64d9 100%);
+			box-shadow: 0 4px 0 #4f64d9, 0 8px 16px rgba(111, 55, 199, 0.08);
+			font-size: inherit;
+			line-height: 1.1;
+			color: #fff !important;
+		}
+
 		.l-container.p-simulation .c-btn.blue {
 			background: linear-gradient(180deg, #a06df0, #8e4dd8) !important;
 			border-color: rgba(99, 56, 173, 0.3);
@@ -349,6 +363,8 @@
 		.dtsb-route-source__btn.is-active {
 			background: linear-gradient(180deg, #a16ff2, #8e4dd8);
 			border-color: rgba(111, 55, 199, 0.45);
+			color: #fff !important;
+			-webkit-text-fill-color: #fff;
 		}
 
 		.l-contents__route-source {
@@ -433,7 +449,7 @@
 		</header>
 		<main class="l-contents">
 			<header class="l-contents__head">
-				<div class="breadcrumb-wrapper">
+				<div class="breadcrumb-wrapper dtsb-headnav">
 					<nav class="breadcrumb-arrow" aria-label="ページ階層">
 						<ul>
 							<li class="step"><a href="index.html" aria-current="page">入力</a></li>
@@ -441,6 +457,40 @@
 							<li class="step"><a href="list.html">結果一覧</a></li>
 						</ul>
 					</nav>
+					<details class="dtsb-mission">
+						<summary class="dtsb-mission__toggle">
+							<span class="dtsb-mission__toggle-label">Mission Board</span>
+							<span class="dtsb-mission__toggle-value">STEP 1 / 3</span>
+						</summary>
+						<div class="dtsb-mission__popup">
+							<span class="dtsb-hero__eyebrow">Mission Board</span>
+							<div class="dtsb-mission__title">入力ステージ</div>
+							<p class="dtsb-mission__copy">路線を選んで、朝の運行頻度を調整し、結果ステージへ進みます。</p>
+							<div class="dtsb-stage-grid" aria-label="操作ステップ">
+								<div class="dtsb-stage-card">
+									<strong>1. 路線を選ぶ</strong>
+									<span>CURR / BRT を切り替えてベース条件を決める</span>
+								</div>
+								<div class="dtsb-stage-card">
+									<strong>2. 頻度を調整</strong>
+									<span>地図上の路線を選んで運行頻度と専用レーンを設定</span>
+								</div>
+								<div class="dtsb-stage-card">
+									<strong>3. 結果へ進む</strong>
+									<span>保存した変更をもとに次のステージで効果を確認</span>
+								</div>
+							</div>
+							<div class="dtsb-progress" style="--progress: 34%;">
+								<div class="dtsb-progress__label">
+									<span>シミュレーション準備</span>
+									<strong>STEP 1 / 3</strong>
+								</div>
+								<div class="dtsb-progress__track">
+									<span class="dtsb-progress__fill"></span>
+								</div>
+							</div>
+						</div>
+					</details>
 				</div>
 				<h1 class="l-contents__tit">入力</h1>
 				<div class="l-contents__route-source">
