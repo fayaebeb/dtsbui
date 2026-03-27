@@ -24,21 +24,49 @@
       return;
     }
 
+    const totalTasks = stepEls.length;
+    const idleLabels = [
+      '「比較する」で変更前後を集計',
+      '駅周辺の人数差とピークを計算',
+      '代表ユーザーの1日をAIで要約',
+    ];
+    const busyLabels = [
+      '運航頻度変更前後を計算中',
+      '西条駅周辺人数を計算中',
+      'AIストーリーを生成中',
+    ];
+    const doneLabels = [
+      '変更前後の集計が完了',
+      '西条駅周辺人数の計算が完了',
+      'AIストーリー生成が完了',
+    ];
+    const retryLabels = [
+      '運航頻度変更前後を再実行してください',
+      '西条駅周辺人数を再計算してください',
+      'AIストーリーを再生成してください',
+    ];
     const state = {
-      done: [false, false, false],
-      activeStep: 1,
+      statusByTask: ['idle', 'idle', 'idle'],
       mode: 'frequency',
-      message: '「比較する」を押して、運航頻度変更前後の集計から始めます。',
-      labels: [
-        '「比較する」で変更前後を集計',
-        '駅周辺の人数差とピークを計算',
-        '代表ユーザーの1日をAIで要約',
-      ],
+      message: '3つのレビュー項目はどの順番でも確認できます。気になるものから試してください。',
     };
 
+    function completedCount() {
+      return state.statusByTask.filter((status) => status === 'done').length;
+    }
+
+    function labelForTask(index) {
+      const status = state.statusByTask[index];
+      if (status === 'done') return doneLabels[index];
+      if (status === 'busy') return busyLabels[index];
+      if (status === 'retry') return retryLabels[index];
+      return idleLabels[index];
+    }
+
     function setQuestView() {
-      const progress = state.done[2] ? 100 : state.done[1] ? 68 : state.done[0] ? 34 : 0;
-      const value = state.done[2] ? 'COMPLETE' : `STEP ${state.activeStep} / 3`;
+      const doneCount = completedCount();
+      const progress = (doneCount / totalTasks) * 100;
+      const value = `${doneCount} / ${totalTasks} 完了`;
 
       valueEl.textContent = value;
       progressLabelEl.textContent = value;
@@ -46,106 +74,78 @@
       progressEl.style.setProperty('--progress', `${progress}%`);
 
       stepEls.forEach((el, index) => {
-        if (state.done[index]) el.dataset.state = 'done';
-        else if (state.activeStep === index + 1) el.dataset.state = 'current';
+        if (state.statusByTask[index] === 'done') el.dataset.state = 'done';
+        else if (state.statusByTask[index] === 'busy' || state.statusByTask[index] === 'retry') el.dataset.state = 'current';
         else el.dataset.state = 'todo';
       });
       stepTextEls.forEach((el, index) => {
-        el.textContent = state.labels[index];
+        el.textContent = labelForTask(index);
       });
     }
 
-    function setError(step, message) {
-      state.activeStep = step;
+    function setError(task, message) {
+      state.statusByTask[task - 1] = 'retry';
       state.message = message || '処理に失敗しました。';
-      if (step === 1) state.labels[0] = '運航頻度変更前後を再実行してください';
-      if (step === 2) state.labels[1] = '西条駅周辺人数を再計算してください';
-      if (step === 3) state.labels[2] = 'AIストーリーを再生成してください';
       setQuestView();
     }
 
     setQuestView();
 
     window.addEventListener('dtsb:agg-compare-started', () => {
-      state.done[0] = false;
-      state.done[1] = false;
-      state.done[2] = false;
-      state.activeStep = 1;
-      state.message = '運航頻度変更前後を集計しています。';
-      state.labels = [
-        '運航頻度変更前後を計算中',
-        '駅周辺の人数差とピークを計算',
-        '代表ユーザーの1日をAIで要約',
-      ];
+      state.statusByTask[0] = 'busy';
+      state.message = '運航頻度変更前後を集計しています。ほかの項目は後からでも確認できます。';
       setQuestView();
     });
 
     window.addEventListener('dtsb:agg-compare-completed', (ev) => {
       const detail = ev && ev.detail ? ev.detail : {};
-      state.done[0] = true;
-      state.done[1] = false;
-      state.done[2] = false;
+      state.statusByTask[0] = 'done';
       state.mode = String(detail.mode || 'frequency');
-      state.labels[0] = '変更前後の集計が完了';
-      state.labels[1] = '「計算する」で西条駅周辺人数を計算';
-      state.labels[2] = 'AIストーリー生成を押して要約';
       if (state.mode !== 'frequency') {
-        state.activeStep = 2;
-        state.message = 'Results Quest は「運航頻度変更前後」モードで進行します。';
+        state.message = '変更前後の集計が完了しました。残りの項目も必要に応じて確認できます。';
       } else {
-        state.activeStep = 2;
-        state.message = 'Step 1 完了。次に「計算する」で西条駅周辺人数を計算してください。';
+        state.message = '運航頻度変更前後の集計が完了しました。残りの項目はどちらからでも確認できます。';
       }
       setQuestView();
     });
 
     window.addEventListener('dtsb:agg-compare-failed', (ev) => {
-      state.done[0] = false;
-      state.done[1] = false;
-      state.done[2] = false;
-      state.labels[0] = '運航頻度変更前後を再実行してください';
       setError(1, ev?.detail?.error || '運航頻度変更前後の集計に失敗しました。');
     });
 
     window.addEventListener('dtsb:station-compare-started', () => {
-      state.activeStep = 2;
-      state.labels[1] = '西条駅周辺人数を計算中';
+      state.statusByTask[1] = 'busy';
       state.message = '西条駅周辺人数を計算しています。';
       setQuestView();
     });
 
     window.addEventListener('dtsb:station-compare-completed', () => {
-      state.done[1] = true;
-      state.done[2] = false;
-      state.activeStep = 3;
-      state.labels[1] = '西条駅周辺人数の計算が完了';
-      state.labels[2] = 'AIストーリー生成を押して要約';
-      state.message = 'Step 2 完了。最後に AI ストーリー生成を押してください。';
+      state.statusByTask[1] = 'done';
+      state.message = completedCount() === totalTasks
+        ? '3つのレビュー項目が完了しました。'
+        : '西条駅周辺人数の計算が完了しました。残りの項目はどの順番でも確認できます。';
       setQuestView();
     });
 
     window.addEventListener('dtsb:station-compare-failed', (ev) => {
-      state.labels[1] = '西条駅周辺人数を再計算してください';
       setError(2, ev?.detail?.error || '西条駅周辺人数の計算に失敗しました。');
     });
 
     window.addEventListener('dtsb:story-started', () => {
-      state.activeStep = 3;
-      state.labels[2] = 'AIストーリーを生成中';
+      state.statusByTask[2] = 'busy';
       state.message = 'AIストーリーを生成しています。';
       setQuestView();
     });
 
     window.addEventListener('dtsb:story-completed', () => {
-      state.done[2] = true;
-      state.activeStep = 3;
-      state.labels[2] = 'AIストーリー生成が完了';
-      state.message = '3ステップすべて完了しました。';
+      state.statusByTask[2] = 'done';
+      state.message = completedCount() === totalTasks
+        ? '3つのレビュー項目が完了しました。'
+        : 'AIストーリー生成が完了しました。残りの項目も任意の順番で確認できます。';
       setQuestView();
     });
 
     window.addEventListener('dtsb:story-failed', (ev) => {
-      state.labels[2] = 'AIストーリーを再生成してください';
       setError(3, ev?.detail?.error || 'AIストーリー生成に失敗しました。');
     });
   });

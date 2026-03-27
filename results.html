@@ -1345,19 +1345,19 @@
 					<details class="dtsb-mission">
 						<summary class="dtsb-mission__toggle">
 							<span class="dtsb-mission__toggle-label">Results Quest</span>
-							<span class="dtsb-mission__toggle-value" id="resultsQuestValue">STEP 1 / 3</span>
+							<span class="dtsb-mission__toggle-value" id="resultsQuestValue">0 / 3 完了</span>
 						</summary>
 						<div class="dtsb-mission__popup">
 							<span class="dtsb-hero__eyebrow">Results Quest</span>
 							<div class="dtsb-mission__title">結果レビュー</div>
-							<p class="dtsb-mission__copy" id="resultsQuestCopy">「比較する」を押して、運航頻度変更前後の集計から始めます。</p>
+							<p class="dtsb-mission__copy" id="resultsQuestCopy">3つのレビュー項目はどの順番でも確認できます。気になるものから試してください。</p>
 							<div class="dtsb-hero__meta">
 								<span class="dtsb-chip dtsb-chip--accent">集計比較</span>
 								<span class="dtsb-chip">西条駅周辺人数</span>
 								<span class="dtsb-chip dtsb-chip--blue">AIストーリー</span>
 							</div>
-							<div class="dtsb-stage-grid" aria-label="レビュー項目">
-								<div class="dtsb-stage-card" id="resultsQuestStep1" data-state="current">
+							<div class="dtsb-stage-grid" aria-label="レビュー項目（順不同）">
+								<div class="dtsb-stage-card" id="resultsQuestStep1" data-state="todo">
 									<strong>運航頻度変更前後</strong>
 									<span id="resultsQuestStep1Text">「比較する」で変更前後を集計</span>
 								</div>
@@ -1373,7 +1373,7 @@
 							<div class="dtsb-progress" id="resultsQuestProgress" style="--progress: 0%;">
 								<div class="dtsb-progress__label">
 									<span>結果レビュー進行</span>
-									<strong id="resultsQuestProgressLabel">STEP 1 / 3</strong>
+									<strong id="resultsQuestProgressLabel">0 / 3 完了</strong>
 								</div>
 								<div class="dtsb-progress__track">
 									<span class="dtsb-progress__fill"></span>
@@ -2101,7 +2101,7 @@
 				'bus_route/baseline_transitSchedule_cr24_1.xml': '096896b54be24ffbb0cbee53dde6fd9f',
 				'bus_route/brt_transitSchedule_brt24_2.xml': '67eb5392da3a4202906f46f7b808b888',
 				'bus_route/net_expansion_transitSchedule_cr40_3.xml': '18c774153bad4ee0aae34a8dcbb7f03b',
-				'bus_route/output_transitSchedule_brt40_4.xml': '1e42e937-c0d9-445b-ae12-ba7ac8a66924'
+				'bus_route/output_transitSchedule_brt40_4.xml': '10862aa9ea9d4fd18c1b91b980b66439'
 			};
 			const DEFAULT_WEIGHTS = {
 				act: { Home: 1.0, Work: 0.5, Business: 0.3, Shopping: 0.2, __other__: 0.1 },
