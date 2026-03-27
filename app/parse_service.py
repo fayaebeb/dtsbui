@@ -42,11 +42,21 @@ _FACILITY_CANDIDATES = (
 )
 
 
-def _find_first_existing(folder: str, candidates: Tuple[str, ...]) -> Optional[str]:
+def _looks_like_schedule_name(name: str) -> bool:
+    base = os.path.basename(str(name or "")).lower()
+    return "transitschedule" in base and (base.endswith(".xml") or base.endswith(".xml.gz"))
+
+
+def _find_first_existing(folder: str, candidates: Tuple[str, ...], *, allow_schedule_fallback: bool = False) -> Optional[str]:
     for name in candidates:
         path = os.path.join(folder, name)
         if os.path.isfile(path):
             return path
+    if allow_schedule_fallback:
+        for root, _dirs, files in os.walk(folder):
+            for name in files:
+                if _looks_like_schedule_name(name):
+                    return os.path.join(root, name)
     return None
 
 
@@ -57,7 +67,7 @@ def _extract_member(zf: zipfile.ZipFile, member: str, dest_dir: str) -> str:
     return dst
 
 
-def _locate_member(zf: zipfile.ZipFile, wanted: Tuple[str, ...]) -> Optional[str]:
+def _locate_member(zf: zipfile.ZipFile, wanted: Tuple[str, ...], *, allow_schedule_fallback: bool = False) -> Optional[str]:
     wanted_lc = {name.lower() for name in wanted}
     for info in zf.infolist():
         if info.is_dir():
@@ -65,6 +75,12 @@ def _locate_member(zf: zipfile.ZipFile, wanted: Tuple[str, ...]) -> Optional[str
         base = os.path.basename(info.filename).lower()
         if base in wanted_lc:
             return info.filename
+    if allow_schedule_fallback:
+        for info in zf.infolist():
+            if info.is_dir():
+                continue
+            if _looks_like_schedule_name(info.filename):
+                return info.filename
     return None
 
 
@@ -94,6 +110,23 @@ def _parse_and_cache(
     bestscore_agg = Aggregator() if not selected_only else None
     route_cache_writer = RouteCacheWriter(sim_id) if not selected_only else None
     station_baseline_builders = prepare_station_baseline_builders(schedule_path) if not selected_only else []
+    if selected_only:
+        current_app.logger.info("[parse] station baseline skipped for %s: selected-only parse", sim_id)
+    elif not schedule_path:
+        current_app.logger.info("[parse] station baseline skipped for %s: transit schedule not found", sim_id)
+    elif station_baseline_builders:
+        current_app.logger.info(
+            "[parse] station baseline prepared for %s: schedule=%s profiles=%s",
+            sim_id,
+            os.path.basename(schedule_path),
+            len(station_baseline_builders),
+        )
+    else:
+        current_app.logger.info(
+            "[parse] station baseline skipped for %s: no supported station profiles from schedule=%s",
+            sim_id,
+            os.path.basename(schedule_path),
+        )
     sample: list[dict[str, Any]] = []
     sample_limit = int(os.getenv("PUBLIC_MAX_PERSONS", "1000") or "1000")
     sample_limit = max(1, sample_limit)
@@ -161,7 +194,14 @@ def _parse_and_cache(
         if bestscore_agg is not None:
             save_bestscore_aggregate_state(sim_id, bestscore_agg.to_state())
         if station_baseline_builders:
-            save_station_baseline_payload(sim_id, builders_to_payload(sim_id, station_baseline_builders))
+            payload = builders_to_payload(sim_id, station_baseline_builders)
+            save_station_baseline_payload(sim_id, payload)
+            current_app.logger.info(
+                "[parse] station baseline saved for %s: stations=%s profiles=%s",
+                sim_id,
+                len((payload.get("stations") or {})) if isinstance(payload, dict) else 0,
+                len(station_baseline_builders),
+            )
     except Exception:
         cleanup_frequency_route_cache(sim_id)
         cleanup_station_baseline_cache(sim_id)
@@ -206,7 +246,7 @@ def run_parse(sim_id: str, limit: int, selected_only: bool = True) -> Dict[str, 
             raise ParseError("plans file not found in local folder")
         facilities_path = _find_first_existing(folder, tuple(_FACILITY_CANDIDATES))
         events_path = _find_first_existing(folder, tuple(_EVENT_CANDIDATES))
-        schedule_path = _find_first_existing(folder, tuple(_SCHEDULE_CANDIDATES))
+        schedule_path = _find_first_existing(folder, tuple(_SCHEDULE_CANDIDATES), allow_schedule_fallback=True)
         result = _parse_and_cache(sim_id, plans_path, facilities_path, limit, selected_only, schedule_path=schedule_path)
 
         if facilities_path:
@@ -244,7 +284,7 @@ def run_parse(sim_id: str, limit: int, selected_only: bool = True) -> Dict[str, 
                 raise ParseError("plans file not found in zip")
             fac_member = _locate_member(zf, tuple(_FACILITY_CANDIDATES))
             ev_member = _locate_member(zf, tuple(_EVENT_CANDIDATES))
-            sch_member = _locate_member(zf, tuple(_SCHEDULE_CANDIDATES))
+            sch_member = _locate_member(zf, tuple(_SCHEDULE_CANDIDATES), allow_schedule_fallback=True)
 
             plans_path = _extract_member(zf, plan_member, tmpd)
             facilities_path = _extract_member(zf, fac_member, tmpd) if fac_member else None

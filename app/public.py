@@ -16,7 +16,7 @@ from .frequency_compare import (
 )
 from .frequency_route_cache import iter_route_cached_persons, load_bestscore_aggregate_state, load_route_manifest
 from .station_counts import StationQuery, resolve_station_center
-from .station_frequency_cache import get_station_baseline_profile
+from .station_frequency_cache import ensure_station_baseline_profile
 from .station_jobs import enqueue_station_job, get_station_status
 from .person_cache import iter_cached_persons, read_cached_persons_sample
 from .aggregates import Aggregator
@@ -439,7 +439,7 @@ def public_frequency_compare(sim_id: str):
             return jsonify({"error": "radiusM must be > 0"}), 400
         if station_bin_sec_n <= 0 or station_bin_sec_n > 24 * 3600:
             return jsonify({"error": "binSec out of range"}), 400
-        station_baseline = get_station_baseline_profile(sim_id, station_name, float(station_radius_m), int(station_bin_sec_n))
+        station_baseline = ensure_station_baseline_profile(sim_id, station_name, float(station_radius_m), int(station_bin_sec_n))
         if isinstance(station_baseline, dict):
             station_center = {
                 "stationName": station_baseline.get("stationName") or station_name,

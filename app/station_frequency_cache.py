@@ -6,7 +6,9 @@ from typing import Any, Dict, List, Optional
 
 from flask import current_app
 
-from .station_counts import _resolve_station_center_from_schedule_path
+from .models import get_simulation
+from .person_cache import iter_cached_persons
+from .station_counts import _resolve_station_center_from_schedule_path, resolve_station_center
 
 
 SUPPORTED_STATION_BASELINES = (
@@ -299,3 +301,111 @@ def get_station_baseline_profile(
         return None
     profile = (station.get("profiles") or {}).get(_profile_key(radius_m, bin_sec))
     return profile if isinstance(profile, dict) else None
+
+
+def _best_plan_for_person(person: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    plans = person.get("plans") or []
+    if not isinstance(plans, list) or not plans:
+        return None
+    best_idx = person.get("bestServerScorePlanIndex")
+    if isinstance(best_idx, int) and 0 <= best_idx < len(plans):
+        plan = plans[best_idx]
+        return plan if isinstance(plan, dict) else None
+
+    best_plan = None
+    best_score = float("-inf")
+    for plan in plans:
+        if not isinstance(plan, dict):
+            continue
+        try:
+            score = float(plan.get("serverScore") or 0.0)
+        except Exception:
+            score = 0.0
+        if best_plan is None or score > best_score:
+            best_plan = plan
+            best_score = score
+    return best_plan
+
+
+def ensure_station_baseline_profile(
+    sim_id: str,
+    station_name: str,
+    radius_m: float,
+    bin_sec: int,
+) -> Optional[Dict[str, Any]]:
+    profile = get_station_baseline_profile(sim_id, station_name, radius_m, bin_sec)
+    if isinstance(profile, dict):
+        return profile
+
+    canonical = _canonical_station_name(station_name)
+    if not canonical:
+        return None
+    spec = next((s for s in SUPPORTED_STATION_BASELINES if str(s.get("name") or "") == canonical), None)
+    if not isinstance(spec, dict):
+        return None
+
+    radius_n = float(radius_m)
+    bin_sec_n = int(bin_sec)
+    supported_radii = {float(r) for r in spec.get("radii") or ()}
+    if radius_n not in supported_radii or bin_sec_n != int(spec.get("binSec") or 3600):
+        return None
+
+    sim = get_simulation(sim_id)
+    if not sim:
+        return None
+    cache_path = sim.get("cached_json_path")
+    if not cache_path or not os.path.isfile(str(cache_path)):
+        return None
+
+    try:
+        resolved = resolve_station_center(sim_id, canonical)
+    except Exception:
+        current_app.logger.exception("[station-baseline] failed resolving %s for %s", canonical, sim_id)
+        return None
+
+    current_app.logger.info(
+        "[station-baseline] building on demand sim=%s station=%s radius=%s bin=%s",
+        sim_id,
+        canonical,
+        int(round(radius_n)),
+        bin_sec_n,
+    )
+    builder = StationBaselineBuilder(
+        station_name=canonical,
+        center_x=float(resolved.get("centerX") or 0.0),
+        center_y=float(resolved.get("centerY") or 0.0),
+        radius_m=radius_n,
+        bin_sec=bin_sec_n,
+        match_count=int(resolved.get("matchCount") or 0),
+        matched_stops=list(resolved.get("matchedStops") or [])[:20],
+    )
+
+    for person in iter_cached_persons(str(cache_path)):
+        if not isinstance(person, dict):
+            continue
+        plan = _best_plan_for_person(person)
+        if not isinstance(plan, dict):
+            continue
+        builder.add_person_plan(str(person.get("personId") or ""), plan)
+
+    payload = load_station_baseline_payload(sim_id) or {"simId": sim_id, "stations": {}}
+    stations = payload.setdefault("stations", {})
+    station_payload = stations.setdefault(
+        canonical,
+        {
+            "stationName": canonical,
+            "centerX": builder.center_x,
+            "centerY": builder.center_y,
+            "matchCount": builder.match_count,
+            "matchedStops": builder.matched_stops,
+            "profiles": {},
+        },
+    )
+    station_payload["stationName"] = canonical
+    station_payload["centerX"] = builder.center_x
+    station_payload["centerY"] = builder.center_y
+    station_payload["matchCount"] = builder.match_count
+    station_payload["matchedStops"] = builder.matched_stops
+    station_payload.setdefault("profiles", {})[builder.profile_key()] = builder.to_profile()
+    save_station_baseline_payload(sim_id, payload)
+    return builder.to_profile()
