@@ -530,6 +530,8 @@ def public_frequency_compare(sim_id: str):
             "walkCoeffPerSec": walk_coeff_per_sec,
             "personLimit": person_limit,
         },
+        "deltaWaitMin": float(cmp.get("deltaWaitMin") or 0.0),
+        "deltaScore": float(cmp.get("deltaScore") or 0.0),
         "changedPeople": int(cmp.get("changedPeople") or 0),
         "changedSample": cmp.get("changedSample") or [],
         "mostImpacted": cmp.get("mostImpacted"),

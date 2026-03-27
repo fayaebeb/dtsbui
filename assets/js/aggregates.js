@@ -88,6 +88,14 @@
     return labelMap[String(name || '')] || name || 'シミュレーション';
   }
 
+  function emitWindowEvent(name, detail) {
+    try {
+      window.dispatchEvent(new CustomEvent(name, { detail }));
+    } catch (e) {
+      console.warn(`Failed to emit ${name}`, e);
+    }
+  }
+
   function resolveFrequencySimulationId(params, eligible, fallbackId) {
     const fromSource = params?.sourcePath ? ROUTE_SOURCE_TO_SIM_ID[String(params.sourcePath)] : null;
     const simId = params?.simulationId || fromSource || fallbackId || null;
@@ -622,15 +630,16 @@
       const postId = postSel.value;
       const preName = simulationDisplayName(eligible.find(s => s.id === preId)?.name) || '比較前';
       const postName = simulationDisplayName(eligible.find(s => s.id === postId)?.name) || '比較後';
+      const mode = getMode();
       const personLimit = (() => {
         const raw = (limitSel && limitSel.value) ? String(limitSel.value) : '';
         const n = parseInt(raw, 10);
         return Number.isFinite(n) && n > 0 ? n : null;
       })();
       setStatus('集計中…', 'loading');
-      emitCompareReady({ ready: false, reason: 'computing' });
+      emitCompareReady({ ready: false, reason: 'computing', mode });
+      emitWindowEvent('dtsb:agg-compare-started', { mode, personLimit });
       try {
-        const mode = getMode();
         setControlsForMode(mode);
         if (mode === 'frequency') {
           const params = loadRouteParams();
@@ -670,6 +679,18 @@
                 personLimit,
               },
             });
+            emitWindowEvent('dtsb:agg-compare-completed', {
+              ready: true,
+              source: 'cache',
+              mode: 'frequency',
+              simId: freqSimId,
+              params: {
+                routeId: params.routeId,
+                oldFrequency: Number(params.oldFrequency),
+                newFrequency: Number(params.newFrequency),
+                personLimit,
+              },
+            });
             return;
           }
           const resp = await fetchFrequencyCompare(freqSimId, {
@@ -697,6 +718,18 @@
               personLimit,
             },
           });
+          emitWindowEvent('dtsb:agg-compare-completed', {
+            ready: true,
+            source: 'fresh',
+            mode: 'frequency',
+            simId: freqSimId,
+            params: {
+              routeId: params.routeId,
+              oldFrequency: Number(params.oldFrequency),
+              newFrequency: Number(params.newFrequency),
+              personLimit,
+            },
+          });
           return;
         }
 
@@ -706,6 +739,14 @@
           renderCharts(cached.data.pre, cached.data.post, { preName, postName });
           setStatus(`キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人）`, 'neutral');
           emitCompareReady({
+            ready: true,
+            source: 'cache',
+            mode: 'sim',
+            preId,
+            postId,
+            personLimit,
+          });
+          emitWindowEvent('dtsb:agg-compare-completed', {
             ready: true,
             source: 'cache',
             mode: 'sim',
@@ -727,14 +768,28 @@
           postId,
           personLimit,
         });
+        emitWindowEvent('dtsb:agg-compare-completed', {
+          ready: true,
+          source: 'fresh',
+          mode: 'sim',
+          preId,
+          postId,
+          personLimit,
+        });
       } catch (e) {
         console.error(e);
         setStatus(e?.message || '失敗しました', 'error');
         emitCompareReady({ ready: false, reason: 'failed', error: e?.message || '失敗しました' });
+        emitWindowEvent('dtsb:agg-compare-failed', {
+          mode,
+          personLimit,
+          error: e?.message || '失敗しました',
+        });
       }
     }
 
     btn.addEventListener('click', run);
+    window.__dtsbAggCompare = { run };
     // Do not auto-run on page load or selection changes; let the user decide
     // when to compute since this can be expensive for large datasets.
   });

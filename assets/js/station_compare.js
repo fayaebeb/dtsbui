@@ -74,6 +74,14 @@
     };
   }
 
+  function emitWindowEvent(name, detail) {
+    try {
+      window.dispatchEvent(new CustomEvent(name, { detail }));
+    } catch (e) {
+      console.warn(`Failed to emit ${name}`, e);
+    }
+  }
+
   function compareSignature(ctx, stationName, radiusM) {
     if (!ctx || ctx.mode !== 'frequency') return '';
     const p = ctx.params || {};
@@ -135,7 +143,7 @@
 
             <div class="dtsb-compare-actions dtsb-compare-actions--compact">
               <button id="stationCompareBtn" type="button" class="btn dtsb-compare-btn" disabled>計算する</button>
-              <span id="stationCompareStatus" class="dtsb-compare-status" data-tone="neutral">index.html で保存した運航頻度設定を使って単独で計算できます。</span>
+              <span id="stationCompareStatus" class="dtsb-compare-status" data-tone="neutral">比較結果を確認したら、このボタンで西条駅周辺人数を計算できます。</span>
             </div>
 
             <div id="stationPeopleLegend" class="muted"></div>
@@ -689,11 +697,15 @@
     return data;
   }
 
-  async function runStationCompare() {
+  async function runStationCompare(options = {}) {
     const ctx = latestCompareContext || buildStandaloneFrequencyContext();
     if (!ctx || ctx.mode !== 'frequency' || !ctx.simId) {
       setStatus('index.html で運航頻度設定を保存してください。');
-      return;
+      emitWindowEvent('dtsb:station-compare-failed', {
+        auto: !!options.auto,
+        error: 'index.html で運航頻度設定を保存してください。',
+      });
+      return null;
     }
     latestCompareContext = ctx;
 
@@ -704,22 +716,54 @@
 
     setStatus('計算中…', 'loading');
     if (btn) btn.disabled = true;
+    emitWindowEvent('dtsb:station-compare-started', {
+      auto: !!options.auto,
+      ctx,
+      stationName,
+      radiusM,
+    });
     try {
       const cache = getCache();
       const cached = cache[sig];
       if (cached && cached.stationArea) {
         renderStationCompare(cached);
         setStatus('キャッシュを表示中', 'neutral');
-        return;
+        emitWindowEvent('dtsb:station-compare-completed', {
+          auto: !!options.auto,
+          cached: true,
+          ctx,
+          stationName,
+          radiusM,
+          data: cached,
+        });
+        return cached;
       }
       const data = await fetchStationCompare(ctx, stationName, radiusM);
       cache[sig] = data;
       setCache(cache);
       renderStationCompare(data);
       setStatus('計算完了', 'success');
+      emitWindowEvent('dtsb:station-compare-completed', {
+        auto: !!options.auto,
+        cached: false,
+        ctx,
+        stationName,
+        radiusM,
+        data,
+      });
+      return data;
     } catch (err) {
       console.error(err);
-      setStatus(err && err.message ? String(err.message) : '失敗しました', 'error');
+      const error = err && err.message ? String(err.message) : '失敗しました';
+      setStatus(error, 'error');
+      emitWindowEvent('dtsb:station-compare-failed', {
+        auto: !!options.auto,
+        ctx,
+        stationName,
+        radiusM,
+        error,
+      });
+      return null;
     } finally {
       setButtonEnabled(!!((latestCompareContext || buildStandaloneFrequencyContext())?.simId));
     }
@@ -748,7 +792,7 @@
     latestStationArea = null;
     clearStationOverlay();
     setButtonEnabled(true);
-    setStatus('準備完了。半径を選んで「計算する」を押してください。', 'ready');
+    setStatus('準備完了。比較のあとに「計算する」を押してください。', 'ready');
   }
 
   onReady(() => {
@@ -780,5 +824,6 @@
     } else {
       onCompareReady(null);
     }
+    window.__dtsbStationCompare = { run: runStationCompare };
   });
 })();

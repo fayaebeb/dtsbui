@@ -227,6 +227,68 @@ function updateDynFreqUi() {
   if (view) view.textContent = `${v} 本`;
 }
 
+function routeParamsMatchSelectedRoute(saved, info) {
+  if (!saved || !info) return false;
+  if (saved.routeId != null && info.routeId != null && String(saved.routeId) !== String(info.routeId)) return false;
+  if (saved.lineId != null && info.lineId != null && String(saved.lineId) !== String(info.lineId)) return false;
+  if (saved.sourcePath && currentBusRouteSource && String(saved.sourcePath) !== String(currentBusRouteSource)) return false;
+  return true;
+}
+
+function isSelectedRouteSaveCurrent() {
+  if (!selectedRouteInfo) return false;
+  const saved = readDynSavedParams(selectedRouteInfo);
+  if (!routeParamsMatchSelectedRoute(saved, selectedRouteInfo)) return false;
+
+  const slider = document.querySelector('#dynFreqRange .js-range-slider');
+  const currentFreq = Number(slider?.value ?? getBusFreq(selectedRouteInfo) ?? 0);
+  const currentBrt = !!document.getElementById('dynBrtToggle')?.checked;
+  return Number(saved?.newFrequency) === currentFreq && !!saved?.brtExclusive === currentBrt;
+}
+
+function updateInputMissionBoard() {
+  const mini = document.getElementById('missionBoardMini');
+  const stepLabel = document.getElementById('missionBoardStepLabel');
+  const copy = document.getElementById('missionBoardCopy');
+  const progress = document.getElementById('missionBoardProgress');
+  const stageCards = [
+    document.getElementById('missionStageCard1'),
+    document.getElementById('missionStageCard2'),
+    document.getElementById('missionStageCard3')
+  ];
+
+  if (!mini && !stepLabel && !copy && !progress && stageCards.every(card => !card)) return;
+
+  const hasSource = !!currentBusRouteSource;
+  const hasSelection = !!selectedRouteInfo;
+  const hasSavedChange = hasSelection && isSelectedRouteSaveCurrent();
+  const step = hasSavedChange ? 3 : hasSelection ? 2 : hasSource ? 1 : 0;
+  const displayStep = Math.max(1, step);
+  const progressPercent = displayStep === 1 ? 34 : displayStep === 2 ? 68 : 100;
+  const stepText = `STEP ${displayStep} / 3`;
+
+  if (mini) mini.textContent = stepText;
+  if (stepLabel) stepLabel.textContent = stepText;
+  if (progress) progress.style.setProperty('--progress', `${progressPercent}%`);
+
+  if (copy) {
+    copy.textContent = hasSavedChange
+      ? '変更を保存しました。結果ステージへ進んで効果を確認できます。'
+      : hasSelection
+        ? '路線を選択しました。運航頻度や専用レーンを調整して保存します。'
+        : '路線を選んで、朝の運行頻度を調整し、結果ステージへ進みます。';
+  }
+
+  stageCards.forEach((card, index) => {
+    if (!card) return;
+    const cardStep = index + 1;
+    const state = cardStep < displayStep ? 'done' : cardStep === displayStep ? 'current' : 'todo';
+    card.dataset.state = state;
+    if (state === 'current') card.setAttribute('aria-current', 'step');
+    else card.removeAttribute('aria-current');
+  });
+}
+
 function bindDynRoutePanel() {
   if (window.__dynRoutePanelBound) return;
   window.__dynRoutePanelBound = true;
@@ -234,7 +296,12 @@ function bindDynRoutePanel() {
   document.getElementById('clearRouteBtn')?.addEventListener('click', () => clearSelection());
 
   const slider = document.querySelector('#dynFreqRange .js-range-slider');
-  if (slider) slider.addEventListener('input', updateDynFreqUi);
+  if (slider) {
+    slider.addEventListener('input', updateDynFreqUi);
+    slider.addEventListener('input', updateInputMissionBoard);
+  }
+
+  document.getElementById('dynBrtToggle')?.addEventListener('change', updateInputMissionBoard);
 
   document.getElementById('applyDynParamsBtn')?.addEventListener('click', () => {
     if (!selectedRouteInfo) return;
@@ -254,13 +321,16 @@ function bindDynRoutePanel() {
       ts: Date.now()
     };
     writeDynSavedParams(selectedRouteInfo, payload);
+    persistedRouteParams = payload;
     setDynSaveStatus(true);
+    updateInputMissionBoard();
   });
 }
 
 ensureDynRoutePanel();
 bindDynRoutePanel();
 renderRouteDetails(null);
+updateInputMissionBoard();
 
 // ================================
 // Bus routes derived from transitSchedule
@@ -303,6 +373,7 @@ function initBusRouteSourceButtons() {
       currentBusRouteSource = source;
       setActiveBusRouteSourceButton(currentBusRouteSource);
       clearSelection();
+      updateInputMissionBoard();
       if (busRoutesLayer && map.hasLayer(busRoutesLayer)) map.removeLayer(busRoutesLayer);
       busRoutesLayer = null;
 
@@ -696,6 +767,7 @@ function renderRouteDetails(info) {
     details.innerHTML = '';
     if (applyBtn) applyBtn.disabled = true;
     setDynControlsVisibility(false);
+    updateInputMissionBoard();
     return;
   }
 
@@ -739,6 +811,7 @@ function renderRouteDetails(info) {
   setDynControlsVisibility(true, { scroll: true });
   setDynSaveStatus(false);
   updateDynFreqUi();
+  updateInputMissionBoard();
 
   document.getElementById('dynRouteContainer')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }

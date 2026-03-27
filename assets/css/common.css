@@ -3539,6 +3539,23 @@
     font-weight: 700;
   }
 
+  .dtsb-stage-card[data-state="done"] {
+    border-color: rgba(79, 100, 217, 0.26);
+    background: linear-gradient(180deg, #ffffff 0%, #eef4ff 100%);
+    box-shadow: 0 5px 0 #d8e4ff, 0 12px 18px rgba(79, 100, 217, 0.10);
+  }
+
+  .dtsb-stage-card[data-state="current"] {
+    border-color: rgba(255, 214, 108, 0.98);
+    background: linear-gradient(180deg, #fffdf4 0%, #fff1ca 100%);
+    box-shadow: 0 6px 0 #ffd66c, 0 14px 22px rgba(255, 184, 78, 0.18);
+    transform: translateY(-2px);
+  }
+
+  .dtsb-stage-card[data-state="todo"] {
+    opacity: 0.72;
+  }
+
   .dtsb-headnav {
     display: flex;
     align-items: flex-start;
