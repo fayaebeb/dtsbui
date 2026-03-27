@@ -394,39 +394,39 @@
   }
 
   .l-header__nav-link.logout {
-    --icoPath: url(../image/ico_logout_01.svg)
+    --icoPath: url(../image/logout.svg)
   }
 
   .l-header__nav-link.logout:hover {
-    --icoPath: url(../image/ico_logout_01_on.svg)
+    --icoPath: url(../image/logout.svg)
   }
 
   .l-header__nav-link.logout.current {
-    --icoPath: url(../image/ico_logout_01_current.svg)
+    --icoPath: url(../image/logout.svg)
   }
 
   .l-header__nav-link.simulation {
-    --icoPath: url(../image/ico_simulation_01.svg)
+    --icoPath: url(../image/3d-model.svg)
   }
 
   .l-header__nav-link.simulation:hover {
-    --icoPath: url(../image/ico_simulation_01_on.svg)
+    --icoPath: url(../image/3d-model.svg)
   }
 
   .l-header__nav-link.simulation.current {
-    --icoPath: url(../image/ico_simulation_01_current.svg)
+    --icoPath: url(../image/3d-model.svg)
   }
 
   .l-header__nav-link.results {
-    --icoPath: url(../image/ico_results_01.svg)
+    --icoPath: url(../image/list.svg)
   }
 
   .l-header__nav-link.results:hover {
-    --icoPath: url(../image/ico_results_01_on.svg)
+    --icoPath: url(../image/list.svg)
   }
 
   .l-header__nav-link.results.current {
-    --icoPath: url(../image/ico_results_01_current.svg)
+    --icoPath: url(../image/list.svg)
   }
 
   .l-header__nav-link.menu {
