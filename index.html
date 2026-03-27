@@ -368,10 +368,15 @@
 		}
 
 		#dyn_frequency_0609 {
-			padding-right: 16px;
+			display: block;
+			padding-right: 0;
+			min-width: 0;
 		}
 
-		#dyn_frequency_0609 .c-input__range-unit {
+		#dynFreqRange .c-input__range-unit {
+			position: absolute;
+			top: 12px;
+			left: 14px;
 			display: inline-flex;
 			align-items: center;
 			min-height: 26px;
@@ -384,14 +389,20 @@
 			font-size: 0.92rem;
 			font-weight: 800;
 			letter-spacing: 0.04em;
+			z-index: 1;
+			pointer-events: none;
 		}
 
 		#dynFreqRange {
 			position: relative;
 			display: grid;
 			gap: 14px;
+			width: 100%;
+			min-width: 0;
+			justify-self: stretch;
+			box-sizing: border-box;
 			margin-top: 10px;
-			padding: 18px 14px 22px;
+			padding: 22px 14px 22px;
 			border: 2px solid rgba(255, 255, 255, 0.95);
 			border-radius: 24px;
 			background:
@@ -411,6 +422,7 @@
 			gap: 6px;
 			white-space: nowrap;
 			z-index: 3;
+			pointer-events: none;
 		}
 
 		#dynFreqRange .c-input__range-change {
@@ -515,6 +527,7 @@
 			border-radius: 999px;
 			background: linear-gradient(180deg, #ffd978 0%, #ffbf4e 100%);
 			box-shadow: 0 0 0 3px rgba(255, 214, 108, 0.22);
+			pointer-events: none;
 		}
 
 		#dynFreqRange .c-input__range-mark.js-range-mark.equal {
@@ -572,6 +585,70 @@
 
 		@media (min-width: 960px) and (max-width: 1440px),
 		(min-width: 960px) and (max-height: 900px) {
+			#dynFreqRange {
+				gap: 10px;
+				margin-top: 8px;
+				padding: 18px 12px 16px;
+				border-radius: 20px;
+			}
+
+			#dynFreqRange .c-input__range-unit {
+				top: 10px;
+				left: 12px;
+				min-height: 22px;
+				padding: 0 7px;
+				font-size: 0.82rem;
+			}
+
+			#dynFreqRange .c-input__range-change {
+				top: -14px;
+				padding: 6px 10px;
+				border-radius: 16px;
+			}
+
+			#dynFreqRange .c-input__range-change::after {
+				border-width: 6px 6px 0 6px;
+			}
+
+			#dynFreqRange .js-range-value {
+				font-size: 1.45rem;
+			}
+
+			#dynFreqRange .js-range-diff,
+			#dynFreqRange .c-input__range-minmax {
+				font-size: 0.92rem;
+			}
+
+			#dynFreqRange .c-input__range-wrap {
+				height: 22px;
+			}
+
+			#dynFreqRange .c-input__range-slider,
+			#dynFreqRange .c-input__range-slider::-webkit-slider-runnable-track,
+			#dynFreqRange .c-input__range-slider::-moz-range-track {
+				height: 12px;
+			}
+
+			#dynFreqRange .c-input__range-slider {
+				--range-thumb-width: 24px;
+			}
+
+			#dynFreqRange .c-input__range-slider::-webkit-slider-thumb {
+				width: 24px;
+				height: 24px;
+				margin-top: -6px;
+			}
+
+			#dynFreqRange .c-input__range-slider::-moz-range-thumb {
+				width: 24px;
+				height: 24px;
+			}
+
+			#dynFreqRange .c-input__range-mark.js-range-mark {
+				width: 8px;
+				height: 14px;
+			}
+
 			.l-container.p-simulation .dtsb-actions__left {
 				gap: 10px;
 			}
@@ -873,9 +950,9 @@
 														</dt>
 														<dd class="c-frequency__number c-input__range"
 															id="dyn_frequency_0609">
-															<span class="c-input__range-unit">台数(台)</span>
 															<div class="c-input__range-container js-range"
 																id="dynFreqRange">
+																<span class="c-input__range-unit">台数(台)</span>
 																<span
 																	class="c-input__change c-input__range-change current-value u-en js-range-change">
 																	<span class="js-range-value" data-saved="0">0</span>
