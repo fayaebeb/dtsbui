@@ -47,6 +47,14 @@ def _ensure_parse_columns(conn: sqlite3.Connection) -> None:
         cur.execute("ALTER TABLE simulations ADD COLUMN cached_events_path TEXT")
     if 'cached_facilities_path' not in cols:
         cur.execute("ALTER TABLE simulations ADD COLUMN cached_facilities_path TEXT")
+    if 'station_baseline_status' not in cols:
+        cur.execute("ALTER TABLE simulations ADD COLUMN station_baseline_status TEXT DEFAULT 'idle'")
+    if 'station_baseline_started_at' not in cols:
+        cur.execute("ALTER TABLE simulations ADD COLUMN station_baseline_started_at TEXT")
+    if 'station_baseline_completed_at' not in cols:
+        cur.execute("ALTER TABLE simulations ADD COLUMN station_baseline_completed_at TEXT")
+    if 'station_baseline_error' not in cols:
+        cur.execute("ALTER TABLE simulations ADD COLUMN station_baseline_error TEXT")
     conn.commit()
 
 def init_db(app=None):
@@ -128,6 +136,17 @@ def _normalize_sim_row(row: Dict[str, Any]) -> Dict[str, Any]:
     status = row.get('parse_status')
     if not status:
         row['parse_status'] = 'succeeded' if row.get('cached_json_path') else 'idle'
+    station_status = row.get('station_baseline_status')
+    if not station_status:
+        station_path = None
+        try:
+            storage_root = current_app.config.get("STORAGE_ROOT", "/home/site/storage")
+            sim_id = str(row.get("id") or "")
+            if sim_id:
+                station_path = os.path.join(storage_root, "parsed", f"{sim_id}.station_baselines.json")
+        except Exception:
+            station_path = None
+        row['station_baseline_status'] = 'succeeded' if station_path and os.path.isfile(station_path) else 'idle'
     return row
 
 def create_admin_if_missing(app, username: str, password: str) -> bool:
@@ -236,6 +255,10 @@ def reset_stuck_jobs() -> None:
     conn = get_db()
     cur = conn.cursor()
     cur.execute("UPDATE simulations SET parse_status='failed' WHERE parse_status IN ('running','queued')")
+    cur.execute(
+        "UPDATE simulations SET station_baseline_status='failed' "
+        "WHERE station_baseline_status IN ('running','queued')"
+    )
     conn.commit()
     conn.close()
 

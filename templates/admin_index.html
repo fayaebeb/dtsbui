@@ -181,6 +181,7 @@
       failed: 'badge danger'
     };
     const activePolls = new Map();
+    const activeBaselinePolls = new Map();
     const POLL_DELAY_MS = 4000;
 
     function escapeHtml(value) {
@@ -201,6 +202,15 @@
         clearTimeout(handle);
       }
       activePolls.delete(key);
+    }
+
+    function stopBaselinePolling(simId) {
+      const key = String(simId);
+      const handle = activeBaselinePolls.get(key);
+      if (handle) {
+        clearTimeout(handle);
+      }
+      activeBaselinePolls.delete(key);
     }
 
     function getRowById(simId) {
@@ -316,10 +326,20 @@
       return status === 'queued' || status === 'running';
     }
 
+    function isBuildingBaselineStatus(status) {
+      return status === 'queued' || status === 'running';
+    }
+
     function formatActionsCell(row, status) {
       const parsing = isParsingStatus(status);
+      const baselineStatus = (row.station_baseline_status || 'idle').toLowerCase();
+      const baselineRunning = isBuildingBaselineStatus(baselineStatus);
       const publishLabel = row.published ? 'Unpublish' : 'Publish';
       const parseLabel = status === 'succeeded' ? 'Re-parse' : (status === 'failed' ? 'Retry Parse' : 'Parse/Cache');
+      const baselineLabel =
+        baselineStatus === 'succeeded' ? 'Rebuild Station Baseline'
+        : baselineStatus === 'failed' ? 'Retry Station Baseline'
+        : 'Build Station Baseline';
       const primaryAction = parsing
         ? '<span class="badge info parsing-chip" aria-label="Parsing in progress">Parsing...</span>'
         : `<button class="btn small ${row.published ? 'warning' : 'secondary'}" data-act="publish">${publishLabel}</button>`;
@@ -330,6 +350,11 @@
       } else {
         menuItems.push(`<button type="button" class="menu-item" data-act="parse">${parseLabel}</button>`);
       }
+      menuItems.push(
+        `<button type="button" class="menu-item" data-act="station-baseline" ${parsing || baselineRunning ? 'disabled' : ''}>` +
+        `${baselineRunning ? (baselineStatus === 'running' ? 'Building Station Baseline...' : 'Station Baseline Queued...') : baselineLabel}` +
+        `</button>`
+      );
       menuItems.push('<button type="button" class="menu-item danger" data-act="delete">Delete</button>');
 
       return `
@@ -431,16 +456,57 @@
       }
     }
 
+    function pollBaselineStatus(simId) {
+      const key = String(simId);
+      fetch(`/admin/api/simulations/${encodeURIComponent(key)}/station-baseline/status`, { credentials: 'same-origin' })
+        .then((res) => (res.ok ? res.json() : Promise.reject(new Error('baseline status fetch failed'))))
+        .then((data) => {
+          const status = (data && data.status) ? String(data.status).toLowerCase() : 'idle';
+          if (status === 'queued' || status === 'running') {
+            const handle = setTimeout(() => pollBaselineStatus(key), POLL_DELAY_MS);
+            activeBaselinePolls.set(key, handle);
+          } else {
+            stopBaselinePolling(key);
+            refresh();
+          }
+        })
+        .catch(() => {
+          stopBaselinePolling(key);
+          refresh();
+        });
+    }
+
+    function ensureBaselinePolling(simId) {
+      const key = String(simId);
+      if (!activeBaselinePolls.has(key)) {
+        activeBaselinePolls.set(key, null);
+        pollBaselineStatus(key);
+      }
+    }
+
     function formatParseCell(row) {
       const status = (row.parse_status || (row.cached_json_path ? 'succeeded' : 'idle')).toLowerCase();
       const label = statusLabels[status] || status;
       const badgeClass = statusBadges[status] || 'badge';
       const pieces = [`<span class="${badgeClass}">${label}</span>`];
+      const baselineStatus = (row.station_baseline_status || 'idle').toLowerCase();
+      const baselineLabelMap = {
+        idle: 'Not built',
+        queued: 'Queued',
+        running: 'Building...',
+        succeeded: 'Ready',
+        failed: 'Failed'
+      };
+      const baselineBadgeClass = statusBadges[baselineStatus] || 'badge';
       if (typeof row.parsed_person_count === 'number') {
         pieces.push(`<small class="muted">${numberFmt.format(row.parsed_person_count)} persons</small>`);
       }
       if (row.parse_error) {
         pieces.push(`<small class="muted">Error: ${escapeHtml(row.parse_error)}</small>`);
+      }
+      pieces.push(`<small>Station baseline: <span class="${baselineBadgeClass}">${escapeHtml(baselineLabelMap[baselineStatus] || baselineStatus)}</span></small>`);
+      if (row.station_baseline_error) {
+        pieces.push(`<small class="muted">Baseline error: ${escapeHtml(row.station_baseline_error)}</small>`);
       }
       return `<div class="stack gap-xxs">${pieces.map((p) => `<div>${p}</div>`).join('')}</div>`;
     }
@@ -486,6 +552,7 @@
 
         const publishBtns = tr.querySelectorAll('[data-act="publish"]');
         const parseBtns = tr.querySelectorAll('[data-act="parse"]');
+        const baselineBtns = tr.querySelectorAll('[data-act="station-baseline"]');
         const deleteBtns = tr.querySelectorAll('[data-act="delete"]');
         const copyIdBtn = tr.querySelector('[data-act="copy-id"]');
 
@@ -545,11 +612,47 @@
           };
         });
 
+        baselineBtns.forEach((baselineBtn) => {
+          baselineBtn.onclick = async () => {
+            if (baselineBtn.disabled) return;
+            closeAllActionMenus();
+            const originalText = baselineBtn.textContent;
+            baselineBtn.disabled = true;
+            baselineBtn.textContent = 'Starting...';
+            try {
+              const resp = await fetch(`/admin/api/simulations/${simPathId}/station-baseline?force=1`, {
+                method: 'POST',
+                headers: { ...(csrf ? { 'X-CSRFToken': csrf } : {}) },
+                credentials: 'same-origin'
+              });
+              let payload = null;
+              try { payload = await resp.json(); } catch (_) {}
+              if (!resp.ok) {
+                alert(payload?.error || 'Station baseline build failed');
+                baselineBtn.disabled = false;
+                baselineBtn.textContent = originalText;
+                return;
+              }
+              const nextStatus = payload?.status ? String(payload.status).toLowerCase() : baselineStatus;
+              if (nextStatus === 'queued' || nextStatus === 'running') {
+                ensureBaselinePolling(simId);
+              }
+              refresh();
+            } catch (err) {
+              console.error('Station baseline build failed', err);
+              alert(err?.message || 'Station baseline build failed');
+              baselineBtn.disabled = false;
+              baselineBtn.textContent = originalText;
+            }
+          };
+        });
+
         deleteBtns.forEach((deleteBtn) => {
           deleteBtn.onclick = async () => {
             closeAllActionMenus();
             if (!confirm('Delete this simulation?')) return;
             stopPolling(simId);
+            stopBaselinePolling(simId);
             const resp = await fetch(`/admin/api/simulations/${simPathId}`, {
               method: 'DELETE',
               headers: { ...(csrf ? { 'X-CSRFToken': csrf } : {}) },
@@ -568,6 +671,13 @@
           ensurePolling(simId);
         } else {
           stopPolling(simId);
+        }
+
+        const baselineStatus = (r.station_baseline_status || 'idle').toLowerCase();
+        if (baselineStatus === 'queued' || baselineStatus === 'running') {
+          ensureBaselinePolling(simId);
+        } else {
+          stopBaselinePolling(simId);
         }
 
         tb.appendChild(tr);

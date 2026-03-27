@@ -18,6 +18,7 @@ from .azure_utils import get_storage_context
 from .parse_jobs import enqueue_parse_job, get_parse_status
 from .frequency_route_cache import cleanup_frequency_route_cache
 from .station_frequency_cache import cleanup_station_baseline_cache
+from .station_baseline_jobs import enqueue_station_baseline_job, get_station_baseline_status
 from typing import cast
 
 admin_api_bp = Blueprint("admin_api", __name__, url_prefix="/admin/api")
@@ -220,6 +221,33 @@ def parse_and_cache(sim_id):
 @login_required
 def parse_status(sim_id):
     payload = get_parse_status(sim_id)
+    if not payload:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(payload)
+
+
+@admin_api_bp.route("/simulations/<sim_id>/station-baseline", methods=["POST"])
+@login_required
+def build_station_baseline(sim_id):
+    force_flag = request.args.get("force", "0").lower() in {"1", "true", "yes"}
+    try:
+        payload = enqueue_station_baseline_job(sim_id, force=force_flag)
+    except LookupError:
+        return jsonify({"error": "Not found"}), 404
+    except FileNotFoundError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except RuntimeError as exc:
+        return jsonify({"error": str(exc)}), 409
+
+    status = payload.get("status")
+    code = 202 if status in {"queued", "running"} else 200
+    return jsonify(payload), code
+
+
+@admin_api_bp.route("/simulations/<sim_id>/station-baseline/status", methods=["GET"])
+@login_required
+def station_baseline_status(sim_id):
+    payload = get_station_baseline_status(sim_id)
     if not payload:
         return jsonify({"error": "Not found"}), 404
     return jsonify(payload)

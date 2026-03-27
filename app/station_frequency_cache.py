@@ -327,6 +327,121 @@ def _best_plan_for_person(person: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return best_plan
 
 
+def _looks_like_schedule_name(name: str) -> bool:
+    base = os.path.basename(str(name or "")).lower()
+    return "transitschedule" in base and (base.endswith(".xml") or base.endswith(".xml.gz"))
+
+
+def _resolve_station_center_from_packaged_schedules(station_name: str) -> Optional[Dict[str, Any]]:
+    repo_root = os.path.abspath(os.path.join(current_app.root_path, os.pardir))
+    schedule_dir = os.path.join(repo_root, "bus_route")
+    if not os.path.isdir(schedule_dir):
+        return None
+
+    for name in sorted(os.listdir(schedule_dir)):
+        path = os.path.join(schedule_dir, name)
+        if not os.path.isfile(path) or not _looks_like_schedule_name(name):
+            continue
+        try:
+            resolved = _resolve_station_center_from_schedule_path(path, station_name)
+        except Exception:
+            current_app.logger.exception("[station-baseline] packaged schedule resolve failed for %s", path)
+            continue
+        if isinstance(resolved, dict):
+            current_app.logger.info(
+                "[station-baseline] resolved %s from packaged schedule %s",
+                station_name,
+                name,
+            )
+            return resolved
+    return None
+
+
+def _resolve_station_center_for_baseline(sim_id: str, station_name: str) -> Optional[Dict[str, Any]]:
+    try:
+        return resolve_station_center(sim_id, station_name)
+    except Exception:
+        current_app.logger.exception("[station-baseline] failed resolving %s for %s", station_name, sim_id)
+        return _resolve_station_center_from_packaged_schedules(station_name)
+
+
+def build_station_baselines_from_cache(sim_id: str) -> Dict[str, Any]:
+    sim = get_simulation(sim_id)
+    if not sim:
+        raise LookupError("simulation not found")
+
+    cache_path = sim.get("cached_json_path")
+    if not cache_path:
+        raise FileNotFoundError("cached persons data not found")
+    cache_path = str(cache_path)
+    if not os.path.isabs(cache_path):
+        cache_path = os.path.abspath(cache_path)
+    if not os.path.isfile(cache_path):
+        raise FileNotFoundError("cached persons data file missing")
+
+    builders: List[StationBaselineBuilder] = []
+    station_count = 0
+    for spec in SUPPORTED_STATION_BASELINES:
+        station_name = str(spec.get("name") or "").strip()
+        if not station_name:
+            continue
+        resolved = _resolve_station_center_for_baseline(sim_id, station_name)
+        if not isinstance(resolved, dict):
+            current_app.logger.warning("[station-baseline] skipped %s for %s: center not resolved", station_name, sim_id)
+            continue
+        station_count += 1
+        for radius in spec.get("radii") or ():
+            try:
+                radius_m = float(radius)
+            except Exception:
+                continue
+            builders.append(
+                StationBaselineBuilder(
+                    station_name=station_name,
+                    center_x=float(resolved.get("centerX") or 0.0),
+                    center_y=float(resolved.get("centerY") or 0.0),
+                    radius_m=radius_m,
+                    bin_sec=int(spec.get("binSec") or 3600),
+                    match_count=int(resolved.get("matchCount") or 0),
+                    matched_stops=list(resolved.get("matchedStops") or [])[:20],
+                )
+            )
+
+    if not builders:
+        raise RuntimeError("no station baselines could be prepared")
+
+    current_app.logger.info(
+        "[station-baseline] building from cached persons sim=%s stations=%s profiles=%s",
+        sim_id,
+        station_count,
+        len(builders),
+    )
+    for person in iter_cached_persons(cache_path):
+        if not isinstance(person, dict):
+            continue
+        plan = _best_plan_for_person(person)
+        if not isinstance(plan, dict):
+            continue
+        pid = str(person.get("personId") or "")
+        for builder in builders:
+            builder.add_person_plan(pid, plan)
+
+    payload = builders_to_payload(sim_id, builders)
+    save_station_baseline_payload(sim_id, payload)
+    current_app.logger.info(
+        "[station-baseline] saved for %s: stations=%s profiles=%s",
+        sim_id,
+        len((payload.get("stations") or {})) if isinstance(payload, dict) else 0,
+        len(builders),
+    )
+    return {
+        "simId": sim_id,
+        "stations": len((payload.get("stations") or {})) if isinstance(payload, dict) else 0,
+        "profiles": len(builders),
+        "path": station_baseline_path(sim_id),
+    }
+
+
 def ensure_station_baseline_profile(
     sim_id: str,
     station_name: str,
@@ -357,12 +472,6 @@ def ensure_station_baseline_profile(
     if not cache_path or not os.path.isfile(str(cache_path)):
         return None
 
-    try:
-        resolved = resolve_station_center(sim_id, canonical)
-    except Exception:
-        current_app.logger.exception("[station-baseline] failed resolving %s for %s", canonical, sim_id)
-        return None
-
     current_app.logger.info(
         "[station-baseline] building on demand sim=%s station=%s radius=%s bin=%s",
         sim_id,
@@ -370,42 +479,9 @@ def ensure_station_baseline_profile(
         int(round(radius_n)),
         bin_sec_n,
     )
-    builder = StationBaselineBuilder(
-        station_name=canonical,
-        center_x=float(resolved.get("centerX") or 0.0),
-        center_y=float(resolved.get("centerY") or 0.0),
-        radius_m=radius_n,
-        bin_sec=bin_sec_n,
-        match_count=int(resolved.get("matchCount") or 0),
-        matched_stops=list(resolved.get("matchedStops") or [])[:20],
-    )
-
-    for person in iter_cached_persons(str(cache_path)):
-        if not isinstance(person, dict):
-            continue
-        plan = _best_plan_for_person(person)
-        if not isinstance(plan, dict):
-            continue
-        builder.add_person_plan(str(person.get("personId") or ""), plan)
-
-    payload = load_station_baseline_payload(sim_id) or {"simId": sim_id, "stations": {}}
-    stations = payload.setdefault("stations", {})
-    station_payload = stations.setdefault(
-        canonical,
-        {
-            "stationName": canonical,
-            "centerX": builder.center_x,
-            "centerY": builder.center_y,
-            "matchCount": builder.match_count,
-            "matchedStops": builder.matched_stops,
-            "profiles": {},
-        },
-    )
-    station_payload["stationName"] = canonical
-    station_payload["centerX"] = builder.center_x
-    station_payload["centerY"] = builder.center_y
-    station_payload["matchCount"] = builder.match_count
-    station_payload["matchedStops"] = builder.matched_stops
-    station_payload.setdefault("profiles", {})[builder.profile_key()] = builder.to_profile()
-    save_station_baseline_payload(sim_id, payload)
-    return builder.to_profile()
+    try:
+        build_station_baselines_from_cache(sim_id)
+    except Exception:
+        current_app.logger.exception("[station-baseline] failed on-demand build for %s", sim_id)
+        return None
+    return get_station_baseline_profile(sim_id, canonical, radius_n, bin_sec_n)

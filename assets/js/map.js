@@ -32,7 +32,7 @@ const BUS_ROUTE_SOURCE_TO_SIM_ID = {
   'bus_route/baseline_transitSchedule_cr24_1.xml': '096896b54be24ffbb0cbee53dde6fd9f',
   'bus_route/brt_transitSchedule_brt24_2.xml': '67eb5392da3a4202906f46f7b808b888',
   'bus_route/net_expansion_transitSchedule_cr40_3.xml': '18c774153bad4ee0aae34a8dcbb7f03b',
-  'bus_route/output_transitSchedule_brt40_4.xml': '10862aa9ea9d4fd18c1b91b980b66439'
+  'bus_route/output_transitSchedule_brt40_4.xml': '1e42e937-c0d9-445b-ae12-ba7ac8a66924'
 };
 let currentBusRouteSource = BUS_ROUTE_SOURCES[0];
 const IS_RESULTS_PAGE = /\/results(?:_graph)?\.html$/i.test(window.location.pathname || '');

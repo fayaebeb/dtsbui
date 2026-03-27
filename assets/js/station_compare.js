@@ -11,7 +11,7 @@
     'bus_route/baseline_transitSchedule_cr24_1.xml': '096896b54be24ffbb0cbee53dde6fd9f',
     'bus_route/brt_transitSchedule_brt24_2.xml': '67eb5392da3a4202906f46f7b808b888',
     'bus_route/net_expansion_transitSchedule_cr40_3.xml': '18c774153bad4ee0aae34a8dcbb7f03b',
-    'bus_route/output_transitSchedule_brt40_4.xml': '10862aa9ea9d4fd18c1b91b980b66439'
+    'bus_route/output_transitSchedule_brt40_4.xml': '1e42e937-c0d9-445b-ae12-ba7ac8a66924'
   };
   const PEOPLE_BIN_STEP_MS = 1200;
   const PEOPLE_MAX_MARKERS_PER_SERIES = 140;
@@ -309,6 +309,22 @@
     return (Array.isArray(arr) ? arr : []).reduce((max, v) => Math.max(max, toNonNegativeInt(v)), 0);
   }
 
+  function effectiveBinCount(...series) {
+    let lastNonZero = -1;
+    let longest = 0;
+    for (const arr of series) {
+      if (!Array.isArray(arr)) continue;
+      longest = Math.max(longest, arr.length);
+      for (let i = arr.length - 1; i >= 0; i -= 1) {
+        if (toNonNegativeInt(arr[i]) > 0) {
+          lastNonZero = Math.max(lastNonZero, i);
+          break;
+        }
+      }
+    }
+    return lastNonZero >= 0 ? (lastNonZero + 1) : longest;
+  }
+
   function buildSeededRandom(seedText) {
     const src = String(seedText || 'station-seed');
     let seed = 0;
@@ -389,7 +405,7 @@
   function startPeopleAnimation(group, station, latlng, radiusM) {
     const preBins = Array.isArray(station?.pre?.presentByBin) ? station.pre.presentByBin : [];
     const postBins = Array.isArray(station?.post?.presentByBin) ? station.post.presentByBin : [];
-    const bins = Math.max(preBins.length, postBins.length);
+    const bins = effectiveBinCount(preBins, postBins);
     if (!bins || !isPeopleAnimationEnabled()) {
       setPeopleLegend(null);
       setPeopleControlsVisible(false);
@@ -560,7 +576,7 @@
     const post = station && station.post ? station.post : {};
     const preBins = Array.isArray(pre.presentByBin) ? pre.presentByBin : [];
     const postBins = Array.isArray(post.presentByBin) ? post.presentByBin : [];
-    const n = Math.max(preBins.length, postBins.length);
+    const n = effectiveBinCount(preBins, postBins);
     const labels = Array.from({ length: n }, (_, i) => `${String(i).padStart(2, '0')}:00`);
     const peak = (arr) => arr.reduce((max, v) => Math.max(max, Number(v) || 0), 0);
 
