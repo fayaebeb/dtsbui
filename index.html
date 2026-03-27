@@ -367,6 +367,161 @@
 			-webkit-text-fill-color: #fff;
 		}
 
+		#dyn_frequency_0609 {
+			padding-right: 16px;
+		}
+
+		#dyn_frequency_0609 .c-input__range-unit {
+			display: inline-flex;
+			align-items: center;
+			min-height: 26px;
+			padding: 0 8px;
+			border-radius: 999px;
+			border: 2px solid rgba(255, 255, 255, 0.94);
+			background: linear-gradient(180deg, #ffffff 0%, #f4eeff 100%);
+			box-shadow: 0 4px 0 #e7dbff, 0 10px 16px rgba(111, 55, 199, 0.08);
+			color: #5e3a95;
+			font-size: 0.92rem;
+			font-weight: 800;
+			letter-spacing: 0.04em;
+		}
+
+		#dynFreqRange {
+			position: relative;
+			display: grid;
+			gap: 14px;
+			margin-top: 10px;
+			padding: 18px 14px 22px;
+			border: 2px solid rgba(255, 255, 255, 0.95);
+			border-radius: 24px;
+			background:
+				radial-gradient(circle at 0% 0%, rgba(255, 214, 108, 0.18), transparent 26%),
+				radial-gradient(circle at 100% 0%, rgba(79, 100, 217, 0.12), transparent 28%),
+				linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 237, 255, 0.95));
+			box-shadow: 0 8px 0 #e6d8ff, 0 18px 26px rgba(111, 55, 199, 0.11);
+			overflow: visible;
+		}
+
+		#dynFreqRange .c-input__range-change,
+		#dynFreqRange .c-input__range-saved {
+			position: absolute;
+			transform: translateX(-50%);
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			white-space: nowrap;
+			z-index: 3;
+		}
+
+		#dynFreqRange .c-input__range-change {
+			top: -18px;
+			padding: 8px 12px;
+			border-radius: 18px;
+			background: linear-gradient(180deg, #ffd66c 0%, #ffbb58 100%);
+			box-shadow: 0 5px 0 rgba(212, 147, 28, 0.18), 0 12px 18px rgba(255, 187, 88, 0.22);
+			color: #5b3400;
+			font-weight: 900;
+		}
+
+		#dynFreqRange .c-input__range-change::after {
+			content: "";
+			position: absolute;
+			top: 100%;
+			left: 50%;
+			transform: translateX(-50%);
+			border-width: 8px 7px 0 7px;
+			border-style: solid;
+			border-color: #ffbb58 transparent transparent transparent;
+		}
+
+		#dynFreqRange .c-input__range-saved {
+			bottom: -14px;
+			padding: 6px 10px;
+			border-radius: 16px;
+			border: 2px solid rgba(255, 255, 255, 0.94);
+			background: linear-gradient(180deg, #ffffff 0%, #f2edff 100%);
+			box-shadow: 0 4px 0 #e8dbff, 0 10px 16px rgba(111, 55, 199, 0.08);
+			color: #617089;
+			font-size: 1.05rem;
+			font-weight: 800;
+		}
+
+		#dynFreqRange .js-range-value {
+			font-size: 1.65rem;
+			line-height: 1;
+		}
+
+		#dynFreqRange .js-range-diff {
+			font-size: 1rem;
+			font-weight: 900;
+			color: #6f37c7;
+		}
+
+		#dynFreqRange .c-input__range-minmax {
+			padding: 0 4px;
+			color: #74668f;
+			font-size: 1.1rem;
+			font-weight: 800;
+		}
+
+		#dynFreqRange .c-input__range-wrap {
+			height: 26px;
+			margin: 0;
+			overflow: visible;
+		}
+
+		#dynFreqRange .c-input__range-slider {
+			--range-thumb-width: 28px;
+			height: 14px;
+			border-radius: 999px;
+			background: linear-gradient(90deg, #eae3fb 0%, #dde8ff 100%);
+			box-shadow: inset 0 2px 4px rgba(111, 55, 199, 0.12);
+		}
+
+		#dynFreqRange .c-input__range-slider::-webkit-slider-runnable-track {
+			height: 14px;
+			border-radius: 999px;
+			background: linear-gradient(90deg, #eae3fb 0%, #dde8ff 100%);
+		}
+
+		#dynFreqRange .c-input__range-slider::-moz-range-track {
+			height: 14px;
+			border-radius: 999px;
+			background: linear-gradient(90deg, #eae3fb 0%, #dde8ff 100%);
+		}
+
+		#dynFreqRange .c-input__range-slider::-webkit-slider-thumb {
+			width: 28px;
+			height: 28px;
+			margin-top: -7px;
+			border-radius: 50%;
+			border: 4px solid #ffffff;
+			background: linear-gradient(180deg, #a06df0 0%, #8e4dd8 100%);
+			box-shadow: 0 6px 0 #6f37c7, 0 12px 18px rgba(111, 55, 199, 0.18);
+		}
+
+		#dynFreqRange .c-input__range-slider::-moz-range-thumb {
+			width: 28px;
+			height: 28px;
+			border-radius: 50%;
+			border: 4px solid #ffffff;
+			background: linear-gradient(180deg, #a06df0 0%, #8e4dd8 100%);
+			box-shadow: 0 6px 0 #6f37c7, 0 12px 18px rgba(111, 55, 199, 0.18);
+		}
+
+		#dynFreqRange .c-input__range-mark.js-range-mark {
+			width: 10px;
+			height: 18px;
+			border-radius: 999px;
+			background: linear-gradient(180deg, #ffd978 0%, #ffbf4e 100%);
+			box-shadow: 0 0 0 3px rgba(255, 214, 108, 0.22);
+		}
+
+		#dynFreqRange .c-input__range-mark.js-range-mark.equal {
+			background: linear-gradient(180deg, #ffffff 0%, #efe8ff 100%);
+			box-shadow: 0 0 0 3px rgba(142, 77, 216, 0.14);
+		}
+
 		.l-contents__route-source {
 			min-width: 0;
 		}
@@ -709,10 +864,7 @@
 
 										<div id="dynRouteControls" class="dtsb-dynroute__controls" hidden>
 											<dl class="c-route__setting">
-												<dt>運航頻度
-													<span class="c-btn__small c-btn__small-white reset js-reset"
-														data-reset="dyn_frequency">まとめてリセット</span>
-												</dt>
+												<dt>運航頻度</dt>
 												<dd id="dyn_frequency">
 													<dl class="c-frequency">
 														<dt class="c-frequency__hours">6～9時台
