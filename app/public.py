@@ -221,6 +221,47 @@ def public_data(sim_id):
     return jsonify({"error": "No cached data. Admin must parse this simulation first."}), 400
 
 
+@public_bp.route("/api/simulations/<sim_id>/persons/<path:person_id>/plans", methods=["GET"])
+def public_person_plans(sim_id, person_id):
+    """Return all plans for a single person from cached data on demand."""
+    sim = get_simulation(sim_id)
+    if not sim or not sim.get("published"):
+        return jsonify({"error": "Not found"}), 404
+
+    cache = sim.get("cached_json_path")
+    if not cache:
+        return jsonify({"error": "No cached data. Admin must parse this simulation first."}), 400
+
+    cache_path = cache
+    if not os.path.isabs(cache_path):
+        cache_path = os.path.abspath(cache_path)
+    if not os.path.isfile(cache_path):
+        current_app.logger.warning("Cached JSON path missing for person plans: %s", cache_path)
+        return jsonify({"error": "Cached data file missing"}), 500
+
+    person_id_str = str(person_id or "")
+    for p in iter_cached_persons(cache_path):
+        if not isinstance(p, dict):
+            continue
+        if str(p.get("personId") or "") != person_id_str:
+            continue
+
+        plans = p.get("plans") or []
+        if not isinstance(plans, list):
+            plans = []
+        selected_idx = p.get("selectedPlanIndex")
+        if not isinstance(selected_idx, int) or selected_idx < 0 or selected_idx >= len(plans):
+            selected_idx = 0
+
+        return jsonify({
+            "personId": person_id_str,
+            "selectedPlanIndex": selected_idx,
+            "plans": plans,
+        })
+
+    return jsonify({"error": "Person not found"}), 404
+
+
 @public_bp.route("/api/simulations/<sim_id>/summary", methods=["POST"])
 def public_summary(sim_id):
     """Return aggregate stats and top plans computed over all persons."""

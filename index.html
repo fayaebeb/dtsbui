@@ -1054,22 +1054,28 @@
 						</section>
 					</div>
 
-					<div id="analysisBlock" class="collapsible">
+					<div id="analysisBlock" class="collapsible dtsb-analysis">
 						<!-- Legend + status toolbar -->
 						<div class="dtsb-toolbar">
-							<div class="legend">
-								<span>凡例:</span>
-								<span><span class="dot" style="background:blue"></span> Home</span>
-								<span><span class="dot" style="background:green"></span> Work</span>
-								<span><span class="dot" style="background:orange"></span> Business</span>
-								<span><span class="dot" style="background:purple"></span> Shopping</span>
-								<span><span class="dot" style="background:gray"></span> pt interaction</span>
+							<div class="legend dtsb-analysis__legend" aria-label="凡例">
+								<span class="dtsb-analysis__legend-label">凡例</span>
+								<span class="dtsb-analysis__legend-item"><span
+										class="dot dtsb-analysis__dot dtsb-analysis__dot--home"></span>Home</span>
+								<span class="dtsb-analysis__legend-item"><span
+										class="dot dtsb-analysis__dot dtsb-analysis__dot--work"></span>Work</span>
+								<span class="dtsb-analysis__legend-item"><span
+										class="dot dtsb-analysis__dot dtsb-analysis__dot--business"></span>Business</span>
+								<span class="dtsb-analysis__legend-item"><span
+										class="dot dtsb-analysis__dot dtsb-analysis__dot--shopping"></span>Shopping</span>
+								<span class="dtsb-analysis__legend-item"><span
+										class="dot dtsb-analysis__dot dtsb-analysis__dot--interaction"></span>pt
+									interaction</span>
 							</div>
-							<!-- 🔎 Person filter + Export buttons -->
+							<!-- Person filter + Export buttons -->
 							<div class="dtsb-toolbar__actions" aria-label="Person filter and exports">
 								<div class="dtsb-toolbar__filter">
 									<input id="personSearch" type="text" placeholder="Filter by personId (partial ok)"
-										style="padding:6px 8px; font-size:12px; width:220px; min-width:140px; flex:1 1 220px; border:1px solid #ccd5ff; border-radius:8px;">
+										class="dtsb-analysis__search">
 									<button id="clearSearchBtn" type="button" class="btn ghost">Clear</button>
 								</div>
 								<div class="dtsb-toolbar__exports" aria-label="Exports">
@@ -1085,7 +1091,7 @@
 
 						<!-- Scoring + table panel (unchanged content) -->
 						<div class="panel">
-							<div class="card" style="flex:1 1 320px;">
+							<div class="card dtsb-analysis__card dtsb-analysis__card--weights" style="flex:1 1 320px;">
 								<h3>Scoring Weights（1秒あたりの重み）</h3>
 								<div class="weights-grid">
 									<label for="wHome">🏠 Home</label><input id="wHome" type="number" step="0.01"
@@ -1107,34 +1113,31 @@
 									<label for="wOtherLeg">🚦 other mode</label><input id="wOtherLeg" type="number"
 										step="0.01" value="0.0" />
 								</div>
-								<div style="margin-top:8px; display:flex; gap:8px;">
+								<div class="dtsb-analysis__button-row">
 									<button id="recomputeBtn" type="button" class="btn">Recompute Scores</button>
 									<button id="clearMapBtn" type="button" class="btn secondary">Clear Map</button>
 									<button id="topBusBtn" type="button" class="btn">Find Top Bus User</button>
 									<button id="fullSummaryBtn" type="button" class="btn secondary">Full
 										Summary</button>
 								</div>
-								<div id="fullSummaryStatus" class="muted" style="margin-top:8px;"></div>
-								<pre id="fullSummaryPre"
-									style="margin-top:8px; font-size:12px; background:#f8f8f8; padding:6px; border-radius:6px; max-height:180px; overflow:auto;"></pre>
-								<pre id="bus-result"
-									style="margin-top:8px; font-size:12px; background:#f8f8f8; padding:6px; border-radius:6px; max-height:180px; overflow:auto;"></pre>
+								<div id="fullSummaryStatus" class="muted dtsb-analysis__status-copy"></div>
+								<pre id="fullSummaryPre" class="dtsb-analysis__pre"></pre>
+								<pre id="bus-result" class="dtsb-analysis__pre"></pre>
 
-								<div class="muted" style="margin-top:6px;">※
+								<div class="muted dtsb-analysis__note">※
 									サーバーは既定重みでもスコアを付与します。上記を変更するとフロント側で再計算して表示します。</div>
 							</div>
 
-							<div class="card" style="flex:2 1 520px;">
-								<h3>Persons & Plans（selected=yes がデフォルト表示）</h3>
-								<div class="table-wrap">
+							<div class="card dtsb-analysis__card dtsb-analysis__card--table" style="flex:2 1 520px;">
+								<h3>Persons（selected=yes がデフォルト表示）</h3>
+								<div class="table-wrap dtsb-analysis__table-wrap">
 									<table id="plansTable">
 										<thead>
 											<tr>
 												<th>Person</th>
-												<th>MATSim Score (Plan)</th>
+												<th>MATSim Score</th>
 												<th>Our Score</th>
 												<th>Selected</th>
-												<th>Plans</th>
 												<th>Actions</th>
 											</tr>
 										</thead>
@@ -1142,6 +1145,24 @@
 									</table>
 								</div>
 							</div>
+						</div>
+					</div>
+
+					<div id="personPlansModal" class="dtsb-modal" hidden aria-hidden="true">
+						<div class="dtsb-modal__backdrop" data-close-person-plans></div>
+						<div class="dtsb-modal__dialog" role="dialog" aria-modal="true"
+							aria-labelledby="personPlansTitle">
+							<div class="dtsb-modal__header">
+								<div class="dtsb-modal__titlewrap">
+									<span class="dtsb-modal__eyebrow">Plan Details</span>
+									<h3 id="personPlansTitle" class="dtsb-modal__title">人物プラン詳細</h3>
+									<p id="personPlansSubtitle" class="dtsb-modal__subtitle"></p>
+								</div>
+								<button id="closePersonPlansModal" type="button"
+									class="btn ghost dtsb-modal__close">閉じる</button>
+							</div>
+							<div id="personPlansModalStatus" class="dtsb-modal__status" aria-live="polite"></div>
+							<div id="personPlansModalBody" class="dtsb-modal__body"></div>
 						</div>
 					</div>
 				</div>
@@ -1424,10 +1445,13 @@
 			const btn = document.getElementById('toggleAnalysisBtn');
 			if (!block || !btn) return;
 
-			const MAX_VH = 60;
+			function getMaxVh() {
+				if (window.innerWidth >= 960 && window.innerWidth <= 1440) return 94;
+				return 60;
+			}
 
 			function applyOpenStyles() {
-				const capPx = Math.floor(window.innerHeight * (MAX_VH / 100));
+				const capPx = Math.floor(window.innerHeight * (getMaxVh() / 100));
 				const prev = block.style.maxHeight;
 				block.style.maxHeight = 'none';
 				const contentHeight = block.scrollHeight;
