@@ -408,6 +408,13 @@ th {
     gap: 10px 12px;
 }
 
+#analysisBlock .dtsb-analysis__card--weights .weights-grid {
+    max-height: min(34vh, 320px);
+    padding-right: 6px;
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
 #analysisBlock .weights-grid label {
     display: flex;
     align-items: center;
