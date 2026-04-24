@@ -218,6 +218,56 @@
 			border-color: rgba(var(--colorSubRgb), 1);
 		}
 
+		.dtsb-route-source__btn[data-tooltip]::after,
+		.dtsb-route-source__btn[data-tooltip]::before {
+			position: absolute;
+			left: 50%;
+			opacity: 0;
+			pointer-events: none;
+			transition: opacity .16s ease, transform .16s ease;
+		}
+
+		.dtsb-route-source__btn[data-tooltip]::after {
+			content: attr(data-tooltip);
+			bottom: calc(100% + 12px);
+			transform: translate(-50%, 4px);
+			z-index: 26;
+			min-width: 228px;
+			max-width: min(320px, calc(100vw - 28px));
+			padding: 8px 12px;
+			border-radius: 10px;
+			border: 2px solid rgba(255, 255, 255, 0.94);
+			background: linear-gradient(180deg, #5f6fe4, #4f64d9 100%);
+			box-shadow: 0 4px 0 #4f64d9, 0 10px 16px rgba(111, 55, 199, 0.16);
+			color: #fff;
+			font-size: 0.82rem;
+			font-weight: 700;
+			line-height: 1.35;
+			letter-spacing: 0;
+			text-align: left;
+			white-space: normal;
+		}
+
+		.dtsb-route-source__btn[data-tooltip]::before {
+			content: "";
+			bottom: calc(100% + 6px);
+			transform: translate(-50%, 4px) rotate(45deg);
+			z-index: 25;
+			width: 10px;
+			height: 10px;
+			border-right: 2px solid rgba(255, 255, 255, 0.94);
+			border-bottom: 2px solid rgba(255, 255, 255, 0.94);
+			background: #4f64d9;
+		}
+
+		.dtsb-route-source__btn[data-tooltip]:hover::after,
+		.dtsb-route-source__btn[data-tooltip]:hover::before,
+		.dtsb-route-source__btn[data-tooltip]:focus-visible::after,
+		.dtsb-route-source__btn[data-tooltip]:focus-visible::before {
+			opacity: 1;
+			transform: translate(-50%, 0);
+		}
+
 		/* Make reset/pills read nicely on small widths */
 		@media (max-width: 720px) {
 			.dtsb-select {
@@ -238,6 +288,37 @@
 
 			.dtsb-route-source__btn {
 				width: 100%;
+			}
+
+			.dtsb-route-source__btn[data-tooltip]::after {
+				left: 0;
+				transform: translate(0, 4px);
+				min-width: 0;
+				width: max-content;
+			}
+
+			.dtsb-route-source__btn[data-tooltip]::before {
+				left: 18px;
+				transform: translate(0, 4px) rotate(45deg);
+			}
+
+			.dtsb-route-source__buttons .dtsb-route-source__btn:nth-child(2n)[data-tooltip]::after {
+				left: auto;
+				right: 0;
+				transform: translate(0, 4px);
+			}
+
+			.dtsb-route-source__buttons .dtsb-route-source__btn:nth-child(2n)[data-tooltip]::before {
+				left: auto;
+				right: 18px;
+				transform: translate(0, 4px) rotate(45deg);
+			}
+
+			.dtsb-route-source__btn[data-tooltip]:hover::after,
+			.dtsb-route-source__btn[data-tooltip]:hover::before,
+			.dtsb-route-source__btn[data-tooltip]:focus-visible::after,
+			.dtsb-route-source__btn[data-tooltip]:focus-visible::before {
+				transform: translate(0, 0);
 			}
 		}
 
@@ -810,18 +891,22 @@
 						<div id="busRouteSourceButtons" class="dtsb-route-source__buttons">
 							<button type="button"
 								class="c-btn__small c-btn__small-white dtsb-route-source__btn is-active"
+								data-tooltip="CURR24：2024年度ネットワーク　BRTなし"
 								data-bus-route-source="bus_route/baseline_transitSchedule_cr24_1.xml">
 								CURR24
 							</button>
 							<button type="button" class="c-btn__small c-btn__small-white dtsb-route-source__btn"
+								data-tooltip="BRT24：2024年度ネットワーク　BRTあり"
 								data-bus-route-source="bus_route/brt_transitSchedule_brt24_2.xml">
 								BRT24
 							</button>
 							<button type="button" class="c-btn__small c-btn__small-white dtsb-route-source__btn"
+								data-tooltip="CURR40：2040年度ネットワーク　BRTなし"
 								data-bus-route-source="bus_route/net_expansion_transitSchedule_cr40_3.xml">
 								CURR40
 							</button>
 							<button type="button" class="c-btn__small c-btn__small-white dtsb-route-source__btn"
+								data-tooltip="BRT40：2040年度ネットワーク　BRTあり"
 								data-bus-route-source="bus_route/output_transitSchedule_brt40_4.xml">
 								BRT40
 							</button>
