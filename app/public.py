@@ -11,6 +11,7 @@ from azure.storage.blob import generate_blob_sas, BlobSasPermissions
 from .models import list_simulations, get_simulation
 from .azure_utils import get_storage_context
 from .frequency_compare import (
+    DEFAULT_WAITING_PT_COEFF_UTIL_HR,
     compute_frequency_compare_aggregates,
     compute_frequency_compare_aggregates_from_affected,
 )
@@ -25,7 +26,7 @@ from .aggregates import Aggregator
 public_bp = Blueprint("public", __name__)
 
 
-# ---- Shared scoring logic (mirror of app.js) ----
+# ---- Legacy fallback scoring for pre-config cached data ----
 _DEFAULT_WEIGHTS = {
     "act": {"Home": 1.0, "Work": 0.5, "Business": 0.3, "Shopping": 0.2, "__other__": 0.1},
     "leg": {"car": -2.0, "walk": 0.5, "pt": 0.1, "__other__": 0.0},
@@ -54,7 +55,13 @@ def _normalize_weights(payload: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
 
 
 def _compute_score_client(plan: Dict[str, Any], weights: Dict[str, Dict[str, float]]) -> float:
-    """Client-side score: mirror of computeScoreClient in app.js."""
+    """Prefer authoritative parse-time utility; keep legacy weighting as fallback."""
+    try:
+        if plan.get("serverScore") is not None:
+            return float(plan.get("serverScore"))
+    except Exception:
+        pass
+
     steps = plan.get("steps") or []
     if not isinstance(steps, list):
         return 0.0
@@ -452,18 +459,17 @@ def public_frequency_compare(sim_id: str):
     include_most_steps = str(payload.get("includeMostImpactedSteps") or "").lower() in {"1", "true", "yes"}
     person_limit = _coerce_person_limit(payload.get("person_limit") or payload.get("personLimit") or payload.get("limit"))
 
-    # Prefer an explicit walk coefficient; else derive from weights (if provided).
-    walk_coeff = payload.get("walkCoeffPerSec")
-    if walk_coeff is None:
-        weights_payload = payload.get("weights") or {}
-        if isinstance(weights_payload, dict):
-            leg = weights_payload.get("leg") or {}
-            if isinstance(leg, dict):
-                walk_coeff = leg.get("walk")
+    waiting_coeff = payload.get("waitingPtCoeffUtilHr")
+    if waiting_coeff is None:
+        waiting_coeff = payload.get("waitingPtUtilityUtilHr")
     try:
-        walk_coeff_per_sec = float(walk_coeff) if walk_coeff is not None else 0.5
+        waiting_pt_coeff_util_hr = (
+            float(waiting_coeff)
+            if waiting_coeff is not None
+            else DEFAULT_WAITING_PT_COEFF_UTIL_HR
+        )
     except Exception:
-        walk_coeff_per_sec = 0.5
+        waiting_pt_coeff_util_hr = DEFAULT_WAITING_PT_COEFF_UTIL_HR
 
     station_name = str(payload.get("stationName") or "").strip()
     station_radius = payload.get("radiusM")
@@ -521,7 +527,7 @@ def public_frequency_compare(sim_id: str):
                     old_frequency=float(old_f),
                     new_frequency=float(new_f),
                     top_routes=12,
-                    walk_coeff_per_sec=walk_coeff_per_sec,
+                    waiting_pt_coeff_util_hr=waiting_pt_coeff_util_hr,
                     changed_sample_n=50,
                     include_most_impacted_steps=include_most_steps,
                     station_baseline=station_baseline,
@@ -552,7 +558,7 @@ def public_frequency_compare(sim_id: str):
             old_frequency=float(old_f),
             new_frequency=float(new_f),
             top_routes=12,
-            walk_coeff_per_sec=walk_coeff_per_sec,
+            waiting_pt_coeff_util_hr=waiting_pt_coeff_util_hr,
             changed_sample_n=50,
             include_most_impacted_steps=include_most_steps,
             station_center_x=(station_center or {}).get("centerX"),
@@ -568,7 +574,7 @@ def public_frequency_compare(sim_id: str):
             "routeId": route_id,
             "oldFrequency": float(old_f),
             "newFrequency": float(new_f),
-            "walkCoeffPerSec": walk_coeff_per_sec,
+            "waitingPtCoeffUtilHr": waiting_pt_coeff_util_hr,
             "personLimit": person_limit,
         },
         "deltaWaitMin": float(cmp.get("deltaWaitMin") or 0.0),
@@ -576,6 +582,7 @@ def public_frequency_compare(sim_id: str):
         "changedPeople": int(cmp.get("changedPeople") or 0),
         "changedSample": cmp.get("changedSample") or [],
         "mostImpacted": cmp.get("mostImpacted"),
+        "storyTarget": cmp.get("storyTarget"),
         "pre": cmp.get("preAggregates") or {},
         "post": cmp.get("postAggregates") or {},
     }

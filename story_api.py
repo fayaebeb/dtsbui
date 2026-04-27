@@ -42,6 +42,10 @@ ACTIVITY_LABELS: Dict[str, str] = {
     "Education": "学校",
     "School": "学校",
     "Leisure": "余暇先",
+    "Other": "目的地",
+    "Others": "目的地",
+    "other": "目的地",
+    "others": "目的地",
 }
 
 _AZURE_OPENAI_CLIENT_LOCK = Lock()
@@ -168,8 +172,20 @@ def _display_time_hhmm(total_sec: int) -> str:
 def _mode_label(mode: Any) -> str:
     return MODE_LABELS.get(str(mode or ""), str(mode or "移動"))
 
+def _is_brt_story_mode(mode: Any) -> bool:
+    return str(mode or "") in {"pt", "bus"}
+
+def _mode_label_for_story(mode: Any, *, brt_context: bool = False) -> str:
+    raw = str(mode or "")
+    if brt_context and _is_brt_story_mode(raw):
+        return "BRT"
+    return _mode_label(raw)
+
 def _activity_label(act_type: Any) -> str:
-    return ACTIVITY_LABELS.get(str(act_type or ""), str(act_type or "目的地"))
+    raw = str(act_type or "").strip()
+    if not raw:
+        return "目的地"
+    return ACTIVITY_LABELS.get(raw, ACTIVITY_LABELS.get(raw.lower(), raw))
 
 def _trip_phrase(origin_type: Any, dest_type: Any) -> str:
     origin = str(origin_type or "")
@@ -206,6 +222,83 @@ def _first_trip_activity_pair(steps: List[Dict[str, Any]]) -> Tuple[Optional[str
     if len(acts) < 2:
         return None, None
     return str(acts[0].get("type") or ""), str(acts[1].get("type") or "")
+
+def _is_story_activity(step: Dict[str, Any]) -> bool:
+    return (
+        isinstance(step, dict)
+        and step.get("kind") == "activity"
+        and str(step.get("type") or "").strip().lower() != "pt interaction"
+    )
+
+def _primary_trip_mode(mode_seconds: Dict[str, int], ordered_modes: List[str]) -> Optional[str]:
+    if not ordered_modes:
+        return None
+    for mode in ("pt", "bus", "car", "bike"):
+        if mode in ordered_modes:
+            return mode
+    ranked = [(mode, sec) for mode, sec in mode_seconds.items() if sec > 0]
+    if ranked:
+        ranked.sort(key=lambda item: item[1], reverse=True)
+        return ranked[0][0]
+    return ordered_modes[0]
+
+def _first_trip_context(steps: List[Dict[str, Any]], *, brt_context: bool = False) -> Optional[Dict[str, Any]]:
+    origin: Optional[Dict[str, Any]] = None
+    destination: Optional[Dict[str, Any]] = None
+    legs: List[Dict[str, Any]] = []
+
+    for step in (steps or []):
+        if not isinstance(step, dict):
+            continue
+        if _is_story_activity(step):
+            if origin is None:
+                origin = step
+                legs = []
+                continue
+            if legs:
+                destination = step
+                break
+            origin = step
+            continue
+        if origin is not None and step.get("kind") == "leg":
+            legs.append(step)
+
+    if origin is None or destination is None or not legs:
+        return None
+
+    origin_type = str(origin.get("type") or "")
+    dest_type = str(destination.get("type") or "")
+    mode_seconds: Dict[str, int] = defaultdict(int)
+    ordered_modes: List[str] = []
+    total_sec = 0
+    for leg in legs:
+        mode = str(leg.get("mode") or "")
+        if not mode:
+            continue
+        if mode not in ordered_modes:
+            ordered_modes.append(mode)
+        duration_sec = _sec(leg.get("durationSec"))
+        mode_seconds[mode] += duration_sec
+        total_sec += duration_sec
+
+    main_mode_raw = _primary_trip_mode(mode_seconds, ordered_modes)
+    travel_minutes = int(round(total_sec / 60.0)) if total_sec else 0
+
+    return {
+        "originType": origin_type,
+        "destinationType": dest_type,
+        "origin": _activity_label(origin_type),
+        "destination": _activity_label(dest_type),
+        "tripPhrase": _trip_phrase(origin_type or "Home", dest_type or "Work"),
+        "travelMinutes": travel_minutes,
+        "mainModeRaw": main_mode_raw,
+        "mainMode": _mode_label_for_story(main_mode_raw, brt_context=brt_context) if main_mode_raw else None,
+        "modesRaw": ordered_modes,
+        "modes": [_mode_label_for_story(mode, brt_context=brt_context) for mode in ordered_modes],
+        "usesBrt": any(_is_brt_story_mode(mode) for mode in ordered_modes),
+        "usesPublicTransport": any(_is_brt_story_mode(mode) for mode in ordered_modes),
+        "usesCar": "car" in ordered_modes,
+    }
 
 def _summarize_plan(steps: List[Dict[str, Any]], cap: int = 60) -> Tuple[List[str], Dict[str, Any]]:
     """Return (lines, stats)."""
@@ -267,7 +360,7 @@ def _summarize_plan(steps: List[Dict[str, Any]], cap: int = 60) -> Tuple[List[st
     }
     return lines, stats
 
-def _safe_facts(stats: Dict[str, Any]) -> List[str]:
+def _safe_facts(stats: Dict[str, Any], *, brt_context: bool = False) -> List[str]:
     """Concrete, plausible, *true* facts to choose from (short)."""
     facts: List[str] = []
 
@@ -284,7 +377,7 @@ def _safe_facts(stats: Dict[str, Any]) -> List[str]:
         try:
             m = int(mins)
             if 0 < m <= 240:
-                facts.append(f"{_mode_label(mode)}合計{m}分")
+                facts.append(f"{_mode_label_for_story(mode, brt_context=brt_context)}合計{m}分")
         except Exception:
             pass
 
@@ -301,24 +394,25 @@ def _safe_facts(stats: Dict[str, Any]) -> List[str]:
 
     return (facts[:8] or ["今日の移動をひとことで"])
 
-def _plan_badge_fact(steps: List[Dict[str, Any]], stats: Dict[str, Any]) -> Optional[str]:
+def _plan_badge_fact(steps: List[Dict[str, Any]], stats: Dict[str, Any], *, brt_context: bool = False) -> Optional[str]:
     origin_type, dest_type = _first_trip_activity_pair(steps)
     phrase = _trip_phrase(origin_type or "Home", dest_type or "Work")
     leg_counts = stats.get("leg_counts") or {}
-    if int(leg_counts.get("pt", 0)) > 0:
-        return f"{phrase}で公共交通利用"
+    if int(leg_counts.get("pt", 0)) > 0 or int(leg_counts.get("bus", 0)) > 0:
+        label = "BRT" if brt_context else "公共交通"
+        return f"{phrase}で{label}利用"
     if int(leg_counts.get("car", 0)) > 0:
         return f"{phrase}で自家用車利用"
     return phrase if phrase else None
 
-def _mode_breakdown_labels(stats: Dict[str, Any]) -> List[str]:
+def _mode_breakdown_labels(stats: Dict[str, Any], *, brt_context: bool = False) -> List[str]:
     travel = stats.get("travel_minutes_by_mode") or {}
     rows: List[Tuple[int, str]] = []
     for mode, mins in travel.items():
         m = _as_int(mins)
         if m is None or m <= 0:
             continue
-        rows.append((m, f"{_mode_label(mode)}{m}分"))
+        rows.append((m, f"{_mode_label_for_story(mode, brt_context=brt_context)}{m}分"))
     rows.sort(key=lambda item: item[0], reverse=True)
     return [label for _, label in rows[:3]]
 
@@ -338,21 +432,32 @@ def _activity_labels_for_story(steps: List[Dict[str, Any]]) -> List[str]:
         seen.add(label)
     return out[:4]
 
-def _story_plan_context(steps: List[Dict[str, Any]], stats: Dict[str, Any]) -> Dict[str, Any]:
+def _story_plan_context(steps: List[Dict[str, Any]], stats: Dict[str, Any], *, brt_context: bool = False) -> Dict[str, Any]:
     origin_type, dest_type = _first_trip_activity_pair(steps)
     start_sec = stats.get("first_start_sec")
     end_sec = stats.get("last_end_sec")
+    first_trip = _first_trip_context(steps, brt_context=brt_context)
+    main_mode_raw = (first_trip or {}).get("mainModeRaw") or _primary_story_mode(stats) or stats.get("dominant_mode") or ""
     return {
-        "tripPhrase": _trip_phrase(origin_type or "Home", dest_type or "Work"),
-        "origin": _activity_label(origin_type) if origin_type else None,
-        "destination": _activity_label(dest_type) if dest_type else None,
+        "tripPhrase": (first_trip or {}).get("tripPhrase") or _trip_phrase(origin_type or "Home", dest_type or "Work"),
+        "origin": (first_trip or {}).get("origin") or (_activity_label(origin_type) if origin_type else None),
+        "destination": (first_trip or {}).get("destination") or (_activity_label(dest_type) if dest_type else None),
+        "firstTrip": first_trip,
         "startTime": stats.get("first_start_display") if isinstance(start_sec, int) and start_sec > 0 else None,
         "endTime": stats.get("last_end_display") if isinstance(end_sec, int) and end_sec > 0 else None,
         "totalTravelMinutes": _as_int(stats.get("total_travel_minutes")),
-        "mainMode": _mode_label(_primary_story_mode(stats) or stats.get("dominant_mode") or ""),
-        "modeBreakdown": _mode_breakdown_labels(stats),
+        "mainModeRaw": main_mode_raw,
+        "mainMode": _mode_label_for_story(main_mode_raw, brt_context=brt_context),
+        "modeBreakdown": _mode_breakdown_labels(stats, brt_context=brt_context),
         "activities": _activity_labels_for_story(steps),
-        "usesPublicTransport": bool(int((stats.get("leg_counts") or {}).get("pt", 0)) > 0),
+        "usesPublicTransport": bool(
+            int((stats.get("leg_counts") or {}).get("pt", 0)) > 0
+            or int((stats.get("leg_counts") or {}).get("bus", 0)) > 0
+        ),
+        "usesBrt": bool(
+            int((stats.get("leg_counts") or {}).get("pt", 0)) > 0
+            or int((stats.get("leg_counts") or {}).get("bus", 0)) > 0
+        ),
         "usesCar": bool(int((stats.get("leg_counts") or {}).get("car", 0)) > 0),
     }
 
@@ -366,10 +471,15 @@ def _story_change_context(
 ) -> Dict[str, Any]:
     compare_data: Dict[str, Any] = compare_ctx if isinstance(compare_ctx, dict) else {}
     person_data: Dict[str, Any] = person_ctx if isinstance(person_ctx, dict) else {}
-    before_mode = _primary_story_mode(before_stats or {}) if before_stats else None
-    after_mode = _primary_story_mode(after_stats)
+    brt_context = str(compare_data.get("mode") or "") == "frequency"
+    before_trip = _first_trip_context(before_steps, brt_context=brt_context) if before_stats else None
+    after_trip = _first_trip_context(after_steps, brt_context=brt_context)
+    before_mode = (before_trip or {}).get("mainModeRaw") or (_primary_story_mode(before_stats or {}) if before_stats else None)
+    after_mode = (after_trip or {}).get("mainModeRaw") or _primary_story_mode(after_stats)
     before_total = _as_int((before_stats or {}).get("total_travel_minutes")) if before_stats else None
     after_total = _as_int(after_stats.get("total_travel_minutes"))
+    before_trip_minutes = _as_int((before_trip or {}).get("travelMinutes")) if before_trip else None
+    after_trip_minutes = _as_int((after_trip or {}).get("travelMinutes")) if after_trip else None
     params = compare_data.get("params") or {}
     old_f = _as_int(params.get("oldFrequency"))
     new_f = _as_int(params.get("newFrequency"))
@@ -379,18 +489,37 @@ def _story_change_context(
     except Exception:
         delta_wait_out = None
 
+    before_trip_uses_brt = bool(before_trip and before_trip.get("usesBrt"))
+    after_trip_uses_brt = bool(after_trip and after_trip.get("usesBrt"))
+    before_uses_brt = before_trip_uses_brt or bool(person_data.get("beforeUsesBrt"))
+    after_uses_brt = after_trip_uses_brt
+
     return {
-        "after": _story_plan_context(after_steps, after_stats),
-        "before": _story_plan_context(before_steps, before_stats) if before_stats else None,
+        "storyType": "brt_frequency_change" if brt_context else "plan_summary",
+        "after": _story_plan_context(after_steps, after_stats, brt_context=brt_context),
+        "before": _story_plan_context(before_steps, before_stats, brt_context=brt_context) if before_stats else None,
         "change": {
             "selectedPlanChanged": bool(person_data.get("changedPlan")),
             "mainModeChanged": (before_mode != after_mode) if before_stats else None,
             "travelMinutesChanged": (before_total != after_total) if before_stats and before_total is not None and after_total is not None else None,
-            "beforeMainMode": _mode_label(before_mode) if before_mode else None,
-            "afterMainMode": _mode_label(after_mode) if after_mode else None,
+            "firstTripTravelMinutesChanged": (
+                before_trip_minutes != after_trip_minutes
+                if before_trip_minutes is not None and after_trip_minutes is not None
+                else None
+            ),
+            "beforeMainModeRaw": before_mode,
+            "afterMainModeRaw": after_mode,
+            "beforeMainMode": _mode_label_for_story(before_mode, brt_context=brt_context) if before_mode else None,
+            "afterMainMode": _mode_label_for_story(after_mode, brt_context=brt_context) if after_mode else None,
             "beforeTotalTravelMinutes": before_total,
             "afterTotalTravelMinutes": after_total,
-            "frequencyChange": f"{old_f}本→{new_f}本" if old_f is not None and new_f is not None else None,
+            "beforeFirstTripTravelMinutes": before_trip_minutes,
+            "afterFirstTripTravelMinutes": after_trip_minutes,
+            "beforeUsesBrt": before_uses_brt,
+            "afterUsesBrt": after_uses_brt,
+            "brtAdoption": (after_uses_brt and not before_uses_brt) if before_trip and after_trip else None,
+            "frequencyChange": f"{old_f}本から{new_f}本" if old_f is not None and new_f is not None else None,
+            "frequencySubject": "BRT" if brt_context else "対象路線",
             "deltaWaitMinutes": delta_wait_out if delta_wait_out and delta_wait_out > 0 else None,
             "deltaScore": round(float(compare_data.get("deltaScore") or 0.0), 2),
         },
@@ -405,6 +534,47 @@ def _as_int(v: Any) -> Optional[int]:
     except Exception:
         return None
 
+def _trip_sentence_fragment(trip: Optional[Dict[str, Any]]) -> Optional[str]:
+    if not isinstance(trip, dict):
+        return None
+    origin = trip.get("origin")
+    destination = trip.get("destination")
+    mode = trip.get("mainMode")
+    minutes = _as_int(trip.get("travelMinutes"))
+    if not origin or not destination or not mode or minutes is None or minutes <= 0:
+        return None
+    return f"{origin}から{destination}まで{mode}で{minutes}分"
+
+def _recommended_story_draft(normalized_ctx: Dict[str, Any]) -> Optional[str]:
+    before = normalized_ctx.get("before") if isinstance(normalized_ctx, dict) else None
+    after = normalized_ctx.get("after") if isinstance(normalized_ctx, dict) else None
+    change = normalized_ctx.get("change") if isinstance(normalized_ctx, dict) else None
+    if not isinstance(before, dict) or not isinstance(after, dict) or not isinstance(change, dict):
+        return None
+
+    before_trip = before.get("firstTrip") if isinstance(before.get("firstTrip"), dict) else None
+    after_trip = after.get("firstTrip") if isinstance(after.get("firstTrip"), dict) else None
+    before_fragment = _trip_sentence_fragment(before_trip)
+    after_fragment = _trip_sentence_fragment(after_trip)
+    if not before_fragment or not after_fragment:
+        return None
+
+    frequency_change = change.get("frequencyChange")
+    subject = str(change.get("frequencySubject") or "対象路線")
+    first = f"普段は{before_fragment}かけて移動していました。"
+    if isinstance(frequency_change, str) and frequency_change:
+        freq_text = frequency_change + "に"
+        if change.get("brtAdoption"):
+            return (
+                f"{first}{subject}の運行頻度が{freq_text}増えたことで、待ち時間が減り、"
+                f"{after_trip.get('mainMode')}を利用するようになり、{after_trip.get('travelMinutes')}分で移動できるようになって楽になりました。"
+            )
+        return (
+            f"{first}{subject}の運行頻度が{freq_text}増えたことで、待ち時間の負担が減り、"
+            f"{after_fragment}移動できるようになって楽になりました。"
+        )
+    return f"{first}変更後は{after_fragment}移動できるようになって楽になりました。"
+
 def _dedupe_keep_order(items: List[str]) -> List[str]:
     out: List[str] = []
     seen = set()
@@ -417,7 +587,9 @@ def _dedupe_keep_order(items: List[str]) -> List[str]:
     return out
 
 def _compare_story_facts(
+    before_steps: List[Dict[str, Any]],
     before_stats: Optional[Dict[str, Any]],
+    after_steps: List[Dict[str, Any]],
     after_stats: Dict[str, Any],
     compare_ctx: Optional[Dict[str, Any]],
     person_ctx: Optional[Dict[str, Any]],
@@ -430,6 +602,27 @@ def _compare_story_facts(
     """
     approved: List[str] = []
     must_use: List[str] = []
+    compare_data = compare_ctx if isinstance(compare_ctx, dict) else {}
+    brt_context = str(compare_data.get("mode") or "") == "frequency"
+    before_trip = _first_trip_context(before_steps, brt_context=brt_context) if before_stats else None
+    after_trip = _first_trip_context(after_steps, brt_context=brt_context)
+
+    before_fragment = _trip_sentence_fragment(before_trip)
+    after_fragment = _trip_sentence_fragment(after_trip)
+    if before_fragment:
+        must_use.append(f"変更前は{before_fragment}")
+    if after_fragment:
+        must_use.append(f"変更後は{after_fragment}")
+
+    if before_trip and after_trip:
+        before_mode = before_trip.get("mainMode")
+        after_mode = after_trip.get("mainMode")
+        if before_mode and after_mode and before_mode != after_mode:
+            approved.append(f"{before_mode}→{after_mode}に変更")
+            must_use.append(f"{before_mode}から{after_mode}へ変更")
+        if (not before_trip.get("usesBrt")) and after_trip.get("usesBrt"):
+            approved.append("BRT未利用→BRT利用")
+            must_use.append("BRT未利用からBRT利用へ変化")
 
     if before_stats:
         b_total = _as_int(before_stats.get("total_travel_minutes"))
@@ -445,7 +638,7 @@ def _compare_story_facts(
             a = _as_int(a_modes.get(m))
             if b is None or a is None or b == a:
                 continue
-            fact = f"{_mode_label(m)}合計{b}分→{a}分"
+            fact = f"{_mode_label_for_story(m, brt_context=brt_context)}合計{b}分→{a}分"
             approved.append(fact)
 
     if isinstance(person_ctx, dict):
@@ -460,8 +653,9 @@ def _compare_story_facts(
             old_f = _as_int(params.get("oldFrequency"))
             new_f = _as_int(params.get("newFrequency"))
             if old_f is not None and new_f is not None:
-                fact = f"対象路線の運行頻度{old_f}本→{new_f}本"
+                fact = f"BRT運行頻度{old_f}本から{new_f}本に増加"
                 must_use.insert(0, fact)
+                approved.append(fact)
 
     approved = _dedupe_keep_order(approved)
     must_use = _dedupe_keep_order(must_use)
@@ -470,7 +664,7 @@ def _compare_story_facts(
         return approved, must_use
     return approved, must_use
 
-def _core_facts(stats: Dict[str, Any], approved: List[str]) -> List[str]:
+def _core_facts(stats: Dict[str, Any], approved: List[str], *, brt_context: bool = False) -> List[str]:
     """Pick 2–4 high-priority facts used to guide one_liner."""
     chosen: List[str] = []
     fs = stats.get("first_start_display"); le = stats.get("last_end_display")
@@ -480,7 +674,7 @@ def _core_facts(stats: Dict[str, Any], approved: List[str]) -> List[str]:
             chosen.append(pair)
     dom = stats.get("dominant_mode"); tmbm = stats.get("travel_minutes_by_mode") or {}
     if dom and dom in tmbm and isinstance(tmbm[dom], int) and 0 < tmbm[dom] <= 240:
-        cand = f"{_mode_label(dom)}合計{int(tmbm[dom])}分"
+        cand = f"{_mode_label_for_story(dom, brt_context=brt_context)}合計{int(tmbm[dom])}分"
         if cand in approved and cand not in chosen:
             chosen.append(cand)
     tt = stats.get("total_travel_minutes")
@@ -566,16 +760,28 @@ def generate_story():
         _, before_stats = _summarize_plan(before_steps, cap=40)
 
     normalized_ctx = _story_change_context(before_steps, before_stats, steps, stats, compare_ctx, person_ctx)
+    brt_context = normalized_ctx.get("storyType") == "brt_frequency_change"
+    change_ctx = normalized_ctx.get("change") if isinstance(normalized_ctx.get("change"), dict) else {}
+    if brt_context and not bool(change_ctx.get("brtAdoption")):
+        return jsonify({
+            "error": (
+                "BRT未利用からBRT利用に変わった対象者ではありません。"
+                " 運行頻度比較から storyTarget を取得し直してください。"
+            )
+        }), 422
+    recommended_story = _recommended_story_draft(normalized_ctx)
+    if recommended_story:
+        normalized_ctx["recommendedStoryDraft"] = recommended_story
 
     approved_facts = []
-    badge = _plan_badge_fact(steps, stats)
+    badge = _plan_badge_fact(steps, stats, brt_context=brt_context)
     if badge:
         approved_facts.append(badge)
-    approved_facts.extend(_safe_facts(stats))
-    approved_extra, must_extra = _compare_story_facts(before_stats, stats, compare_ctx, person_ctx, lang=lang)
+    approved_facts.extend(_safe_facts(stats, brt_context=brt_context))
+    approved_extra, must_extra = _compare_story_facts(before_steps, before_stats, steps, stats, compare_ctx, person_ctx, lang=lang)
     approved_facts = _dedupe_keep_order(approved_facts + approved_extra)[:14]
 
-    must_use = _core_facts(stats, approved_facts)  # 2–4 prioritized facts
+    must_use = _core_facts(stats, approved_facts, brt_context=brt_context)  # 2–4 prioritized facts
     if must_extra:
         must_use = _dedupe_keep_order(must_extra + must_use)[:6]
 
@@ -591,6 +797,8 @@ def generate_story():
                 "Do not write analyst/report prose like 'この人物は', 'この人は', or 'personId'. "
                 "Prefer natural openings such as '普段の通勤では...' or 'いつもの通学では...'. "
                 "Do not start with compressed summary phrases like '通勤で公共交通を利用し'. "
+                "When before/after firstTrip facts are provided, write about that trip, not whole-day mode totals. "
+                "For frequency-change stories, call the improved public transport route 'BRT' and do not call it generic '公共交通'. "
                 "Prefer simulation-safe change phrasing such as '運行頻度が増えてからは' or '以前より' instead of concrete time markers like '今日から'. "
                 "Do not use raw technical labels like 'pt interaction' or 'transit_walk'; paraphrase them naturally. "
                 "Avoid generic phrasing and avoid repeating the same fact twice. "
@@ -609,8 +817,10 @@ def generate_story():
                 "- title ≤20 chars, punchy and neutral.\n"
                 "- one_liner: exactly 2 sentences, 60–200 chars, NO line breaks. "
                 "Prefer first-person narration and describe my day as if I am speaking. "
-                "Sentence 1 should describe my usual trip in natural Japanese, preferably with a lived opening rather than a metric summary. "
-                "Sentence 2 should explain how the service change affected that trip in first person.\n"
+                "If recommendedStoryDraft exists, use it as the structure for one_liner while keeping exactly 2 sentences. "
+                "Sentence 1 should describe the BEFORE firstTrip: origin, destination, output_plans mode label, and travel minutes. "
+                "Sentence 2 should describe the frequency change and the AFTER firstTrip: BRT use/mode label and travel minutes. "
+                "Only mention walking or transfer walking when it is the main mode of that firstTrip.\n"
                 "Prefer personal before/after change facts over whole-system metrics. Whole-system metrics are optional background only.\n"
                 "Prefer a small lived narrative: usual trip -> what changed -> how it feels.\n"
                 "Avoid report-like phrasing, metric recitation, and compressed factual openings.\n"

@@ -11,7 +11,7 @@ from azure.storage.blob import BlobClient
 
 from .azure_utils import get_storage_context
 from .models import get_simulation, update_simulation
-from .parsing import iter_plans_to_persons
+from .parsing import iter_plans_to_persons, parse_config_file
 from .aggregates import Aggregator
 from .frequency_route_cache import (
     RouteCacheWriter,
@@ -32,6 +32,7 @@ class ParseError(Exception):
 
 
 _PLAN_CANDIDATES = ("output_plans.xml.gz", "output_plans.xml")
+_CONFIG_CANDIDATES = ("output_config.xml.gz", "output_config.xml", "config.xml.gz", "config.xml")
 _EVENT_CANDIDATES = ("output_events.xml.gz", "output_events.xml", "events.xml.gz", "events.xml")
 _SCHEDULE_CANDIDATES = ("output_transitSchedule.xml.gz", "output_transitSchedule.xml", "transitSchedule.xml.gz", "transitSchedule.xml")
 _FACILITY_CANDIDATES = (
@@ -91,12 +92,22 @@ def _parse_and_cache(
     limit: int,
     selected_only: bool,
     schedule_path: Optional[str] = None,
+    config_path: Optional[str] = None,
 ) -> Dict[str, Any]:
+    scoring_config: Optional[Dict[str, Any]] = None
+    if config_path:
+        try:
+            scoring_config = parse_config_file(config_path)
+            current_app.logger.info("[parse] scoring config loaded for %s: %s", sim_id, os.path.basename(config_path))
+        except Exception:
+            current_app.logger.exception("[parse] failed to parse scoring config for %s; using defaults", sim_id)
+
     people_iter = iter_plans_to_persons(
         plans_path,
         facilities_path,
         max_persons=limit,
         selected_only_flag=selected_only,
+        scoring_config=scoring_config,
     )
     parsed_dir = os.path.join(current_app.config["STORAGE_ROOT"], "parsed")
     os.makedirs(parsed_dir, exist_ok=True)
@@ -245,9 +256,18 @@ def run_parse(sim_id: str, limit: int, selected_only: bool = True) -> Dict[str, 
         if not plans_path:
             raise ParseError("plans file not found in local folder")
         facilities_path = _find_first_existing(folder, tuple(_FACILITY_CANDIDATES))
+        config_path = _find_first_existing(folder, tuple(_CONFIG_CANDIDATES))
         events_path = _find_first_existing(folder, tuple(_EVENT_CANDIDATES))
         schedule_path = _find_first_existing(folder, tuple(_SCHEDULE_CANDIDATES), allow_schedule_fallback=True)
-        result = _parse_and_cache(sim_id, plans_path, facilities_path, limit, selected_only, schedule_path=schedule_path)
+        result = _parse_and_cache(
+            sim_id,
+            plans_path,
+            facilities_path,
+            limit,
+            selected_only,
+            schedule_path=schedule_path,
+            config_path=config_path,
+        )
 
         if facilities_path:
             try:
@@ -283,22 +303,33 @@ def run_parse(sim_id: str, limit: int, selected_only: bool = True) -> Dict[str, 
             if not plan_member:
                 raise ParseError("plans file not found in zip")
             fac_member = _locate_member(zf, tuple(_FACILITY_CANDIDATES))
+            cfg_member = _locate_member(zf, tuple(_CONFIG_CANDIDATES))
             ev_member = _locate_member(zf, tuple(_EVENT_CANDIDATES))
             sch_member = _locate_member(zf, tuple(_SCHEDULE_CANDIDATES), allow_schedule_fallback=True)
 
             plans_path = _extract_member(zf, plan_member, tmpd)
             facilities_path = _extract_member(zf, fac_member, tmpd) if fac_member else None
+            config_path = _extract_member(zf, cfg_member, tmpd) if cfg_member else None
             events_path = _extract_member(zf, ev_member, tmpd) if ev_member else None
             schedule_path = _extract_member(zf, sch_member, tmpd) if sch_member else None
 
             logger.info(
-                "[parse] found plans=%s facilities=%s events=%s schedule=%s",
+                "[parse] found plans=%s facilities=%s config=%s events=%s schedule=%s",
                 plan_member,
                 fac_member or "none",
+                cfg_member or "none",
                 ev_member or "none",
                 sch_member or "none",
             )
-            result = _parse_and_cache(sim_id, plans_path, facilities_path, limit, selected_only, schedule_path=schedule_path)
+            result = _parse_and_cache(
+                sim_id,
+                plans_path,
+                facilities_path,
+                limit,
+                selected_only,
+                schedule_path=schedule_path,
+                config_path=config_path,
+            )
 
             # Cache facilities locally so station-count queries can avoid zip access.
             if facilities_path:

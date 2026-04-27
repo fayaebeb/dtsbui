@@ -1349,14 +1349,18 @@
 						});
 						const cmp = await resCmp.json().catch(() => ({}));
 						if (resCmp.ok) {
-							const mi = cmp && cmp.mostImpacted;
+							const target = cmp && cmp.storyTarget;
+							if (!target || !Array.isArray(target.afterPlanSteps) || !target.afterPlanSteps.length) {
+								throw new Error("BRT未利用からBRT利用に変わった対象者が見つかりませんでした。");
+							}
+							const mi = target;
 							if (mi && mi.personId && Array.isArray(mi.afterPlanSteps) && mi.afterPlanSteps.length) {
 								return {
 									personId: mi.personId,
 									planSteps: mi.afterPlanSteps,
 									beforePlanSteps: Array.isArray(mi.beforePlanSteps) ? mi.beforePlanSteps : null,
 									meta: {
-										kind: "mostImpacted",
+										kind: "storyTarget",
 										routeId: params.routeId,
 										beforePlanIndex: Number(mi.beforePlanIndex),
 										afterPlanIndex: Number(mi.afterPlanIndex),
@@ -1364,6 +1368,8 @@
 										afterScore: Number(mi.afterScore),
 										deltaScore: Number(mi.deltaScore),
 										changedPlan: !!mi.changedPlan,
+										beforeUsesBrt: !!mi.beforeUsesBrt,
+										afterUsesBrt: !!mi.afterUsesBrt,
 									},
 									compare: {
 										mode: "frequency",

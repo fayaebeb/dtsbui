@@ -230,6 +230,9 @@ function getWeights() {
 
 function computeScoreClient(plan, weights) {
   if (!plan || !Array.isArray(plan.steps)) return 0; // guard
+  if (plan.serverScore != null && Number.isFinite(Number(plan.serverScore))) {
+    return Number(plan.serverScore);
+  }
   let score = 0;
   (plan.steps || []).forEach(s => {
     if (!s) return;
@@ -1069,13 +1072,39 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
         });
         const cmp = await resCmp.json().catch(() => ({}));
         if (resCmp.ok) {
-          const mi = cmp?.mostImpacted;
+          const target = cmp?.storyTarget;
+          if (!target || !Array.isArray(target.afterPlanSteps) || !target.afterPlanSteps.length) {
+            throw new Error("BRT未利用からBRT利用に変わった対象者が見つかりませんでした。");
+          }
+          const mi = target;
           if (mi && mi.personId && Array.isArray(mi.afterPlanSteps) && mi.afterPlanSteps.length) {
             picked = {
               personId: mi.personId,
               planIndex: mi.afterPlanIndex,
               planSteps: mi.afterPlanSteps,
-              meta: { kind: "mostImpacted", deltaScore: mi.deltaScore, routeId: routeParams.routeId },
+              beforePlanSteps: Array.isArray(mi.beforePlanSteps) ? mi.beforePlanSteps : null,
+              meta: {
+                kind: "storyTarget",
+                deltaScore: mi.deltaScore,
+                routeId: routeParams.routeId,
+                beforePlanIndex: mi.beforePlanIndex,
+                afterPlanIndex: mi.afterPlanIndex,
+                changedPlan: !!mi.changedPlan,
+                beforeUsesBrt: !!mi.beforeUsesBrt,
+                afterUsesBrt: !!mi.afterUsesBrt,
+              },
+              compare: {
+                mode: "frequency",
+                simId,
+                params: {
+                  routeId: routeParams.routeId,
+                  oldFrequency: Number(routeParams.oldFrequency),
+                  newFrequency: Number(routeParams.newFrequency),
+                },
+                changedPeople: Number(cmp.changedPeople || 0),
+                deltaWaitMin: Number(cmp.deltaWaitMin || 0),
+                deltaScore: Number(cmp.deltaScore || 0),
+              },
             };
           }
         }
@@ -1102,7 +1131,9 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
         personId: best.personId,
         planIndex: best.planIndex,
         planSteps: best.steps,
+        beforePlanSteps: null,
         meta: { kind: "bestPlan" },
+        compare: null,
       };
     }
 
@@ -1113,6 +1144,9 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
       body: JSON.stringify({
         personId: picked.personId,
         plan: { steps: picked.planSteps },
+        ...(picked.beforePlanSteps ? { beforePlan: { steps: picked.beforePlanSteps } } : {}),
+        compareContext: picked.compare || null,
+        personContext: picked.meta || null,
         weights,
         lang: "ja", // set to "en" if you add a language toggle later
       }),
