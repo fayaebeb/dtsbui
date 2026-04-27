@@ -91,7 +91,8 @@
 
     setQuestView();
 
-    window.addEventListener('dtsb:agg-compare-started', () => {
+    window.addEventListener('dtsb:agg-compare-started', (ev) => {
+      if (ev?.detail?.mode !== 'frequency') return;
       state.statusByTask[0] = 'busy';
       state.message = '運航頻度変更前後を集計しています。ほかの項目は後からでも確認できます。';
       setQuestView();
@@ -99,17 +100,15 @@
 
     window.addEventListener('dtsb:agg-compare-completed', (ev) => {
       const detail = ev && ev.detail ? ev.detail : {};
+      if (detail.mode !== 'frequency') return;
       state.statusByTask[0] = 'done';
       state.mode = String(detail.mode || 'frequency');
-      if (state.mode !== 'frequency') {
-        state.message = '変更前後の集計が完了しました。残りの項目も必要に応じて確認できます。';
-      } else {
-        state.message = '運航頻度変更前後の集計が完了しました。残りの項目はどちらからでも確認できます。';
-      }
+      state.message = '運航頻度変更前後の集計が完了しました。残りの項目はどちらからでも確認できます。';
       setQuestView();
     });
 
     window.addEventListener('dtsb:agg-compare-failed', (ev) => {
+      if (ev?.detail?.mode !== 'frequency') return;
       setError(1, ev?.detail?.error || '運航頻度変更前後の集計に失敗しました。');
     });
 

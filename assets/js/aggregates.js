@@ -109,6 +109,100 @@
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
   }
 
+  const PANEL_IDS = {
+    frequency: {
+      cards: 'freqCards',
+      charts: 'freqCharts',
+      status: 'freqStatus',
+      actPeople: 'freqChartActPeople',
+      actTime: 'freqChartActTime',
+      actAvg: 'freqChartActAvg',
+      modeTime: 'freqChartModeTime',
+      modeAvg: 'freqChartModeAvg',
+      pt: 'freqChartPt',
+      ptRouteTable: 'freqPtRouteTable',
+    },
+    sim: {
+      cards: 'aggCards',
+      charts: 'aggCharts',
+      status: 'aggStatus',
+      actPeople: 'chartActPeople',
+      actTime: 'chartActTime',
+      actAvg: 'chartActAvg',
+      modeTime: 'chartModeTime',
+      modeAvg: 'chartModeAvg',
+      pt: 'chartPt',
+      ptRouteTable: 'ptRouteTable',
+    },
+  };
+
+  function panelIds(mode) {
+    return mode === 'frequency' ? PANEL_IDS.frequency : PANEL_IDS.sim;
+  }
+
+  function personLimitOptions() {
+    return `
+      <option value="">全員</option>
+      <option value="1000">1000</option>
+    `;
+  }
+
+  function chartGridHtml(ids) {
+    return `
+      <div id="${ids.charts}" class="dtsb-chart-grid" style="display:none;">
+        <section class="dtsb-chart-card">
+          <div class="dtsb-chart-card__head">
+            <span class="dtsb-chart-card__eyebrow">Activity</span>
+            <h3 class="dtsb-chart-card__title">活動ごとの人数</h3>
+          </div>
+          <div class="dtsb-chart-card__body c-chart"><canvas id="${ids.actPeople}"></canvas></div>
+        </section>
+        <section class="dtsb-chart-card">
+          <div class="dtsb-chart-card__head">
+            <span class="dtsb-chart-card__eyebrow">Activity</span>
+            <h3 class="dtsb-chart-card__title">活動ごとの合計時間</h3>
+          </div>
+          <div class="dtsb-chart-card__body c-chart"><canvas id="${ids.actTime}"></canvas></div>
+        </section>
+        <section class="dtsb-chart-card">
+          <div class="dtsb-chart-card__head">
+            <span class="dtsb-chart-card__eyebrow">Activity</span>
+            <h3 class="dtsb-chart-card__title">1人あたり活動時間</h3>
+          </div>
+          <div class="dtsb-chart-card__body c-chart"><canvas id="${ids.actAvg}"></canvas></div>
+        </section>
+        <section class="dtsb-chart-card">
+          <div class="dtsb-chart-card__head">
+            <span class="dtsb-chart-card__eyebrow">Mode</span>
+            <h3 class="dtsb-chart-card__title">交通手段ごとの移動時間</h3>
+          </div>
+          <div class="dtsb-chart-card__body c-chart"><canvas id="${ids.modeTime}"></canvas></div>
+        </section>
+        <section class="dtsb-chart-card">
+          <div class="dtsb-chart-card__head">
+            <span class="dtsb-chart-card__eyebrow">Mode</span>
+            <h3 class="dtsb-chart-card__title">1人あたり移動時間</h3>
+          </div>
+          <div class="dtsb-chart-card__body c-chart"><canvas id="${ids.modeAvg}"></canvas></div>
+        </section>
+        <section class="dtsb-chart-card">
+          <div class="dtsb-chart-card__head">
+            <span class="dtsb-chart-card__eyebrow">Transit</span>
+            <h3 class="dtsb-chart-card__title">公共交通利用の内訳</h3>
+          </div>
+          <div class="dtsb-chart-card__body c-chart"><canvas id="${ids.pt}"></canvas></div>
+        </section>
+        <section class="dtsb-chart-card dtsb-chart-card--table">
+          <div class="dtsb-chart-card__head">
+            <span class="dtsb-chart-card__eyebrow">Transit</span>
+            <h3 class="dtsb-chart-card__title">路線別利用比較</h3>
+          </div>
+          <div class="dtsb-chart-card__body" id="${ids.ptRouteTable}"></div>
+        </section>
+      </div>
+    `;
+  }
+
   function ensurePanel() {
     let host = document.getElementById('aggPanel');
     if (host) return host;
@@ -118,32 +212,49 @@
     host.className = 'dtsb-fun-panel dtsb-fun-panel--agg dtsb-compare-panel';
     host.style.marginTop = '16px';
     host.style.minWidth = '0';
+    host.style.display = 'grid';
+    host.style.gap = '12px';
 
     host.innerHTML = `
+    <div class="c-box dtsb-compare-shell">
+      <details id="freqDetails" class="c-details dtsb-compare-details" open>
+        <summary class="c-details__summary">運航頻度変更前後</summary>
+        <div class="dtsb-compare-panel__body">
+          <p class="dtsb-compare-panel__intro">入力画面で保存した運航頻度設定を使って、変更前後の集計差を確認できます。</p>
+
+          <div class="dtsb-compare-controls dtsb-compare-controls--compact">
+            <label class="dtsb-compare-field dtsb-compare-field--compact">
+              <span class="dtsb-compare-field__label dtsb-compare-field__label--compact">対象人数</span>
+              <select id="freqPersonLimit" class="dtsb-compare-field__input dtsb-compare-field__input--compact">
+                ${personLimitOptions()}
+              </select>
+            </label>
+          </div>
+
+          <div class="dtsb-compare-actions dtsb-compare-actions--compact">
+            <button id="freqCompareBtn" type="button" class="btn dtsb-compare-btn">比較する</button>
+            <span id="freqStatus" class="dtsb-compare-status" data-tone="neutral"></span>
+          </div>
+
+          <div id="freqCards" class="dtsb-compare-cards"></div>
+          ${chartGridHtml(PANEL_IDS.frequency)}
+        </div>
+      </details>
+    </div>
+
     <div class="c-box dtsb-compare-shell">
       <details id="aggDetails" class="c-details dtsb-compare-details" open>
         <summary class="c-details__summary">集計比較</summary>
         <div class="dtsb-compare-panel__body">
-          <p class="dtsb-compare-panel__intro">運航頻度を変えた前後差、または2つの解析結果を同じ指標セットで比較できます。</p>
-
-          <div class="dtsb-compare-mode" role="radiogroup" aria-label="集計比較モード">
-            <label class="dtsb-compare-mode__option">
-              <input type="radio" name="aggMode" value="frequency" checked>
-              <span>運航頻度変更前後</span>
-            </label>
-            <label class="dtsb-compare-mode__option">
-              <input type="radio" name="aggMode" value="sim">
-              <span>シミュレーション2本を比較</span>
-            </label>
-          </div>
+          <p class="dtsb-compare-panel__intro">シミュレーション2本を比較し、同じ指標セットで差を確認できます。</p>
 
           <div class="dtsb-compare-controls dtsb-compare-controls--compact">
             <div id="aggSimPairWrap" class="dtsb-compare-field dtsb-compare-field--compact dtsb-compare-field--pair-equal">
-              <label id="aggPreWrap" class="dtsb-compare-subfield">
+              <label class="dtsb-compare-subfield">
                 <span class="dtsb-compare-field__label dtsb-compare-field__label--compact">比較前</span>
                 <select id="aggPreSelect" class="dtsb-compare-field__input dtsb-compare-field__input--compact"></select>
               </label>
-              <label id="aggPostWrap" class="dtsb-compare-subfield">
+              <label class="dtsb-compare-subfield">
                 <span class="dtsb-compare-field__label dtsb-compare-field__label--compact">比較後</span>
                 <select id="aggPostSelect" class="dtsb-compare-field__input dtsb-compare-field__input--compact"></select>
               </label>
@@ -151,8 +262,7 @@
             <label class="dtsb-compare-field dtsb-compare-field--compact">
               <span class="dtsb-compare-field__label dtsb-compare-field__label--compact">対象人数</span>
               <select id="aggPersonLimit" class="dtsb-compare-field__input dtsb-compare-field__input--compact">
-                <option value="">全員</option>
-                <option value="1000">1000</option>
+                ${personLimitOptions()}
               </select>
             </label>
           </div>
@@ -163,58 +273,7 @@
           </div>
 
           <div id="aggCards" class="dtsb-compare-cards"></div>
-
-          <div id="aggCharts" class="dtsb-chart-grid" style="display:none;">
-            <section class="dtsb-chart-card">
-              <div class="dtsb-chart-card__head">
-                <span class="dtsb-chart-card__eyebrow">Activity</span>
-                <h3 class="dtsb-chart-card__title">活動ごとの人数</h3>
-              </div>
-              <div class="dtsb-chart-card__body c-chart"><canvas id="chartActPeople"></canvas></div>
-            </section>
-            <section class="dtsb-chart-card">
-              <div class="dtsb-chart-card__head">
-                <span class="dtsb-chart-card__eyebrow">Activity</span>
-                <h3 class="dtsb-chart-card__title">活動ごとの合計時間</h3>
-              </div>
-              <div class="dtsb-chart-card__body c-chart"><canvas id="chartActTime"></canvas></div>
-            </section>
-            <section class="dtsb-chart-card">
-              <div class="dtsb-chart-card__head">
-                <span class="dtsb-chart-card__eyebrow">Activity</span>
-                <h3 class="dtsb-chart-card__title">1人あたり活動時間</h3>
-              </div>
-              <div class="dtsb-chart-card__body c-chart"><canvas id="chartActAvg"></canvas></div>
-            </section>
-            <section class="dtsb-chart-card">
-              <div class="dtsb-chart-card__head">
-                <span class="dtsb-chart-card__eyebrow">Mode</span>
-                <h3 class="dtsb-chart-card__title">交通手段ごとの移動時間</h3>
-              </div>
-              <div class="dtsb-chart-card__body c-chart"><canvas id="chartModeTime"></canvas></div>
-            </section>
-            <section class="dtsb-chart-card">
-              <div class="dtsb-chart-card__head">
-                <span class="dtsb-chart-card__eyebrow">Mode</span>
-                <h3 class="dtsb-chart-card__title">1人あたり移動時間</h3>
-              </div>
-              <div class="dtsb-chart-card__body c-chart"><canvas id="chartModeAvg"></canvas></div>
-            </section>
-            <section class="dtsb-chart-card">
-              <div class="dtsb-chart-card__head">
-                <span class="dtsb-chart-card__eyebrow">Transit</span>
-                <h3 class="dtsb-chart-card__title">公共交通利用の内訳</h3>
-              </div>
-              <div class="dtsb-chart-card__body c-chart"><canvas id="chartPt"></canvas></div>
-            </section>
-            <section class="dtsb-chart-card dtsb-chart-card--table">
-              <div class="dtsb-chart-card__head">
-                <span class="dtsb-chart-card__eyebrow">Transit</span>
-                <h3 class="dtsb-chart-card__title">路線別利用比較</h3>
-              </div>
-              <div class="dtsb-chart-card__body" id="ptRouteTable"></div>
-            </section>
-          </div>
+          ${chartGridHtml(PANEL_IDS.sim)}
         </div>
       </details>
     </div>
@@ -260,12 +319,16 @@
       else fallbackContainer.insertBefore(host, fallbackContainer.firstChild);
     }
 
-    const details = host.querySelector('#aggDetails');
-    const KEY = 'aggDetailsOpen';
-
-    const saved = localStorage.getItem(KEY);
-    if (saved != null) details.open = saved === '1';
-    details.addEventListener('toggle', () => localStorage.setItem(KEY, details.open ? '1' : '0'));
+    [
+      { id: 'freqDetails', key: 'freqDetailsOpen' },
+      { id: 'aggDetails', key: 'aggDetailsOpen' },
+    ].forEach(({ id, key }) => {
+      const details = host.querySelector(`#${id}`);
+      if (!details) return;
+      const saved = localStorage.getItem(key);
+      if (saved != null) details.open = saved === '1';
+      details.addEventListener('toggle', () => localStorage.setItem(key, details.open ? '1' : '0'));
+    });
 
     return host;
   }
@@ -277,11 +340,19 @@
     return div;
   }
 
-  function setStatus(text, tone) {
-    const el = document.getElementById('aggStatus');
+  function setStatus(text, tone, mode = 'sim') {
+    const el = document.getElementById(panelIds(mode).status);
     if (!el) return;
     el.textContent = text || '';
     el.dataset.tone = tone || 'neutral';
+  }
+
+  function setPanelMessage(html, mode) {
+    const ids = panelIds(mode);
+    const cards = document.getElementById(ids.cards);
+    const charts = document.getElementById(ids.charts);
+    if (cards) cards.innerHTML = html || '';
+    if (charts) charts.style.display = 'none';
   }
 
   function upsertChart(canvasId, config) {
@@ -301,10 +372,12 @@
   }
 
   function renderCharts(pre, post, meta) {
-    const cards = document.getElementById('aggCards');
-    const charts = document.getElementById('aggCharts');
+    const ids = panelIds(meta?.mode);
+    const cards = document.getElementById(ids.cards);
+    const charts = document.getElementById(ids.charts);
+    if (!cards || !charts) return;
     cards.innerHTML = '';
-    if (charts) charts.style.display = 'grid';
+    charts.style.display = 'grid';
 
     const preName = meta?.preName || '比較前';
     const postName = meta?.postName || '比較後';
@@ -396,42 +469,42 @@
       maxBarThickness: 24,
     });
 
-    upsertChart('chartActPeople', {
+    upsertChart(ids.actPeople, {
       ...commonBar,
       data: { labels: actLabels, datasets: [
         barDataset(`${preName}: 人数`, actPeoplePre, '#4F64D9'),
         barDataset(`${postName}: 人数`, actPeoplePost, '#8E4DD8'),
       ] }
     });
-    upsertChart('chartActTime', {
+    upsertChart(ids.actTime, {
       ...commonBar,
       data: { labels: actLabels, datasets: [
         barDataset(`${preName}: 活動時間 (h)`, actTimePre, '#4F64D9'),
         barDataset(`${postName}: 活動時間 (h)`, actTimePost, '#8E4DD8'),
       ] }
     });
-    upsertChart('chartActAvg', {
+    upsertChart(ids.actAvg, {
       ...commonBar,
       data: { labels: actLabels, datasets: [
         barDataset(`${preName}: 1人あたり平均活動時間 (h)`, actAvgPre, '#4F64D9'),
         barDataset(`${postName}: 1人あたり平均活動時間 (h)`, actAvgPost, '#8E4DD8'),
       ] }
     });
-    upsertChart('chartModeTime', {
+    upsertChart(ids.modeTime, {
       ...commonBar,
       data: { labels: modeLabels, datasets: [
         barDataset(`${preName}: 移動時間 (h)`, modeTimePre, '#6A52D6'),
         barDataset(`${postName}: 移動時間 (h)`, modeTimePost, '#9B63E9'),
       ] }
     });
-    upsertChart('chartModeAvg', {
+    upsertChart(ids.modeAvg, {
       ...commonBar,
       data: { labels: modeLabels, datasets: [
         barDataset(`${preName}: 1人あたり平均時間 (h)`, modeAvgPre, '#6A52D6'),
         barDataset(`${postName}: 1人あたり平均時間 (h)`, modeAvgPost, '#9B63E9'),
       ] }
     });
-    upsertChart('chartPt', {
+    upsertChart(ids.pt, {
       type: 'bar',
       data: {
         labels: ['公共交通利用', '非利用'],
@@ -456,7 +529,7 @@
     });
 
     // PT per-route top list (merge pre/post by route id)
-    const ptHost = document.getElementById('ptRouteTable');
+    const ptHost = document.getElementById(ids.ptRouteTable);
     if (ptHost) {
       const preRows = Array.isArray(pre.ptRoutesTop) ? pre.ptRoutesTop : [];
       const postRows = Array.isArray(post.ptRoutesTop) ? post.ptRoutesTop : [];
@@ -500,15 +573,12 @@
 
   onReady(async () => {
     const host = ensurePanel();
-    const charts = document.getElementById('aggCharts');
-    const simPairWrap = document.getElementById('aggSimPairWrap');
-    const preWrap = document.getElementById('aggPreWrap');
-    const postWrap = document.getElementById('aggPostWrap');
     const preSel = document.getElementById('aggPreSelect');
     const postSel = document.getElementById('aggPostSelect');
-    const limitSel = document.getElementById('aggPersonLimit');
-    const btn = document.getElementById('aggCompareBtn');
-    const modeEls = Array.from(document.querySelectorAll('input[name="aggMode"]'));
+    const simLimitSel = document.getElementById('aggPersonLimit');
+    const freqLimitSel = document.getElementById('freqPersonLimit');
+    const simBtn = document.getElementById('aggCompareBtn');
+    const freqBtn = document.getElementById('freqCompareBtn');
 
     function emitCompareReady(detail) {
       try {
@@ -526,17 +596,19 @@
       sims = await fetchSimulations();
     } catch (e) {
       console.error(e);
-      if (charts) charts.style.display = 'none';
-      host.querySelector('#aggCards').innerHTML = '<div style="color:#666;">シミュレーション一覧の読み込みに失敗しました。</div>';
-      setStatus('シミュレーション一覧の読み込みに失敗しました。', 'error');
+      ['frequency', 'sim'].forEach((mode) => {
+        setPanelMessage('<div style="color:#666;">シミュレーション一覧の読み込みに失敗しました。</div>', mode);
+        setStatus('シミュレーション一覧の読み込みに失敗しました。', 'error', mode);
+      });
       return;
     }
 
     const eligible = sims.filter(s => s.has_cache);
     if (!eligible.length) {
-      if (charts) charts.style.display = 'none';
-      host.querySelector('#aggCards').innerHTML = '<div style="color:#666;">解析済みのシミュレーションがありません。</div>';
-      setStatus('解析済みのシミュレーションがありません。', 'error');
+      ['frequency', 'sim'].forEach((mode) => {
+        setPanelMessage('<div style="color:#666;">解析済みのシミュレーションがありません。</div>', mode);
+        setStatus('解析済みのシミュレーションがありません。', 'error', mode);
+      });
       return;
     }
 
@@ -553,34 +625,20 @@
     fillSelect(preSel, eligible);
     fillSelect(postSel, eligible);
     if (eligible.length >= 2) postSel.value = eligible[1].id;
-    setStatus('準備完了', 'ready');
+    setStatus('準備完了', 'ready', 'frequency');
+    setStatus('準備完了', 'ready', 'sim');
 
-    function getMode() {
-      const picked = modeEls.find((r) => r.checked);
-      return picked ? picked.value : 'frequency';
+    function getPersonLimit(mode) {
+      const sel = mode === 'frequency' ? freqLimitSel : simLimitSel;
+      const raw = (sel && sel.value) ? String(sel.value) : '';
+      const n = parseInt(raw, 10);
+      return Number.isFinite(n) && n > 0 ? n : null;
     }
 
-    function setControlsForMode(mode) {
-      if (mode === 'frequency') {
-        // Frequency compare uses one selected simulation internally; hide sim-vs-sim controls.
-        if (simPairWrap) simPairWrap.style.display = 'none';
-        if (preSel) preSel.disabled = true;
-        postSel.disabled = true;
-      } else {
-        if (simPairWrap) simPairWrap.style.display = 'grid';
-        if (preSel) preSel.disabled = false;
-        postSel.disabled = false;
-      }
+    function setPersonLimit(mode, personLimit) {
+      const sel = mode === 'frequency' ? freqLimitSel : simLimitSel;
+      if (sel) sel.value = personLimit ? String(personLimit) : '';
     }
-
-    function setMode(mode) {
-      modeEls.forEach((r) => { r.checked = (r.value === mode); });
-      setControlsForMode(mode);
-    }
-
-    // Apply initial mode UI and keep controls in sync when radio selection changes.
-    setControlsForMode(getMode());
-    modeEls.forEach((r) => r.addEventListener('change', () => setControlsForMode(getMode())));
 
     // Restore cached results (no recompute) so navigating between results.html
     // and results_graph.html doesn't "lose" the last computed graphs.
@@ -589,7 +647,6 @@
       if (!cached || !cached.data?.pre || !cached.data?.post) return;
 
       const personLimit = cached.personLimit || null;
-      if (limitSel) limitSel.value = personLimit ? String(personLimit) : '';
 
       if (cached.mode === 'frequency') {
         const params = loadRouteParams();
@@ -597,16 +654,16 @@
         if (!cached.simId || !eligible.some(s => s.id === cached.simId)) return;
         if (!cached.sig || cached.sig !== sigNow) return;
 
-        setMode('frequency');
-        preSel.value = cached.simId;
+        setPersonLimit('frequency', personLimit);
 
         const name = simulationDisplayName(eligible.find(s => s.id === cached.simId)?.name);
         renderCharts(cached.data.pre, cached.data.post, {
+          mode: 'frequency',
           preName: `${name}（変更前）`,
           postName: `${name}（変更後）`,
           changedPeople: Number(cached.data.changedPeople || 0),
         });
-        setStatus(`キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人, 変更対象: ${cached.data.changedPeople ?? 0}人）`, 'neutral');
+        setStatus(`キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人, 変更対象: ${cached.data.changedPeople ?? 0}人）`, 'neutral', 'frequency');
         return;
       }
 
@@ -614,33 +671,27 @@
         if (!cached.preId || !cached.postId) return;
         if (!eligible.some(s => s.id === cached.preId) || !eligible.some(s => s.id === cached.postId)) return;
 
-        setMode('sim');
+        setPersonLimit('sim', personLimit);
         preSel.value = cached.preId;
         postSel.value = cached.postId;
 
         const preName = simulationDisplayName(eligible.find(s => s.id === cached.preId)?.name) || '比較前';
         const postName = simulationDisplayName(eligible.find(s => s.id === cached.postId)?.name) || '比較後';
-        renderCharts(cached.data.pre, cached.data.post, { preName, postName });
-        setStatus(`キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人）`, 'neutral');
+        renderCharts(cached.data.pre, cached.data.post, { mode: 'sim', preName, postName });
+        setStatus(`キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人）`, 'neutral', 'sim');
       }
     })();
 
-    async function run() {
+    async function run(mode = 'frequency') {
       const preId = preSel.value;
       const postId = postSel.value;
       const preName = simulationDisplayName(eligible.find(s => s.id === preId)?.name) || '比較前';
       const postName = simulationDisplayName(eligible.find(s => s.id === postId)?.name) || '比較後';
-      const mode = getMode();
-      const personLimit = (() => {
-        const raw = (limitSel && limitSel.value) ? String(limitSel.value) : '';
-        const n = parseInt(raw, 10);
-        return Number.isFinite(n) && n > 0 ? n : null;
-      })();
-      setStatus('集計中…', 'loading');
+      const personLimit = getPersonLimit(mode);
+      setStatus('集計中…', 'loading', mode);
       emitCompareReady({ ready: false, reason: 'computing', mode });
       emitWindowEvent('dtsb:agg-compare-started', { mode, personLimit });
       try {
-        setControlsForMode(mode);
         if (mode === 'frequency') {
           const params = loadRouteParams();
           if (!params || params.oldFrequency == null || params.newFrequency == null) {
@@ -654,7 +705,6 @@
             throw new Error(`対応するシミュレーションが利用できないか未解析です: ${resolved.simId}`);
           }
           const freqSimId = resolved.simId;
-          preSel.value = freqSimId;
           // Avoid recomputing when navigating between results.html and results_graph.html
           // by using a localStorage cache keyed on simulation + routeParams.
           const sig = routeSignature(params, personLimit);
@@ -662,11 +712,12 @@
           if (cached && cached.mode === 'frequency' && cached.simId === freqSimId && cached.sig === sig && cached.personLimit === personLimit && cached.data?.pre && cached.data?.post) {
             const name = simulationDisplayName(eligible.find(s => s.id === freqSimId)?.name);
             renderCharts(cached.data.pre, cached.data.post, {
+              mode: 'frequency',
               preName: `${name}（変更前）`,
               postName: `${name}（変更後）`,
               changedPeople: Number(cached.data.changedPeople || 0),
             });
-            setStatus(`キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人, 変更対象: ${cached.data.changedPeople ?? 0}人）`, 'neutral');
+            setStatus(`キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人, 変更対象: ${cached.data.changedPeople ?? 0}人）`, 'neutral', 'frequency');
             emitCompareReady({
               ready: true,
               source: 'cache',
@@ -700,11 +751,12 @@
           }, personLimit);
           const name = simulationDisplayName(eligible.find(s => s.id === freqSimId)?.name);
           renderCharts(resp.pre, resp.post, {
+            mode: 'frequency',
             preName: `${name}（変更前）`,
             postName: `${name}（変更後）`,
             changedPeople: Number(resp.changedPeople || 0),
           });
-          setStatus(`比較完了（使用人数: ${resp.pre?.totalPeople ?? 0}人, 変更対象: ${resp.changedPeople ?? 0}人）`, 'success');
+          setStatus(`比較完了（使用人数: ${resp.pre?.totalPeople ?? 0}人, 変更対象: ${resp.changedPeople ?? 0}人）`, 'success', 'frequency');
           setCachedCompare({ mode: 'frequency', simId: freqSimId, sig, personLimit, data: resp, savedAt: Date.now() });
           emitCompareReady({
             ready: true,
@@ -736,8 +788,8 @@
         // Sim-vs-sim compare cache to avoid duplicate fetch when moving between pages.
         const cached = getCachedCompare();
         if (cached && cached.mode === 'sim' && cached.preId === preId && cached.postId === postId && cached.personLimit === personLimit && cached.data?.pre && cached.data?.post) {
-          renderCharts(cached.data.pre, cached.data.post, { preName, postName });
-          setStatus(`キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人）`, 'neutral');
+          renderCharts(cached.data.pre, cached.data.post, { mode: 'sim', preName, postName });
+          setStatus(`キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人）`, 'neutral', 'sim');
           emitCompareReady({
             ready: true,
             source: 'cache',
@@ -757,8 +809,8 @@
           return;
         }
         const cmp = await fetchCompare(preId, postId, personLimit);
-        renderCharts(cmp.pre, cmp.post, { preName, postName });
-        setStatus(`比較完了（使用人数: ${cmp.pre?.totalPeople ?? 0}人）`, 'success');
+        renderCharts(cmp.pre, cmp.post, { mode: 'sim', preName, postName });
+        setStatus(`比較完了（使用人数: ${cmp.pre?.totalPeople ?? 0}人）`, 'success', 'sim');
         setCachedCompare({ mode: 'sim', preId, postId, personLimit, data: cmp, savedAt: Date.now() });
         emitCompareReady({
           ready: true,
@@ -778,7 +830,7 @@
         });
       } catch (e) {
         console.error(e);
-        setStatus(e?.message || '失敗しました', 'error');
+        setStatus(e?.message || '失敗しました', 'error', mode);
         emitCompareReady({ ready: false, reason: 'failed', error: e?.message || '失敗しました' });
         emitWindowEvent('dtsb:agg-compare-failed', {
           mode,
@@ -788,8 +840,13 @@
       }
     }
 
-    btn.addEventListener('click', run);
-    window.__dtsbAggCompare = { run };
+    freqBtn?.addEventListener('click', () => run('frequency'));
+    simBtn?.addEventListener('click', () => run('sim'));
+    window.__dtsbAggCompare = {
+      run,
+      runFrequency: () => run('frequency'),
+      runSim: () => run('sim'),
+    };
     // Do not auto-run on page load or selection changes; let the user decide
     // when to compute since this can be expensive for large datasets.
   });
