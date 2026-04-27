@@ -32,7 +32,7 @@ const BUS_ROUTE_SOURCE_TO_SIM_ID = {
   'bus_route/baseline_transitSchedule_cr24_1.xml': '096896b54be24ffbb0cbee53dde6fd9f',
   'bus_route/brt_transitSchedule_brt24_2.xml': '67eb5392da3a4202906f46f7b808b888',
   'bus_route/net_expansion_transitSchedule_cr40_3.xml': '18c774153bad4ee0aae34a8dcbb7f03b',
-  'bus_route/output_transitSchedule_brt40_4.xml': '10862aa9ea9d4fd18c1b91b980b66439'
+  'bus_route/output_transitSchedule_brt40_4.xml': '1e42e937-c0d9-445b-ae12-ba7ac8a66924'
 };
 let currentBusRouteSource = BUS_ROUTE_SOURCES[0];
 const IS_RESULTS_PAGE = /\/results(?:_graph)?\.html$/i.test(window.location.pathname || '');
@@ -243,7 +243,11 @@ function isSelectedRouteSaveCurrent() {
   const slider = document.querySelector('#dynFreqRange .js-range-slider');
   const currentFreq = Number(slider?.value ?? getBusFreq(selectedRouteInfo) ?? 0);
   const currentBrt = !!document.getElementById('dynBrtToggle')?.checked;
-  return Number(saved?.newFrequency) === currentFreq && !!saved?.brtExclusive === currentBrt;
+  const currentPersonLimit = document.getElementById('dynPersonLimit')?.value || '';
+  const savedPersonLimit = saved?.personLimit ? String(saved.personLimit) : '';
+  return Number(saved?.newFrequency) === currentFreq &&
+    !!saved?.brtExclusive === currentBrt &&
+    savedPersonLimit === currentPersonLimit;
 }
 
 function updateInputMissionBoard() {
@@ -302,11 +306,14 @@ function bindDynRoutePanel() {
   }
 
   document.getElementById('dynBrtToggle')?.addEventListener('change', updateInputMissionBoard);
+  document.getElementById('dynPersonLimit')?.addEventListener('change', updateInputMissionBoard);
 
   document.getElementById('applyDynParamsBtn')?.addEventListener('click', () => {
     if (!selectedRouteInfo) return;
     const newFreq = Number(document.querySelector('#dynFreqRange .js-range-slider')?.value || 0);
     const brt = !!document.getElementById('dynBrtToggle')?.checked;
+    const personLimitRaw = document.getElementById('dynPersonLimit')?.value || '';
+    const personLimit = personLimitRaw ? Number(personLimitRaw) : null;
     const simId = getSimulationIdForCurrentBusSource();
     const payload = {
       routeId: selectedRouteInfo.routeId,
@@ -318,6 +325,7 @@ function bindDynRoutePanel() {
       oldFrequency: getBusFreq(selectedRouteInfo),
       newFrequency: newFreq,
       brtExclusive: brt,
+      personLimit,
       ts: Date.now()
     };
     writeDynSavedParams(selectedRouteInfo, payload);
@@ -806,6 +814,8 @@ function renderRouteDetails(info) {
   const saved = readDynSavedParams(info);
   const brtToggle = document.getElementById('dynBrtToggle');
   if (brtToggle) brtToggle.checked = !!saved?.brtExclusive;
+  const personLimitSelect = document.getElementById('dynPersonLimit');
+  if (personLimitSelect) personLimitSelect.value = saved?.personLimit ? String(saved.personLimit) : '';
   if (applyBtn) applyBtn.disabled = false;
   // Always show controls when a route is selected.
   setDynControlsVisibility(true, { scroll: true });

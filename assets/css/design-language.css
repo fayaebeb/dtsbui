@@ -570,6 +570,44 @@
   color: var(--fun-ink);
 }
 
+.dtsb-stat-card--delta {
+  flex: 1 1 210px;
+  min-width: 190px;
+  padding: 10px 12px;
+}
+
+.dtsb-stat-card__change {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: 4px;
+  line-height: 1;
+  color: var(--fun-ink);
+}
+
+.dtsb-stat-card__change-number {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.dtsb-stat-card__change-unit {
+  font-size: 13px;
+  font-weight: 800;
+  color: #51627c;
+}
+
+.dtsb-stat-card__comparison {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 800;
+  color: #40516f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .dtsb-stat-card__note {
   margin-top: 6px;
   font-size: 11px;
@@ -1328,6 +1366,14 @@
   .dtsb-compare-status {
     width: 100%;
     border-radius: 16px;
+  }
+
+  .dtsb-stat-card--delta {
+    min-width: 0;
+  }
+
+  .dtsb-stat-card__comparison {
+    white-space: normal;
   }
 
   .dtsb-compare-field--pair,

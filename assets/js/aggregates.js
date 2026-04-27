@@ -6,7 +6,7 @@
     'bus_route/baseline_transitSchedule_cr24_1.xml': '096896b54be24ffbb0cbee53dde6fd9f',
     'bus_route/brt_transitSchedule_brt24_2.xml': '67eb5392da3a4202906f46f7b808b888',
     'bus_route/net_expansion_transitSchedule_cr40_3.xml': '18c774153bad4ee0aae34a8dcbb7f03b',
-    'bus_route/output_transitSchedule_brt40_4.xml': '10862aa9ea9d4fd18c1b91b980b66439'
+    'bus_route/output_transitSchedule_brt40_4.xml': '1e42e937-c0d9-445b-ae12-ba7ac8a66924'
   };
 
   async function fetchSimulations() {
@@ -203,25 +203,20 @@
     `;
   }
 
+  function panelMode() {
+    const mount = document.getElementById('aggPanelMount');
+    const mode = mount?.dataset?.aggPanelMode || document.body?.dataset?.aggPanelMode || 'full';
+    return ['full', 'frequency', 'frequency-result'].includes(mode) ? mode : 'full';
+  }
+
   function ensurePanel() {
     let host = document.getElementById('aggPanel');
     if (host) return host;
 
-    host = document.createElement('section');
-    host.id = 'aggPanel';
-    host.className = 'dtsb-fun-panel dtsb-fun-panel--agg dtsb-compare-panel';
-    host.style.marginTop = '16px';
-    host.style.minWidth = '0';
-    host.style.display = 'grid';
-    host.style.gap = '12px';
-
-    host.innerHTML = `
-    <div class="c-box dtsb-compare-shell">
-      <details id="freqDetails" class="c-details dtsb-compare-details" open>
-        <summary class="c-details__summary">運航頻度変更前後</summary>
-        <div class="dtsb-compare-panel__body">
-          <p class="dtsb-compare-panel__intro">入力画面で保存した運航頻度設定を使って、変更前後の集計差を確認できます。</p>
-
+    const mode = panelMode();
+    const frequencyOnly = mode === 'frequency' || mode === 'frequency-result';
+    const resultOnly = mode === 'frequency-result';
+    const frequencyControls = resultOnly ? '' : `
           <div class="dtsb-compare-controls dtsb-compare-controls--compact">
             <label class="dtsb-compare-field dtsb-compare-field--compact">
               <span class="dtsb-compare-field__label dtsb-compare-field__label--compact">対象人数</span>
@@ -230,18 +225,18 @@
               </select>
             </label>
           </div>
-
+    `;
+    const frequencyActions = resultOnly ? `
+          <div class="dtsb-compare-actions dtsb-compare-actions--compact">
+            <span id="freqStatus" class="dtsb-compare-status" data-tone="neutral"></span>
+          </div>
+    ` : `
           <div class="dtsb-compare-actions dtsb-compare-actions--compact">
             <button id="freqCompareBtn" type="button" class="btn dtsb-compare-btn">比較する</button>
             <span id="freqStatus" class="dtsb-compare-status" data-tone="neutral"></span>
           </div>
-
-          <div id="freqCards" class="dtsb-compare-cards"></div>
-          ${chartGridHtml(PANEL_IDS.frequency)}
-        </div>
-      </details>
-    </div>
-
+    `;
+    const simPanel = frequencyOnly ? '' : `
     <div class="c-box dtsb-compare-shell">
       <details id="aggDetails" class="c-details dtsb-compare-details" open>
         <summary class="c-details__summary">集計比較</summary>
@@ -277,6 +272,33 @@
         </div>
       </details>
     </div>
+    `;
+
+    host = document.createElement('section');
+    host.id = 'aggPanel';
+    host.className = 'dtsb-fun-panel dtsb-fun-panel--agg dtsb-compare-panel';
+    host.dataset.aggPanelMode = mode;
+    host.style.marginTop = '16px';
+    host.style.minWidth = '0';
+    host.style.display = 'grid';
+    host.style.gap = '12px';
+
+    host.innerHTML = `
+    <div class="c-box dtsb-compare-shell">
+      <details id="freqDetails" class="c-details dtsb-compare-details" open>
+        <summary class="c-details__summary">運航頻度変更前後</summary>
+        <div class="dtsb-compare-panel__body">
+          <p class="dtsb-compare-panel__intro">入力画面で保存した運航頻度設定を使って、変更前後の集計差を確認できます。</p>
+
+          ${frequencyControls}
+          ${frequencyActions}
+
+          <div id="freqCards" class="dtsb-compare-cards"></div>
+          ${chartGridHtml(PANEL_IDS.frequency)}
+        </div>
+      </details>
+    </div>
+    ${simPanel}
   `;
 
     const gridContainer =
@@ -333,10 +355,65 @@
     return host;
   }
 
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[ch]));
+  }
+
   function card(label, value, note) {
     const div = document.createElement('div');
     div.className = 'dtsb-stat-card';
-    div.innerHTML = `<div class="dtsb-stat-card__label">${label}</div><div class="dtsb-stat-card__value u-en">${value}</div>${note ? `<div class="dtsb-stat-card__note">${note}</div>` : ''}`;
+    div.innerHTML = `<div class="dtsb-stat-card__label">${escapeHtml(label)}</div><div class="dtsb-stat-card__value u-en">${escapeHtml(value)}</div>${note ? `<div class="dtsb-stat-card__note">${escapeHtml(note)}</div>` : ''}`;
+    return div;
+  }
+
+  function formatSignedDelta(value, decimals = 0) {
+    const factor = 10 ** decimals;
+    let rounded = Math.round((Number(value) || 0) * factor) / factor;
+    if (Object.is(rounded, -0)) rounded = 0;
+    const absText = decimals > 0 ? Math.abs(rounded).toFixed(decimals) : String(Math.abs(Math.round(rounded)));
+    if (rounded > 0) return `+${absText}`;
+    if (rounded < 0) return `-${absText}`;
+    return decimals > 0 ? (0).toFixed(decimals) : '0';
+  }
+
+  function formatCount(value) {
+    return Math.round(Number(value) || 0).toLocaleString('ja-JP');
+  }
+
+  function metricDeltaCard(label, preValue, postValue, options = {}) {
+    const formatter = options.formatter || ((value) => String(value));
+    const delta = options.delta ?? ((Number(postValue) || 0) - (Number(preValue) || 0));
+    const div = document.createElement('div');
+    div.className = 'dtsb-stat-card dtsb-stat-card--delta';
+    div.innerHTML = `
+      <div class="dtsb-stat-card__label">${escapeHtml(label)}</div>
+      <div class="dtsb-stat-card__change u-en">
+        <span class="dtsb-stat-card__change-number">${escapeHtml(formatSignedDelta(delta, options.deltaDecimals || 0))}</span>
+        ${options.unit ? `<span class="dtsb-stat-card__change-unit">${escapeHtml(options.unit)}</span>` : ''}
+      </div>
+      <div class="dtsb-stat-card__comparison u-en">${escapeHtml(formatter(preValue))} → ${escapeHtml(formatter(postValue))}</div>
+      ${options.note ? `<div class="dtsb-stat-card__note">${escapeHtml(options.note)}</div>` : ''}
+    `;
+    return div;
+  }
+
+  function bigNumberCard(label, value, unit, note) {
+    const div = document.createElement('div');
+    div.className = 'dtsb-stat-card dtsb-stat-card--delta';
+    div.innerHTML = `
+      <div class="dtsb-stat-card__label">${escapeHtml(label)}</div>
+      <div class="dtsb-stat-card__change u-en">
+        <span class="dtsb-stat-card__change-number">${escapeHtml(formatCount(value))}</span>
+        ${unit ? `<span class="dtsb-stat-card__change-unit">${escapeHtml(unit)}</span>` : ''}
+      </div>
+      ${note ? `<div class="dtsb-stat-card__note">${escapeHtml(note)}</div>` : ''}
+    `;
     return div;
   }
 
@@ -384,13 +461,30 @@
     const fmt = (n) => (typeof n === 'number' ? n : 0);
     const hasChangedPeople = Number.isFinite(Number(meta?.changedPeople));
     if (hasChangedPeople) {
-      cards.appendChild(card('影響を受けた人数', `${fmt(Number(meta.changedPeople))}`, '運航頻度変更で影響を受けた人'));
+      cards.appendChild(bigNumberCard('影響を受けた人数', fmt(Number(meta.changedPeople)), '人', '運航頻度変更で影響を受けた人'));
     } else {
-      cards.appendChild(card('比較対象人数', `${fmt(pre.totalPeople)} → ${fmt(post.totalPeople)}`, `${preName} と ${postName} の比較対象`));
+      cards.appendChild(metricDeltaCard('比較対象人数', fmt(pre.totalPeople), fmt(post.totalPeople), {
+        formatter: formatCount,
+        unit: '人',
+        note: `${preName} と ${postName} の比較対象`
+      }));
     }
-    cards.appendChild(card('1人あたり平均移動時間', `${hhmmss(fmt(pre.avgTravelSec))} → ${hhmmss(fmt(post.avgTravelSec))}`, '移動時間が短いほど良好'));
-    cards.appendChild(card('1人あたり平均効用', `${fmt(pre.avgUtility).toFixed(2)} → ${fmt(post.avgUtility).toFixed(2)}`, '行動全体の満足度指標'));
-    cards.appendChild(card('公共交通利用者数', `${fmt(pre.ptUsers)} → ${fmt(post.ptUsers)}`, '公共交通を使った人数'));
+    cards.appendChild(metricDeltaCard('1人あたり平均移動時間', fmt(pre.avgTravelSec), fmt(post.avgTravelSec), {
+      delta: Math.round(fmt(post.avgTravelSec)) - Math.round(fmt(pre.avgTravelSec)),
+      formatter: hhmmss,
+      unit: '秒',
+      note: '移動時間が短いほど良好'
+    }));
+    cards.appendChild(metricDeltaCard('1人あたり平均効用', fmt(pre.avgUtility), fmt(post.avgUtility), {
+      formatter: (value) => Number(value || 0).toFixed(2),
+      deltaDecimals: 2,
+      note: '行動全体の満足度指標'
+    }));
+    cards.appendChild(metricDeltaCard('公共交通利用者数', fmt(pre.ptUsers), fmt(post.ptUsers), {
+      formatter: formatCount,
+      unit: '人',
+      note: '公共交通を使った人数'
+    }));
 
     const actLabels = unionKeys(pre.actStats, post.actStats);
     const actPeoplePre = actLabels.map(k => fmt(pre.actStats?.[k]?.people));
@@ -613,6 +707,7 @@
     }
 
     function fillSelect(sel, items) {
+      if (!sel) return;
       sel.innerHTML = '';
       items.forEach(s => {
         const opt = document.createElement('option');
@@ -624,15 +719,22 @@
 
     fillSelect(preSel, eligible);
     fillSelect(postSel, eligible);
-    if (eligible.length >= 2) postSel.value = eligible[1].id;
+    if (eligible.length >= 2 && postSel) postSel.value = eligible[1].id;
     setStatus('準備完了', 'ready', 'frequency');
-    setStatus('準備完了', 'ready', 'sim');
+    if (simBtn) setStatus('準備完了', 'ready', 'sim');
 
     function getPersonLimit(mode) {
       const sel = mode === 'frequency' ? freqLimitSel : simLimitSel;
       const raw = (sel && sel.value) ? String(sel.value) : '';
       const n = parseInt(raw, 10);
-      return Number.isFinite(n) && n > 0 ? n : null;
+      if (Number.isFinite(n) && n > 0) return n;
+      if (mode === 'frequency') {
+        const fromQuery = Number(new URLSearchParams(window.location.search).get('freq_person_limit') || 0);
+        if (Number.isFinite(fromQuery) && fromQuery > 0) return fromQuery;
+        const fromRouteParams = Number(loadRouteParams()?.personLimit || 0);
+        if (Number.isFinite(fromRouteParams) && fromRouteParams > 0) return fromRouteParams;
+      }
+      return null;
     }
 
     function setPersonLimit(mode, personLimit) {
@@ -668,6 +770,7 @@
       }
 
       if (cached.mode === 'sim') {
+        if (!preSel || !postSel) return;
         if (!cached.preId || !cached.postId) return;
         if (!eligible.some(s => s.id === cached.preId) || !eligible.some(s => s.id === cached.postId)) return;
 
@@ -683,11 +786,15 @@
     })();
 
     async function run(mode = 'frequency') {
-      const preId = preSel.value;
-      const postId = postSel.value;
+      const preId = preSel?.value || eligible[0]?.id || '';
+      const postId = postSel?.value || eligible[1]?.id || preId;
       const preName = simulationDisplayName(eligible.find(s => s.id === preId)?.name) || '比較前';
       const postName = simulationDisplayName(eligible.find(s => s.id === postId)?.name) || '比較後';
       const personLimit = getPersonLimit(mode);
+      if (mode === 'sim' && (!preSel || !postSel)) {
+        setStatus('集計比較はこの画面では利用できません。', 'error', mode);
+        return;
+      }
       setStatus('集計中…', 'loading', mode);
       emitCompareReady({ ready: false, reason: 'computing', mode });
       emitWindowEvent('dtsb:agg-compare-started', { mode, personLimit });
@@ -847,7 +954,10 @@
       runFrequency: () => run('frequency'),
       runSim: () => run('sim'),
     };
-    // Do not auto-run on page load or selection changes; let the user decide
-    // when to compute since this can be expensive for large datasets.
+    if (host?.dataset?.aggPanelMode === 'frequency-result') {
+      run('frequency');
+    }
+    // Full/input modes do not auto-run; result-only mode runs once so the
+    // results page can render the frequency-change output directly.
   });
 })();
