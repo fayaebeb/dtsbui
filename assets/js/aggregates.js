@@ -153,42 +153,42 @@
         <section class="dtsb-chart-card">
           <div class="dtsb-chart-card__head">
             <span class="dtsb-chart-card__eyebrow">Activity</span>
-            <h3 class="dtsb-chart-card__title">活動ごとの人数</h3>
+            <h3 class="dtsb-chart-card__title">活動ごとの人数変化</h3>
           </div>
           <div class="dtsb-chart-card__body c-chart"><canvas id="${ids.actPeople}"></canvas></div>
         </section>
         <section class="dtsb-chart-card">
           <div class="dtsb-chart-card__head">
             <span class="dtsb-chart-card__eyebrow">Activity</span>
-            <h3 class="dtsb-chart-card__title">活動ごとの合計時間</h3>
+            <h3 class="dtsb-chart-card__title">活動ごとの合計時間変化</h3>
           </div>
           <div class="dtsb-chart-card__body c-chart"><canvas id="${ids.actTime}"></canvas></div>
         </section>
         <section class="dtsb-chart-card">
           <div class="dtsb-chart-card__head">
             <span class="dtsb-chart-card__eyebrow">Activity</span>
-            <h3 class="dtsb-chart-card__title">1人あたり活動時間</h3>
+            <h3 class="dtsb-chart-card__title">1人あたり活動時間変化</h3>
           </div>
           <div class="dtsb-chart-card__body c-chart"><canvas id="${ids.actAvg}"></canvas></div>
         </section>
         <section class="dtsb-chart-card">
           <div class="dtsb-chart-card__head">
             <span class="dtsb-chart-card__eyebrow">Mode</span>
-            <h3 class="dtsb-chart-card__title">交通手段ごとの移動時間</h3>
+            <h3 class="dtsb-chart-card__title">交通手段ごとの移動時間変化</h3>
           </div>
           <div class="dtsb-chart-card__body c-chart"><canvas id="${ids.modeTime}"></canvas></div>
         </section>
         <section class="dtsb-chart-card">
           <div class="dtsb-chart-card__head">
             <span class="dtsb-chart-card__eyebrow">Mode</span>
-            <h3 class="dtsb-chart-card__title">1人あたり移動時間</h3>
+            <h3 class="dtsb-chart-card__title">1人あたり移動時間変化</h3>
           </div>
           <div class="dtsb-chart-card__body c-chart"><canvas id="${ids.modeAvg}"></canvas></div>
         </section>
         <section class="dtsb-chart-card">
           <div class="dtsb-chart-card__head">
             <span class="dtsb-chart-card__eyebrow">Transit</span>
-            <h3 class="dtsb-chart-card__title">公共交通利用の内訳</h3>
+            <h3 class="dtsb-chart-card__title">公共交通利用の内訳変化</h3>
           </div>
           <div class="dtsb-chart-card__body c-chart"><canvas id="${ids.pt}"></canvas></div>
         </section>
@@ -489,35 +489,35 @@
     const actLabels = unionKeys(pre.actStats, post.actStats);
     const actPeoplePre = actLabels.map(k => fmt(pre.actStats?.[k]?.people));
     const actPeoplePost = actLabels.map(k => fmt(post.actStats?.[k]?.people));
-    const actTimePre = actLabels.map(k => Math.round((fmt(pre.actStats?.[k]?.timeSec) / 3600) * 10) / 10);
-    const actTimePost = actLabels.map(k => Math.round((fmt(post.actStats?.[k]?.timeSec) / 3600) * 10) / 10);
+    const actTimePre = actLabels.map(k => fmt(pre.actStats?.[k]?.timeSec) / 3600);
+    const actTimePost = actLabels.map(k => fmt(post.actStats?.[k]?.timeSec) / 3600);
     const actAvgPre = actLabels.map(k => {
       const ppl = Math.max(1, fmt(pre.actStats?.[k]?.people));
       const hours = fmt(pre.actStats?.[k]?.timeSec) / 3600;
-      return Math.round((hours / ppl) * 10) / 10;
+      return hours / ppl;
     });
     const actAvgPost = actLabels.map(k => {
       const ppl = Math.max(1, fmt(post.actStats?.[k]?.people));
       const hours = fmt(post.actStats?.[k]?.timeSec) / 3600;
-      return Math.round((hours / ppl) * 10) / 10;
+      return hours / ppl;
     });
 
     const modeLabels = unionKeys(pre.modeStats, post.modeStats);
-    const modeTimePre = modeLabels.map(k => Math.round((fmt(pre.modeStats?.[k]?.timeSec) / 3600) * 10) / 10);
-    const modeTimePost = modeLabels.map(k => Math.round((fmt(post.modeStats?.[k]?.timeSec) / 3600) * 10) / 10);
+    const modeTimePre = modeLabels.map(k => fmt(pre.modeStats?.[k]?.timeSec) / 3600);
+    const modeTimePost = modeLabels.map(k => fmt(post.modeStats?.[k]?.timeSec) / 3600);
     const modeAvgPre = modeLabels.map(k => {
       const ppl = Math.max(1, fmt(pre.modeStats?.[k]?.people));
       const hours = fmt(pre.modeStats?.[k]?.timeSec) / 3600;
-      return Math.round((hours / ppl) * 10) / 10;
+      return hours / ppl;
     });
     const modeAvgPost = modeLabels.map(k => {
       const ppl = Math.max(1, fmt(post.modeStats?.[k]?.people));
       const hours = fmt(post.modeStats?.[k]?.timeSec) / 3600;
-      return Math.round((hours / ppl) * 10) / 10;
+      return hours / ppl;
     });
 
     const commonLegend = {
-      display: true,
+      display: false,
       labels: {
         usePointStyle: true,
         pointStyle: 'rectRounded',
@@ -528,99 +528,95 @@
         font: { weight: '700' }
       }
     };
-    const commonScales = {
-      x: {
-        grid: { display: false },
-        ticks: { color: '#5f6f88', font: { weight: '600' } }
-      },
-      y: {
-        beginAtZero: true,
-        grid: { color: 'rgba(95, 111, 228, 0.12)' },
-        ticks: { color: '#5f6f88', precision: 0 }
-      }
+    const formatChartValue = (value, unit, decimals = 1) => {
+      const n = Number(value) || 0;
+      if (unit === '人') return `${Math.round(n).toLocaleString('ja-JP')}人`;
+      const rounded = Math.round(n * (10 ** decimals)) / (10 ** decimals);
+      return `${rounded.toLocaleString('ja-JP', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      })}${unit || ''}`;
     };
-    const commonBar = {
-      type: 'bar',
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: commonScales,
-        plugins: {
-          legend: commonLegend,
-          tooltip: {
-            backgroundColor: '#1f2d4a',
-            padding: 10,
-            cornerRadius: 12,
+    const signedChartValue = (value, unit, decimals = 1) => {
+      const n = Number(value) || 0;
+      if (Object.is(n, -0) || Math.abs(n) < Number.EPSILON) return formatChartValue(0, unit, decimals);
+      return `${n > 0 ? '+' : '-'}${formatChartValue(Math.abs(n), unit, decimals)}`;
+    };
+    const deltaValues = (before, after, decimals) => before.map((value, index) => {
+      const delta = (Number(after[index]) || 0) - (Number(value) || 0);
+      const factor = 10 ** decimals;
+      return Math.round(delta * factor) / factor;
+    });
+    const deltaColors = (values) => values.map(value => {
+      if (value > 0) return 'rgba(79, 100, 217, 0.86)';
+      if (value < 0) return 'rgba(209, 77, 97, 0.86)';
+      return 'rgba(129, 143, 166, 0.72)';
+    });
+    const deltaScales = (values, unit, decimals) => {
+      const maxAbs = Math.max(...values.map(value => Math.abs(Number(value) || 0)), 0);
+      const limit = maxAbs > 0 ? maxAbs * 1.18 : 1;
+      return {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#5f6f88', font: { weight: '600' } }
+        },
+        y: {
+          min: -limit,
+          max: limit,
+          grid: {
+            color: (ctx) => Number(ctx.tick?.value) === 0 ? 'rgba(32, 48, 77, 0.42)' : 'rgba(95, 111, 228, 0.12)',
+            lineWidth: (ctx) => Number(ctx.tick?.value) === 0 ? 2 : 1
+          },
+          ticks: {
+            color: '#5f6f88',
+            precision: unit === '人' ? 0 : decimals,
+            callback: (value) => signedChartValue(value, unit, decimals)
           }
         }
-      }
+      };
     };
-    const barDataset = (label, data, color) => ({
+    const deltaDataset = (label, values) => ({
       label,
-      data,
-      backgroundColor: color,
+      data: values,
+      backgroundColor: deltaColors(values),
       borderRadius: 10,
-      maxBarThickness: 24,
+      maxBarThickness: 26,
     });
-
-    upsertChart(ids.actPeople, {
-      ...commonBar,
-      data: { labels: actLabels, datasets: [
-        barDataset(`${preName}: 人数`, actPeoplePre, '#4F64D9'),
-        barDataset(`${postName}: 人数`, actPeoplePost, '#8E4DD8'),
-      ] }
-    });
-    upsertChart(ids.actTime, {
-      ...commonBar,
-      data: { labels: actLabels, datasets: [
-        barDataset(`${preName}: 活動時間 (h)`, actTimePre, '#4F64D9'),
-        barDataset(`${postName}: 活動時間 (h)`, actTimePost, '#8E4DD8'),
-      ] }
-    });
-    upsertChart(ids.actAvg, {
-      ...commonBar,
-      data: { labels: actLabels, datasets: [
-        barDataset(`${preName}: 1人あたり平均活動時間 (h)`, actAvgPre, '#4F64D9'),
-        barDataset(`${postName}: 1人あたり平均活動時間 (h)`, actAvgPost, '#8E4DD8'),
-      ] }
-    });
-    upsertChart(ids.modeTime, {
-      ...commonBar,
-      data: { labels: modeLabels, datasets: [
-        barDataset(`${preName}: 移動時間 (h)`, modeTimePre, '#6A52D6'),
-        barDataset(`${postName}: 移動時間 (h)`, modeTimePost, '#9B63E9'),
-      ] }
-    });
-    upsertChart(ids.modeAvg, {
-      ...commonBar,
-      data: { labels: modeLabels, datasets: [
-        barDataset(`${preName}: 1人あたり平均時間 (h)`, modeAvgPre, '#6A52D6'),
-        barDataset(`${postName}: 1人あたり平均時間 (h)`, modeAvgPost, '#9B63E9'),
-      ] }
-    });
-    upsertChart(ids.pt, {
-      type: 'bar',
-      data: {
-        labels: ['公共交通利用', '非利用'],
-        datasets: [
-          barDataset(preName, [fmt(pre.ptUsers), Math.max(0, fmt(pre.totalPeople) - fmt(pre.ptUsers))], '#4F64D9'),
-          barDataset(postName, [fmt(post.ptUsers), Math.max(0, fmt(post.totalPeople) - fmt(post.ptUsers))], '#8E4DD8'),
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: commonScales,
-        plugins: {
-          legend: commonLegend,
-          tooltip: {
-            backgroundColor: '#1f2d4a',
-            padding: 10,
-            cornerRadius: 12,
+    const deltaBarConfig = (labels, before, after, label, unit, decimals = 1) => {
+      const values = deltaValues(before, after, decimals);
+      return {
+        type: 'bar',
+        data: { labels, datasets: [deltaDataset(label, values)] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: deltaScales(values, unit, decimals),
+          plugins: {
+            legend: commonLegend,
+            tooltip: {
+              backgroundColor: '#1f2d4a',
+              padding: 10,
+              cornerRadius: 12,
+              callbacks: {
+                label: (ctx) => `${label}: ${signedChartValue(ctx.parsed.y, unit, decimals)}`,
+                afterLabel: (ctx) => {
+                  const index = ctx.dataIndex;
+                  return `${preName}: ${formatChartValue(before[index], unit, decimals)} / ${postName}: ${formatChartValue(after[index], unit, decimals)}`;
+                }
+              }
+            }
           }
         }
-      }
-    });
+      };
+    };
+    upsertChart(ids.actPeople, deltaBarConfig(actLabels, actPeoplePre, actPeoplePost, '人数の変化', '人', 0));
+    upsertChart(ids.actTime, deltaBarConfig(actLabels, actTimePre, actTimePost, '活動時間の変化', 'h', 2));
+    upsertChart(ids.actAvg, deltaBarConfig(actLabels, actAvgPre, actAvgPost, '1人あたり平均活動時間の変化', 'h', 2));
+    upsertChart(ids.modeTime, deltaBarConfig(modeLabels, modeTimePre, modeTimePost, '移動時間の変化', 'h', 2));
+    upsertChart(ids.modeAvg, deltaBarConfig(modeLabels, modeAvgPre, modeAvgPost, '1人あたり平均時間の変化', 'h', 2));
+    const ptBefore = [fmt(pre.ptUsers), Math.max(0, fmt(pre.totalPeople) - fmt(pre.ptUsers))];
+    const ptAfter = [fmt(post.ptUsers), Math.max(0, fmt(post.totalPeople) - fmt(post.ptUsers))];
+    upsertChart(ids.pt, deltaBarConfig(['公共交通利用', '非利用'], ptBefore, ptAfter, '利用者数の変化', '人', 0));
 
     // PT per-route top list (merge pre/post by route id)
     const ptHost = document.getElementById(ids.ptRouteTable);
