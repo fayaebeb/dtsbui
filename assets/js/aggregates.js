@@ -114,6 +114,12 @@
     return { simId, isEligible };
   }
 
+  function resolveFrequencyBaselineSimulationId(params, eligible, fallbackId) {
+    const fromSource = params?.baselineSourcePath ? ROUTE_SOURCE_TO_SIM_ID[String(params.baselineSourcePath)] : null;
+    const simId = params?.baselineSimId || params?.baselinePreId || params?.baselineSimulationId || fromSource || fallbackId || null;
+    return simId && eligible.some(s => s.id === simId) ? simId : fallbackId || null;
+  }
+
   function frequencyBaselineOptions(eligible) {
     const routeIds = Object.values(ROUTE_SOURCE_TO_SIM_ID);
     const ranked = eligible
@@ -770,9 +776,11 @@
     const baselineOptions = frequencyBaselineOptions(eligible);
     fillSelect(freqPreSel, baselineOptions);
     if (eligible.length >= 2 && postSel) postSel.value = eligible[1].id;
-    const defaultFrequencySimId = resolveFrequencySimulationId(loadRouteParams(), eligible, null).simId;
-    if (freqPreSel && defaultFrequencySimId && baselineOptions.some(s => s.id === defaultFrequencySimId)) {
-      freqPreSel.value = defaultFrequencySimId;
+    const routeParams = loadRouteParams();
+    const defaultFrequencySimId = resolveFrequencySimulationId(routeParams, eligible, null).simId;
+    const defaultBaselineSimId = resolveFrequencyBaselineSimulationId(routeParams, baselineOptions, defaultFrequencySimId);
+    if (freqPreSel && defaultBaselineSimId && baselineOptions.some(s => s.id === defaultBaselineSimId)) {
+      freqPreSel.value = defaultBaselineSimId;
     }
     setStatus('準備完了', 'ready', 'frequency');
     if (simBtn) setStatus('準備完了', 'ready', 'sim');
@@ -806,10 +814,12 @@
 
       if (cached.mode === 'frequency') {
         const params = loadRouteParams();
-        const baselinePreId = cached.baselinePreId || cached.preId || cached.simId;
+        const savedBaselinePreId = resolveFrequencyBaselineSimulationId(params, eligible, cached.simId);
+        const baselinePreId = savedBaselinePreId || cached.baselinePreId || cached.preId || cached.simId;
         const sigNow = routeSignature(params, personLimit, baselinePreId);
         if (!cached.simId || !eligible.some(s => s.id === cached.simId)) return;
         if (!baselinePreId || !eligible.some(s => s.id === baselinePreId)) return;
+        if (cached.baselinePreId && cached.baselinePreId !== baselinePreId) return;
         if (!cached.sig || cached.sig !== sigNow) return;
 
         setPersonLimit('frequency', personLimit);
@@ -873,7 +883,7 @@
             throw new Error(`対応するシミュレーションが利用できないか未解析です: ${resolved.simId}`);
           }
           const freqSimId = resolved.simId;
-          const baselinePreId = freqPreSel?.value || freqSimId;
+          const baselinePreId = freqPreSel?.value || resolveFrequencyBaselineSimulationId(params, eligible, freqSimId) || freqSimId;
           if (!eligible.some(s => s.id === baselinePreId)) {
             throw new Error(`比較前のシミュレーションが利用できないか未解析です: ${baselinePreId}`);
           }
