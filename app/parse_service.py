@@ -25,6 +25,7 @@ from .station_frequency_cache import (
     save_station_baseline_payload,
 )
 from .person_cache import write_ndjson_gz
+from .zip_utils import extract_zip_member
 
 
 class ParseError(Exception):
@@ -62,10 +63,7 @@ def _find_first_existing(folder: str, candidates: Tuple[str, ...], *, allow_sche
 
 
 def _extract_member(zf: zipfile.ZipFile, member: str, dest_dir: str) -> str:
-    dst = os.path.join(dest_dir, os.path.basename(member))
-    with zf.open(member) as src, open(dst, "wb") as dst_file:
-        shutil.copyfileobj(src, dst_file, length=1024 * 1024)
-    return dst
+    return extract_zip_member(zf, member, dest_dir)
 
 
 def _locate_member(zf: zipfile.ZipFile, wanted: Tuple[str, ...], *, allow_schedule_fallback: bool = False) -> Optional[str]:

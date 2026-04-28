@@ -4,7 +4,6 @@ import gzip
 import io
 import json
 import os
-import shutil
 import tempfile
 import zipfile
 import xml.etree.ElementTree as ET
@@ -19,6 +18,7 @@ from .azure_utils import get_storage_context
 from .models import get_simulation
 from .parsing import parse_facilities_file
 from .person_cache import iter_cached_persons
+from .zip_utils import extract_zip_member
 
 
 _EVENT_CANDIDATES = ("output_events.xml.gz", "output_events.xml", "events.xml.gz", "events.xml")
@@ -55,10 +55,7 @@ def _find_first_existing(folder: str, candidates: Tuple[str, ...], *, allow_sche
 
 
 def _extract_member(zf: zipfile.ZipFile, member: str, dest_dir: str) -> str:
-    dst = os.path.join(dest_dir, os.path.basename(member))
-    with zf.open(member) as src, open(dst, "wb") as dst_file:
-        shutil.copyfileobj(src, dst_file, length=1024 * 1024)
-    return dst
+    return extract_zip_member(zf, member, dest_dir)
 
 
 def _locate_member(zf: zipfile.ZipFile, wanted: Tuple[str, ...], *, allow_schedule_fallback: bool = False) -> Optional[str]:
