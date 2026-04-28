@@ -6,6 +6,7 @@ from .aggregates import Aggregator
 
 DEFAULT_WAITING_PT_COEFF_UTIL_HR = -2.3394
 UTILITY_EPSILON = 1e-9
+WAITING_PT_MIN_OBSERVED_SEC = 1.0
 
 
 def _best_index_by_server_score(plans: List[Dict[str, Any]]) -> int:
@@ -176,22 +177,31 @@ def _waiting_pt_coeff_util_hr(plan: Dict[str, Any], fallback: float) -> float:
         return float(fallback)
 
 
+def _expected_wait_sec(frequency: float) -> float:
+    freq = max(1.0, float(frequency or 0.0))
+    return ((60.0 / freq) / 2.0) * 60.0
+
+
+def _effective_current_wait_sec(plan: Dict[str, Any], old_frequency: float) -> float:
+    current_wait_sec = _waiting_pt_duration_sec(plan)
+    if current_wait_sec >= WAITING_PT_MIN_OBSERVED_SEC:
+        return current_wait_sec
+    return _expected_wait_sec(old_frequency)
+
+
 def _plan_frequency_delta_score(
     plan: Dict[str, Any],
     *,
     route_id: str,
+    old_frequency: float,
     new_frequency: float,
     waiting_pt_coeff_util_hr: float,
 ) -> float:
     if not _plan_affected_by_route(plan, route_id):
         return 0.0
 
-    current_wait_sec = _waiting_pt_duration_sec(plan)
-    if current_wait_sec <= 0.0:
-        return 0.0
-
-    new_f = max(1.0, float(new_frequency or 0.0))
-    expected_wait_after_sec = ((60.0 / new_f) / 2.0) * 60.0
+    current_wait_sec = _effective_current_wait_sec(plan, old_frequency)
+    expected_wait_after_sec = _expected_wait_sec(new_frequency)
     expected_change_hr = (expected_wait_after_sec - current_wait_sec) / 3600.0
     coeff = _waiting_pt_coeff_util_hr(plan, waiting_pt_coeff_util_hr)
     return expected_change_hr * coeff
@@ -214,6 +224,7 @@ def _compare_person_frequency_change(
     plans: List[Dict[str, Any]],
     *,
     route_id: str,
+    old_frequency: float,
     new_frequency: float,
     waiting_pt_coeff_util_hr: float = DEFAULT_WAITING_PT_COEFF_UTIL_HR,
     person_may_be_affected: Optional[bool] = None,
@@ -236,6 +247,7 @@ def _compare_person_frequency_change(
         delta = _plan_frequency_delta_score(
             pl,
             route_id=route_id,
+            old_frequency=old_frequency,
             new_frequency=new_frequency,
             waiting_pt_coeff_util_hr=waiting_pt_coeff_util_hr,
         )
@@ -434,6 +446,7 @@ def compare_frequency(
             p,
             plans,
             route_id=route_id,
+            old_frequency=old_f,
             new_frequency=new_f,
             waiting_pt_coeff_util_hr=waiting_pt_coeff_util_hr,
             person_may_be_affected=person_route_affected,
@@ -535,6 +548,7 @@ def compute_frequency_compare_aggregates_from_affected(
             p,
             plans,
             route_id=route_id,
+            old_frequency=old_f,
             new_frequency=new_f,
             waiting_pt_coeff_util_hr=waiting_pt_coeff_util_hr,
             person_may_be_affected=person_route_affected,
@@ -715,6 +729,7 @@ def compute_frequency_compare_aggregates(
             p,
             plans,
             route_id=route_id,
+            old_frequency=old_f,
             new_frequency=new_f,
             waiting_pt_coeff_util_hr=waiting_pt_coeff_util_hr,
             person_may_be_affected=person_route_affected,
