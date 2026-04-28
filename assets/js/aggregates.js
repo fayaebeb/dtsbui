@@ -8,6 +8,7 @@
     'bus_route/net_expansion_transitSchedule_cr40_3.xml': '18c774153bad4ee0aae34a8dcbb7f03b',
     'bus_route/output_transitSchedule_brt40_4.xml': '10862aa9ea9d4fd18c1b91b980b66439'
   };
+  const FREQUENCY_BASELINE_LABELS = ['CURR24', 'BRT24', 'CURR40', 'BRT40'];
 
   async function fetchSimulations() {
     const res = await fetch('/api/simulations');
@@ -28,6 +29,15 @@
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data?.error || '比較に失敗しました。');
+    return data;
+  }
+
+  async function fetchAggregates(simId, personLimit) {
+    const qs = new URLSearchParams({ top_routes: '12' });
+    if (personLimit) qs.set('person_limit', String(personLimit));
+    const res = await fetch(`/api/simulations/${encodeURIComponent(simId)}/aggregates?${qs.toString()}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || '集計の取得に失敗しました。');
     return data;
   }
 
@@ -67,7 +77,7 @@
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(entry)); } catch { }
   }
 
-  function routeSignature(params, personLimit) {
+  function routeSignature(params, personLimit, baselinePreId) {
     if (!params) return '';
     const rid = params.routeId || '';
     const oldF = params.oldFrequency ?? '';
@@ -75,7 +85,8 @@
     const ts = params.ts ?? '';
     const mode = params.timeMode ?? '';
     const lim = personLimit ? String(personLimit) : 'all';
-    return `${rid}|${oldF}|${newF}|${mode}|${ts}|${lim}`;
+    const baseline = baselinePreId || '';
+    return `${rid}|${oldF}|${newF}|${mode}|${ts}|${lim}|${baseline}`;
   }
 
   function simulationDisplayName(name) {
@@ -101,6 +112,27 @@
     const simId = params?.simulationId || fromSource || fallbackId || null;
     const isEligible = !!simId && eligible.some(s => s.id === simId);
     return { simId, isEligible };
+  }
+
+  function frequencyBaselineOptions(eligible) {
+    const routeIds = Object.values(ROUTE_SOURCE_TO_SIM_ID);
+    const ranked = eligible
+      .map((sim) => {
+        const labelRank = FREQUENCY_BASELINE_LABELS.indexOf(simulationDisplayName(sim.name));
+        const sourceRank = routeIds.indexOf(sim.id);
+        const rank = labelRank >= 0 ? labelRank : sourceRank;
+        return { sim, rank };
+      })
+      .filter(item => item.rank >= 0)
+      .sort((a, b) => a.rank - b.rank);
+    const seen = new Set();
+    const options = [];
+    ranked.forEach(({ sim }) => {
+      if (seen.has(sim.id)) return;
+      seen.add(sim.id);
+      options.push(sim);
+    });
+    return options.length ? options : eligible;
   }
 
   function hhmmss(totalSec) {
@@ -216,14 +248,21 @@
     const mode = panelMode();
     const frequencyOnly = mode === 'frequency' || mode === 'frequency-result';
     const resultOnly = mode === 'frequency-result';
-    const frequencyControls = resultOnly ? '' : `
-          <div class="dtsb-compare-controls dtsb-compare-controls--compact">
+    const frequencyPersonLimitControl = resultOnly ? '' : `
             <label class="dtsb-compare-field dtsb-compare-field--compact">
               <span class="dtsb-compare-field__label dtsb-compare-field__label--compact">対象人数</span>
               <select id="freqPersonLimit" class="dtsb-compare-field__input dtsb-compare-field__input--compact">
                 ${personLimitOptions()}
               </select>
             </label>
+    `;
+    const frequencyControls = `
+          <div class="dtsb-compare-controls dtsb-compare-controls--compact">
+            <label class="dtsb-compare-field dtsb-compare-field--compact">
+              <span class="dtsb-compare-field__label dtsb-compare-field__label--compact">比較前</span>
+              <select id="freqPreSelect" class="dtsb-compare-field__input dtsb-compare-field__input--compact"></select>
+            </label>
+            ${frequencyPersonLimitControl}
           </div>
     `;
     const frequencyActions = resultOnly ? `
@@ -459,9 +498,21 @@
     const preName = meta?.preName || '比較前';
     const postName = meta?.postName || '比較後';
     const fmt = (n) => (typeof n === 'number' ? n : 0);
-    const hasChangedPeople = Number.isFinite(Number(meta?.changedPeople));
+    const affectedPeople = Number(meta?.affectedPeople ?? meta?.changedPeople);
+    const hasChangedPeople = Number.isFinite(affectedPeople);
     if (hasChangedPeople) {
-      cards.appendChild(bigNumberCard('影響を受けた人数', fmt(Number(meta.changedPeople)), '人', '運航頻度変更で影響を受けた人'));
+      const utilityChanged = Number(meta?.utilityChangedPeople);
+      const changedPlan = Number(meta?.changedPlanPeople);
+      const diagnostics = [
+        Number.isFinite(utilityChanged) ? `効用変化: ${formatCount(utilityChanged)}人` : '',
+        Number.isFinite(changedPlan) ? `プラン変更: ${formatCount(changedPlan)}人` : '',
+      ].filter(Boolean).join(' / ');
+      cards.appendChild(bigNumberCard(
+        '影響を受けた人数',
+        fmt(affectedPeople),
+        '人',
+        diagnostics || '対象路線を含む候補プランを持つ人'
+      ));
     } else {
       cards.appendChild(metricDeltaCard('比較対象人数', fmt(pre.totalPeople), fmt(post.totalPeople), {
         formatter: formatCount,
@@ -665,6 +716,7 @@
     const host = ensurePanel();
     const preSel = document.getElementById('aggPreSelect');
     const postSel = document.getElementById('aggPostSelect');
+    const freqPreSel = document.getElementById('freqPreSelect');
     const simLimitSel = document.getElementById('aggPersonLimit');
     const freqLimitSel = document.getElementById('freqPersonLimit');
     const simBtn = document.getElementById('aggCompareBtn');
@@ -715,7 +767,13 @@
 
     fillSelect(preSel, eligible);
     fillSelect(postSel, eligible);
+    const baselineOptions = frequencyBaselineOptions(eligible);
+    fillSelect(freqPreSel, baselineOptions);
     if (eligible.length >= 2 && postSel) postSel.value = eligible[1].id;
+    const defaultFrequencySimId = resolveFrequencySimulationId(loadRouteParams(), eligible, null).simId;
+    if (freqPreSel && defaultFrequencySimId && baselineOptions.some(s => s.id === defaultFrequencySimId)) {
+      freqPreSel.value = defaultFrequencySimId;
+    }
     setStatus('準備完了', 'ready', 'frequency');
     if (simBtn) setStatus('準備完了', 'ready', 'sim');
 
@@ -748,20 +806,27 @@
 
       if (cached.mode === 'frequency') {
         const params = loadRouteParams();
-        const sigNow = routeSignature(params, personLimit);
+        const baselinePreId = cached.baselinePreId || cached.preId || cached.simId;
+        const sigNow = routeSignature(params, personLimit, baselinePreId);
         if (!cached.simId || !eligible.some(s => s.id === cached.simId)) return;
+        if (!baselinePreId || !eligible.some(s => s.id === baselinePreId)) return;
         if (!cached.sig || cached.sig !== sigNow) return;
 
         setPersonLimit('frequency', personLimit);
+        if (freqPreSel) freqPreSel.value = baselinePreId;
 
-        const name = simulationDisplayName(eligible.find(s => s.id === cached.simId)?.name);
+        const preName = simulationDisplayName(eligible.find(s => s.id === baselinePreId)?.name);
+        const postName = simulationDisplayName(eligible.find(s => s.id === cached.simId)?.name);
         renderCharts(cached.data.pre, cached.data.post, {
           mode: 'frequency',
-          preName: `${name}（変更前）`,
-          postName: `${name}（変更後）`,
-          changedPeople: Number(cached.data.changedPeople || 0),
+          preName: `${preName}（変更前）`,
+          postName: `${postName}（変更後）`,
+          changedPeople: Number(cached.data.affectedPeople ?? cached.data.changedPeople ?? 0),
+          affectedPeople: Number(cached.data.affectedPeople ?? cached.data.changedPeople ?? 0),
+          utilityChangedPeople: Number(cached.data.utilityChangedPeople),
+          changedPlanPeople: Number(cached.data.changedPlanPeople),
         });
-        setStatus(`キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人, 変更対象: ${cached.data.changedPeople ?? 0}人）`, 'neutral', 'frequency');
+        setStatus(`キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人, 影響人数: ${cached.data.affectedPeople ?? cached.data.changedPeople ?? 0}人）`, 'neutral', 'frequency');
         return;
       }
 
@@ -808,28 +873,38 @@
             throw new Error(`対応するシミュレーションが利用できないか未解析です: ${resolved.simId}`);
           }
           const freqSimId = resolved.simId;
+          const baselinePreId = freqPreSel?.value || freqSimId;
+          if (!eligible.some(s => s.id === baselinePreId)) {
+            throw new Error(`比較前のシミュレーションが利用できないか未解析です: ${baselinePreId}`);
+          }
+          const baselineName = simulationDisplayName(eligible.find(s => s.id === baselinePreId)?.name);
+          const frequencyName = simulationDisplayName(eligible.find(s => s.id === freqSimId)?.name);
           // Avoid recomputing when navigating between results.html and results_graph.html
           // by using a localStorage cache keyed on simulation + routeParams.
-          const sig = routeSignature(params, personLimit);
+          const sig = routeSignature(params, personLimit, baselinePreId);
           const cached = getCachedCompare();
-          if (cached && cached.mode === 'frequency' && cached.simId === freqSimId && cached.sig === sig && cached.personLimit === personLimit && cached.data?.pre && cached.data?.post) {
-            const name = simulationDisplayName(eligible.find(s => s.id === freqSimId)?.name);
+          if (cached && cached.mode === 'frequency' && cached.simId === freqSimId && cached.baselinePreId === baselinePreId && cached.sig === sig && cached.personLimit === personLimit && cached.data?.pre && cached.data?.post) {
             renderCharts(cached.data.pre, cached.data.post, {
               mode: 'frequency',
-              preName: `${name}（変更前）`,
-              postName: `${name}（変更後）`,
-              changedPeople: Number(cached.data.changedPeople || 0),
+              preName: `${baselineName}（変更前）`,
+              postName: `${frequencyName}（変更後）`,
+              changedPeople: Number(cached.data.affectedPeople ?? cached.data.changedPeople ?? 0),
+              affectedPeople: Number(cached.data.affectedPeople ?? cached.data.changedPeople ?? 0),
+              utilityChangedPeople: Number(cached.data.utilityChangedPeople),
+              changedPlanPeople: Number(cached.data.changedPlanPeople),
             });
-            setStatus(`キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人, 変更対象: ${cached.data.changedPeople ?? 0}人）`, 'neutral', 'frequency');
+            setStatus(`キャッシュを表示中（使用人数: ${cached.data.pre?.totalPeople ?? 0}人, 影響人数: ${cached.data.affectedPeople ?? cached.data.changedPeople ?? 0}人）`, 'neutral', 'frequency');
             emitCompareReady({
               ready: true,
               source: 'cache',
               mode: 'frequency',
               simId: freqSimId,
+              baselineSimId: baselinePreId,
               params: {
                 routeId: params.routeId,
                 oldFrequency: Number(params.oldFrequency),
                 newFrequency: Number(params.newFrequency),
+                baselineSimId: baselinePreId,
                 personLimit,
               },
             });
@@ -838,10 +913,12 @@
               source: 'cache',
               mode: 'frequency',
               simId: freqSimId,
+              baselineSimId: baselinePreId,
               params: {
                 routeId: params.routeId,
                 oldFrequency: Number(params.oldFrequency),
                 newFrequency: Number(params.newFrequency),
+                baselineSimId: baselinePreId,
                 personLimit,
               },
             });
@@ -852,24 +929,34 @@
             oldFrequency: params.oldFrequency,
             newFrequency: params.newFrequency,
           }, personLimit);
-          const name = simulationDisplayName(eligible.find(s => s.id === freqSimId)?.name);
-          renderCharts(resp.pre, resp.post, {
+          const baselinePre = baselinePreId === freqSimId ? resp.pre : await fetchAggregates(baselinePreId, personLimit);
+          const compareData = {
+            ...resp,
+            pre: baselinePre,
+            params: { ...(resp.params || {}), baselineSimId: baselinePreId },
+          };
+          renderCharts(baselinePre, resp.post, {
             mode: 'frequency',
-            preName: `${name}（変更前）`,
-            postName: `${name}（変更後）`,
-            changedPeople: Number(resp.changedPeople || 0),
+            preName: `${baselineName}（変更前）`,
+            postName: `${frequencyName}（変更後）`,
+            changedPeople: Number(resp.affectedPeople ?? resp.changedPeople ?? 0),
+            affectedPeople: Number(resp.affectedPeople ?? resp.changedPeople ?? 0),
+            utilityChangedPeople: Number(resp.utilityChangedPeople),
+            changedPlanPeople: Number(resp.changedPlanPeople),
           });
-          setStatus(`比較完了（使用人数: ${resp.pre?.totalPeople ?? 0}人, 変更対象: ${resp.changedPeople ?? 0}人）`, 'success', 'frequency');
-          setCachedCompare({ mode: 'frequency', simId: freqSimId, sig, personLimit, data: resp, savedAt: Date.now() });
+          setStatus(`比較完了（使用人数: ${baselinePre?.totalPeople ?? 0}人, 影響人数: ${resp.affectedPeople ?? resp.changedPeople ?? 0}人）`, 'success', 'frequency');
+          setCachedCompare({ mode: 'frequency', simId: freqSimId, baselinePreId, sig, personLimit, data: compareData, savedAt: Date.now() });
           emitCompareReady({
             ready: true,
             source: 'fresh',
             mode: 'frequency',
             simId: freqSimId,
+            baselineSimId: baselinePreId,
             params: {
               routeId: params.routeId,
               oldFrequency: Number(params.oldFrequency),
               newFrequency: Number(params.newFrequency),
+              baselineSimId: baselinePreId,
               personLimit,
             },
           });
@@ -878,10 +965,12 @@
             source: 'fresh',
             mode: 'frequency',
             simId: freqSimId,
+            baselineSimId: baselinePreId,
             params: {
               routeId: params.routeId,
               oldFrequency: Number(params.oldFrequency),
               newFrequency: Number(params.newFrequency),
+              baselineSimId: baselinePreId,
               personLimit,
             },
           });
@@ -944,6 +1033,9 @@
     }
 
     freqBtn?.addEventListener('click', () => run('frequency'));
+    freqPreSel?.addEventListener('change', () => {
+      if (host?.dataset?.aggPanelMode === 'frequency-result') run('frequency');
+    });
     simBtn?.addEventListener('click', () => run('sim'));
     window.__dtsbAggCompare = {
       run,
