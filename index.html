@@ -1010,7 +1010,7 @@
 									<div id="dynRouteContainer" class="dtsb-dynroute__container">
 										<div class="dtsb-dynroute__top">
 											<div class="dtsb-dynroute__mode">
-												<span class="dtsb-dynroute__label">運行頻度（06:00–09:59）</span>
+												<span class="dtsb-dynroute__label">運行頻度（06:00–09:59、1時間あたり）</span>
 											</div>
 											<div class="dtsb-dynroute__actions">
 												<button id="clearRouteBtn" type="button"
@@ -1030,7 +1030,7 @@
 												<dt>運航頻度</dt>
 												<dd id="dyn_frequency">
 													<dl class="c-frequency">
-														<dt class="c-frequency__hours">6～9時台
+														<dt class="c-frequency__hours">6～9時台（1時間あたり）
 															<span class="c-btn__small c-btn__small-white reset js-reset"
 																data-reset="dyn_frequency_0609">リセット</span>
 														</dt>
@@ -1038,7 +1038,7 @@
 															id="dyn_frequency_0609">
 															<div class="c-input__range-container js-range"
 																id="dynFreqRange">
-																<span class="c-input__range-unit">台数(台)</span>
+																<span class="c-input__range-unit">本/時間</span>
 																<span
 																	class="c-input__change c-input__range-change current-value u-en js-range-change">
 																	<span class="js-range-value" data-saved="0">0</span>
@@ -1052,7 +1052,7 @@
 																<div class="c-input__range-wrap">
 																	<input type="range" name="dyn_frequency_0609"
 																		value="0" data-saved="0" data-default="0"
-																		min="0" max="60"
+																		min="0" max="60" step="0.25"
 																		class="c-input__range-slider js-range-slider" />
 																	<i
 																		class="c-input__range-mark js-range-mark equal"></i>

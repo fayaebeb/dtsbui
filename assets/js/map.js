@@ -40,10 +40,51 @@ const DISABLE_BASE_ROUTE_LAYER_ON_PAGE = /\/results\.html$/i.test(window.locatio
 const DEFAULT_BUS_CRS = 'EPSG:6671';
 const BUS_CRS_FALLBACKS = [DEFAULT_BUS_CRS, 'EPSG:2445'];
 let currentBusCrs = DEFAULT_BUS_CRS;
+const MORNING_FREQUENCY_WINDOW_HOURS = 4;
+const FREQUENCY_UNIT = 'perHour';
+
+function formatFrequency(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '0';
+  return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, '');
+}
+
+function toHourlyFrequency(count, hours = MORNING_FREQUENCY_WINDOW_HOURS) {
+  const n = Number(count);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  const h = Number(hours);
+  return h > 0 ? n / h : n;
+}
+
+function normalizeRouteParamsUnit(params) {
+  if (!params || typeof params !== 'object') return params;
+  if (params.frequencyUnit === FREQUENCY_UNIT) return params;
+  const timeMode = params.timeMode || '0609';
+  if (timeMode !== '0609') return params;
+
+  const next = { ...params };
+  const hours = Number(next.frequencyWindowHours || MORNING_FREQUENCY_WINDOW_HOURS);
+  if (next.oldFrequency != null) {
+    next.oldFrequencyWindowCount = Number(next.oldFrequency);
+    next.oldFrequency = toHourlyFrequency(next.oldFrequency, hours);
+  }
+  if (next.newFrequency != null) {
+    next.newFrequencyWindowCount = Number(next.newFrequency);
+    next.newFrequency = toHourlyFrequency(next.newFrequency, hours);
+  }
+  next.frequencyUnit = FREQUENCY_UNIT;
+  next.frequencyWindowHours = hours;
+  return next;
+}
 
 function readGlobalRouteParams() {
   try {
-    return JSON.parse(localStorage.getItem('routeParams') || 'null');
+    const raw = JSON.parse(localStorage.getItem('routeParams') || 'null');
+    const normalized = normalizeRouteParamsUnit(raw);
+    if (normalized && normalized !== raw) {
+      localStorage.setItem('routeParams', JSON.stringify(normalized));
+    }
+    return normalized;
   } catch {
     return null;
   }
@@ -199,7 +240,13 @@ function readDynSavedParams(info) {
   try {
     const key = dynRouteStorageKey(info);
     const txt = localStorage.getItem(key) || localStorage.getItem('routeParams');
-    return txt ? JSON.parse(txt) : null;
+    const parsed = txt ? JSON.parse(txt) : null;
+    const normalized = normalizeRouteParamsUnit(parsed);
+    if (normalized && normalized !== parsed) {
+      localStorage.setItem(key, JSON.stringify(normalized));
+      localStorage.setItem('routeParams', JSON.stringify(normalized));
+    }
+    return normalized;
   } catch {
     return null;
   }
@@ -221,10 +268,13 @@ function updateDynFreqUi() {
   const def = Number(slider.dataset.default || 0);
   const val = document.querySelector('#dynFreqRange .js-range-value');
   const diff = document.querySelector('#dynFreqRange .js-range-diff');
-  if (val) val.textContent = String(v);
-  if (diff) diff.textContent = `(${v - def >= 0 ? '+' : ''}${v - def})`;
+  if (val) val.textContent = formatFrequency(v);
+  if (diff) {
+    const d = v - def;
+    diff.textContent = `(${d >= 0 ? '+' : ''}${formatFrequency(d)})`;
+  }
   const view = document.getElementById('dynRouteFreqView');
-  if (view) view.textContent = `${v} 本`;
+  if (view) view.textContent = `${formatFrequency(v)} 本/時間`;
 }
 
 function routeParamsMatchSelectedRoute(saved, info) {
@@ -324,6 +374,10 @@ function bindDynRoutePanel() {
       timeMode: getBusTimeMode(),
       oldFrequency: getBusFreq(selectedRouteInfo),
       newFrequency: newFreq,
+      oldFrequencyWindowCount: selectedRouteInfo.count0609 ?? null,
+      newFrequencyWindowCount: newFreq * MORNING_FREQUENCY_WINDOW_HOURS,
+      frequencyUnit: FREQUENCY_UNIT,
+      frequencyWindowHours: MORNING_FREQUENCY_WINDOW_HOURS,
       brtExclusive: brt,
       personLimit,
       ts: Date.now()
@@ -417,7 +471,7 @@ function getBusFreq(info) {
   if (overridden != null) return overridden;
   const mode = getBusTimeMode();
   if (mode === 'all') return info.countAll ?? info.count0609 ?? 0;
-  return info.count0609 ?? info.countAll ?? 0;
+  return toHourlyFrequency(info.count0609 ?? info.countAll ?? 0);
 }
 
 function getBusSamples(info) {
@@ -432,16 +486,16 @@ function getBusTooltip(props) {
   const freq = getBusFreq(props);
   const oldFreq = getSavedOldFrequency(props);
   if (oldFreq != null && oldFreq !== freq) {
-    return `${title}<br>${label}: ${freq}本（変更前 ${oldFreq}本）`;
+    return `${title}<br>${label}: ${formatFrequency(freq)}本/時間（変更前 ${formatFrequency(oldFreq)}本/時間）`;
   }
-  return `${title}<br>${label}: ${freq}本`;
+  return `${title}<br>${label}: ${formatFrequency(freq)}本/時間`;
 }
 
 function getBusLineWeight(info) {
   const freq = getBusFreq(info);
-  if (freq >= 100) return 16;      // very frequent
-  if (freq >= 50) return 9;       // frequent
-  if (freq >= 20) return 4;       // moderate
+  if (freq >= 25) return 16;      // very frequent
+  if (freq >= 12.5) return 9;     // frequent
+  if (freq >= 5) return 4;        // moderate
   return 1.5;                     // low frequency
 }
 
@@ -785,6 +839,7 @@ function renderRouteDetails(info) {
   const lineName = escapeHtml(info.lineId || '(不明)');
   const routeName = escapeHtml(info.routeId || '(不明)');
   const freqAll = info.countAll ?? info.count0609 ?? 0;
+  const freqMorningCount = info.count0609 ?? 0;
   const freqSelected = getBusFreq(info);
   const samples = escapeHtml((getBusSamples(info) || []).join(', ') || '—');
 
@@ -797,16 +852,18 @@ function renderRouteDetails(info) {
   details.innerHTML = `
     <dt>路線ID</dt><dd>${lineName}</dd>
     <dt>経路ID</dt><dd>${routeName}</dd>
-    <dt>運行頻度（06:00–09:59）</dt><dd id="dynRouteFreqView">${freqSelected} 本</dd>
-    <dt>運行頻度（終日）</dt><dd>${freqAll} 本</dd>
+    <dt>運行頻度（06:00–09:59）</dt><dd id="dynRouteFreqView">${formatFrequency(freqSelected)} 本/時間</dd>
+    <dt>運行本数（06:00–09:59）</dt><dd>${freqMorningCount} 本</dd>
+    <dt>運行本数（終日）</dt><dd>${freqAll} 本</dd>
     <dt>出発サンプル</dt><dd>${samples}</dd>
   `;
 
   const slider = document.querySelector('#dynFreqRange .js-range-slider');
   if (slider) {
-    slider.value = String(freqSelected);
-    slider.dataset.default = String(freqSelected);
-    slider.dataset.saved = String(freqSelected);
+    const freqText = formatFrequency(freqSelected);
+    slider.value = freqText;
+    slider.dataset.default = freqText;
+    slider.dataset.saved = freqText;
     // Keep the value bubble centered and UI in sync (simulation.js binds on `input`).
     slider.dispatchEvent(new Event('input', { bubbles: true }));
   }
@@ -1033,7 +1090,7 @@ if (!window.__dynResetBound) {
       if (diffEl) diffEl.textContent = '(+0)';
 
       const view = document.getElementById('dynRouteFreqView');
-      if (view) view.textContent = `${def} 本`;
+      if (view) view.textContent = `${formatFrequency(def)} 本/時間`;
     }
   });
   window.__dynResetBound = true;

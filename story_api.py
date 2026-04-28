@@ -461,6 +461,18 @@ def _story_plan_context(steps: List[Dict[str, Any]], stats: Dict[str, Any], *, b
         "usesCar": bool(int((stats.get("leg_counts") or {}).get("car", 0)) > 0),
     }
 
+
+def _format_frequency_per_hour(value: Any) -> Optional[str]:
+    try:
+        n = float(value)
+        if n != n:
+            return None
+    except Exception:
+        return None
+    text = str(int(n)) if n.is_integer() else f"{n:.2f}".rstrip("0").rstrip(".")
+    return f"{text}本/時間"
+
+
 def _story_change_context(
     before_steps: List[Dict[str, Any]],
     before_stats: Optional[Dict[str, Any]],
@@ -481,8 +493,8 @@ def _story_change_context(
     before_trip_minutes = _as_int((before_trip or {}).get("travelMinutes")) if before_trip else None
     after_trip_minutes = _as_int((after_trip or {}).get("travelMinutes")) if after_trip else None
     params = compare_data.get("params") or {}
-    old_f = _as_int(params.get("oldFrequency"))
-    new_f = _as_int(params.get("newFrequency"))
+    old_f = _format_frequency_per_hour(params.get("oldFrequency"))
+    new_f = _format_frequency_per_hour(params.get("newFrequency"))
     delta_wait = compare_data.get("deltaWaitMin")
     try:
         delta_wait_out = round(float(delta_wait), 1)
@@ -518,7 +530,7 @@ def _story_change_context(
             "beforeUsesBrt": before_uses_brt,
             "afterUsesBrt": after_uses_brt,
             "brtAdoption": (after_uses_brt and not before_uses_brt) if before_trip and after_trip else None,
-            "frequencyChange": f"{old_f}本から{new_f}本" if old_f is not None and new_f is not None else None,
+            "frequencyChange": f"{old_f}から{new_f}" if old_f is not None and new_f is not None else None,
             "frequencySubject": "BRT" if brt_context else "対象路線",
             "deltaWaitMinutes": delta_wait_out if delta_wait_out and delta_wait_out > 0 else None,
             "deltaScore": round(float(compare_data.get("deltaScore") or 0.0), 2),
@@ -650,10 +662,10 @@ def _compare_story_facts(
         mode = str(compare_ctx.get("mode") or "")
         if mode == "frequency":
             params = compare_ctx.get("params") or {}
-            old_f = _as_int(params.get("oldFrequency"))
-            new_f = _as_int(params.get("newFrequency"))
+            old_f = _format_frequency_per_hour(params.get("oldFrequency"))
+            new_f = _format_frequency_per_hour(params.get("newFrequency"))
             if old_f is not None and new_f is not None:
-                fact = f"BRT運行頻度{old_f}本から{new_f}本に増加"
+                fact = f"BRT運行頻度{old_f}から{new_f}に増加"
                 must_use.insert(0, fact)
                 approved.append(fact)
 
