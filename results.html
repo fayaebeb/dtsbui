@@ -8,7 +8,6 @@
 	<link rel="stylesheet" href="assets/js/leaflet/leaflet.css" />
 	<link rel="stylesheet" href="assets/css/common.css" />
 	<link rel="stylesheet" href="assets/css/rcss.css" />
-	<link rel="stylesheet" href="assets/css/design-language.css" />
 	<style>
 		.station-person-marker {
 			background: transparent;
@@ -188,6 +187,17 @@
 			color: #1f2d4a;
 		}
 
+		:root {
+			--fun-violet: #8e4dd8;
+			--fun-violet-deep: #6f37c7;
+			--fun-indigo: #4f64d9;
+			--fun-lilac: #d8c8ff;
+			--fun-ink: #1f2d4a;
+			--fun-card: #ffffff;
+			--fun-border: #dbe8ff;
+			--fun-shadow: 0 8px 0 rgba(36, 56, 99, 0.12), 0 16px 30px rgba(26, 56, 110, 0.12);
+		}
+
 		body {
 			background:
 				radial-gradient(circle at 12% 8%, rgba(142, 77, 216, 0.18), transparent 30%),
@@ -243,6 +253,41 @@
 			font-weight: 800;
 		}
 
+		.l-container.p-result .c-btn,
+		.l-container.p-result .c-btn__small,
+		.l-container.p-result .btn {
+			border-radius: 16px !important;
+			border: 2px solid rgba(43, 73, 130, 0.14);
+			box-shadow: 0 5px 0 rgba(36, 56, 99, 0.14);
+			font-weight: 800;
+			transition: transform 0.16s ease, box-shadow 0.2s ease;
+		}
+
+		.l-container.p-result .c-btn:hover,
+		.l-container.p-result .c-btn__small:hover,
+		.l-container.p-result .btn:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 7px 0 rgba(36, 56, 99, 0.17);
+		}
+
+		.l-container.p-result .l-contents__map-data .c-btn__small.legends {
+			min-height: 0;
+			padding: 0.4166666667em 0.9em;
+			border: 2px solid rgba(255, 255, 255, 0.94);
+			border-radius: 999px;
+			background: linear-gradient(180deg, #5f6fe4, #4f64d9 100%);
+			box-shadow: 0 4px 0 #4f64d9, 0 8px 16px rgba(111, 55, 199, 0.08);
+			font-size: inherit;
+			line-height: 1.1;
+			color: #fff !important;
+		}
+
+		.l-container.p-result .c-btn.blue,
+		.l-container.p-result .btn.blue {
+			background: linear-gradient(180deg, #a06df0, #8e4dd8) !important;
+			border-color: rgba(99, 56, 173, 0.3);
+		}
+
 		.l-container.p-result .l-contents__main {
 			overflow: visible;
 		}
@@ -275,6 +320,481 @@
 
 		.l-container.p-result .l-contents__name-input {
 			padding: 0.15em 0;
+		}
+
+		.l-container.p-result .c-btn.black {
+			background: linear-gradient(180deg, #5f6fe4, #4f64d9) !important;
+			border-color: rgba(47, 63, 152, 0.3);
+		}
+
+		.dtsb-fun-panel .c-box {
+			background:
+				radial-gradient(circle at 0% 0%, rgba(79, 100, 217, 0.11), transparent 44%),
+				linear-gradient(180deg, #ffffff, #f7fbff) !important;
+		}
+
+		.l-contents__map-btn .btn {
+			white-space: nowrap;
+		}
+
+		#aggPanel,
+		#aggPanel *,
+		#stationComparePanel,
+		#stationComparePanel * {
+			font-family: "Inter", "Noto Sans JP", sans-serif;
+		}
+
+		.dtsb-stat-card {
+			flex: 0 1 160px;
+			min-width: 148px;
+			padding: 9px 11px;
+			background: linear-gradient(180deg, #ffffff, #f7fbff);
+			border: 2px solid #d9e8ff;
+			border-radius: 14px;
+			box-shadow: 0 6px 0 rgba(36, 56, 99, 0.1), 0 12px 22px rgba(26, 56, 110, 0.1);
+			animation: dtsb-pop-in .3s ease-out;
+		}
+
+		.dtsb-stat-card__label {
+			font-size: 11px;
+			line-height: 1.35;
+			color: #567;
+			font-weight: 700;
+		}
+
+		.dtsb-stat-card__value {
+			margin-top: 3px;
+			font-size: 18px;
+			line-height: 1.25;
+			word-break: break-word;
+			font-weight: 800;
+			color: var(--fun-ink);
+		}
+
+		.dtsb-stat-card__note {
+			margin-top: 6px;
+			font-size: 11px;
+			line-height: 1.4;
+			color: #617089;
+		}
+
+		.dtsb-compare-panel {
+			margin-top: 0;
+			min-width: 0;
+		}
+
+		.dtsb-compare-shell {
+			padding: 12px 14px !important;
+			background:
+				radial-gradient(circle at 0% 0%, rgba(79, 100, 217, 0.12), transparent 42%),
+				radial-gradient(circle at 100% 0%, rgba(142, 77, 216, 0.12), transparent 34%),
+				linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 255, 0.98)) !important;
+		}
+
+		.dtsb-compare-details {
+			overflow: hidden;
+			border-radius: 18px;
+		}
+
+		.dtsb-compare-details>.c-details__summary {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 14px 18px;
+			font-size: 1.5rem;
+			letter-spacing: 0.02em;
+		}
+
+		.dtsb-compare-panel__body {
+			padding: 14px 4px 4px;
+		}
+
+		.dtsb-compare-panel__intro {
+			margin: 0 0 14px;
+			font-size: 1.22rem;
+			line-height: 1.6;
+			color: #4f607c;
+		}
+
+		.dtsb-compare-mode {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 10px;
+			margin-bottom: 14px;
+		}
+
+		.dtsb-compare-mode__option {
+			position: relative;
+			display: block;
+			cursor: pointer;
+		}
+
+		.dtsb-compare-mode__option input {
+			position: absolute;
+			inset: 0;
+			opacity: 0;
+			pointer-events: none;
+		}
+
+		.dtsb-compare-mode__option span {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			min-height: 48px;
+			padding: 10px 14px;
+			border-radius: 16px;
+			border: 1px solid #d7e1f4;
+			background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(243, 247, 255, 0.92));
+			box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+			font-weight: 800;
+			color: #4f607c;
+			text-align: center;
+			transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, color 0.16s ease;
+		}
+
+		.dtsb-compare-mode__option input:checked+span {
+			color: #ffffff;
+			border-color: rgba(99, 56, 173, 0.34);
+			background: linear-gradient(135deg, #5f6fe4, #8e4dd8);
+			box-shadow: 0 10px 18px rgba(95, 111, 228, 0.22);
+			transform: translateY(-1px);
+		}
+
+		.dtsb-compare-controls {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+			gap: 12px;
+			align-items: start;
+		}
+
+		.dtsb-compare-controls--compact {
+			grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+			gap: 10px;
+		}
+
+		.dtsb-compare-field {
+			display: grid;
+			gap: 6px;
+			min-width: 0;
+			padding: 11px 12px;
+			border-radius: 16px;
+			border: 1px solid #dce7fb;
+			background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 249, 255, 0.96));
+			box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+		}
+
+		.dtsb-compare-field--compact {
+			padding: 9px 10px;
+			border-radius: 14px;
+		}
+
+		.dtsb-compare-field--pair {
+			grid-template-columns: minmax(0, 1.55fr) minmax(100px, 118px);
+			align-items: end;
+			column-gap: 10px;
+		}
+
+		.dtsb-compare-field--pair-equal {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			align-items: end;
+			column-gap: 10px;
+		}
+
+		.dtsb-compare-subfield {
+			display: grid;
+			gap: 6px;
+			min-width: 0;
+		}
+
+		.dtsb-compare-field--toggles {
+			grid-template-columns: auto 1fr 1fr;
+			align-items: center;
+			column-gap: 12px;
+			row-gap: 8px;
+		}
+
+		.dtsb-compare-field__label {
+			font-size: 11px;
+			font-weight: 800;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+			color: #7081a0;
+		}
+
+		.dtsb-compare-field__input {
+			width: 100%;
+			min-width: 0;
+			height: 44px;
+			padding: 0 14px;
+			border: 1px solid #cfdcf4;
+			border-radius: 14px;
+			background: linear-gradient(180deg, #ffffff, #f4f8ff);
+			box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.75), 0 4px 10px rgba(91, 110, 150, 0.08);
+			color: #23314f;
+			transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+		}
+
+		.dtsb-compare-field__label--compact {
+			margin-bottom: 0;
+			white-space: nowrap;
+		}
+
+		.dtsb-compare-field__input--compact {
+			height: 40px;
+			padding-inline: 12px;
+			border-radius: 12px;
+		}
+
+		.dtsb-compare-field__input:focus {
+			outline: none;
+			border-color: rgba(95, 111, 228, 0.72);
+			box-shadow: 0 0 0 4px rgba(95, 111, 228, 0.12);
+		}
+
+		.dtsb-compare-field select.dtsb-compare-field__input {
+			appearance: none;
+			cursor: pointer;
+			padding-right: 42px;
+			background-image:
+				linear-gradient(45deg, transparent 50%, #5f6fe4 50%),
+				linear-gradient(135deg, #5f6fe4 50%, transparent 50%),
+				linear-gradient(180deg, #ffffff, #f4f8ff);
+			background-position:
+				calc(100% - 18px) calc(50% - 3px),
+				calc(100% - 12px) calc(50% - 3px),
+				0 0;
+			background-size: 6px 6px, 6px 6px, 100% 100%;
+			background-repeat: no-repeat;
+		}
+
+		.dtsb-compare-toggle {
+			position: relative;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			min-height: 44px;
+			height: 100%;
+			cursor: pointer;
+		}
+
+		.dtsb-compare-toggle--compact {
+			min-height: 40px;
+			gap: 8px;
+		}
+
+		.dtsb-compare-toggle input {
+			position: absolute;
+			opacity: 0;
+			pointer-events: none;
+		}
+
+		.dtsb-compare-toggle__switch {
+			position: relative;
+			flex: 0 0 auto;
+			width: 44px;
+			height: 24px;
+			border-radius: 999px;
+			background: #d8e1f2;
+			box-shadow: inset 0 1px 2px rgba(16, 24, 39, 0.16);
+			transition: background 0.18s ease;
+		}
+
+		.dtsb-compare-toggle__switch::before {
+			content: "";
+			position: absolute;
+			top: 3px;
+			left: 3px;
+			width: 18px;
+			height: 18px;
+			border-radius: 50%;
+			background: #ffffff;
+			box-shadow: 0 2px 6px rgba(16, 24, 39, 0.24);
+			transition: transform 0.18s ease;
+		}
+
+		.dtsb-compare-toggle__text {
+			font-weight: 700;
+			color: #31415f;
+		}
+
+		.dtsb-compare-toggle__text--compact {
+			font-size: 1.15rem;
+			line-height: 1.3;
+		}
+
+		.dtsb-compare-toggle input:checked+.dtsb-compare-toggle__switch {
+			background: linear-gradient(90deg, #5f6fe4, #8e4dd8);
+		}
+
+		.dtsb-compare-toggle input:checked+.dtsb-compare-toggle__switch::before {
+			transform: translateX(20px);
+		}
+
+		.dtsb-compare-actions {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+			align-items: center;
+			margin-top: 14px;
+			margin-bottom: 14px;
+		}
+
+		.dtsb-compare-actions--compact {
+			margin-top: 10px;
+			margin-bottom: 10px;
+			gap: 8px;
+		}
+
+		.dtsb-compare-btn {
+			min-width: 122px;
+			padding-inline: 18px;
+		}
+
+		.dtsb-compare-status {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			min-height: 40px;
+			padding: 8px 12px;
+			border-radius: 999px;
+			border: 1px solid #dce5f5;
+			background: rgba(255, 255, 255, 0.86);
+			color: #52627c;
+			font-size: 1.18rem;
+			font-weight: 700;
+		}
+
+		.dtsb-compare-status::before {
+			content: "";
+			width: 8px;
+			height: 8px;
+			border-radius: 50%;
+			background: #9aa9c4;
+			box-shadow: 0 0 0 4px rgba(154, 169, 196, 0.14);
+		}
+
+		.dtsb-compare-status[data-tone="ready"]::before,
+		.dtsb-compare-status[data-tone="success"]::before {
+			background: #43b780;
+			box-shadow: 0 0 0 4px rgba(67, 183, 128, 0.14);
+		}
+
+		.dtsb-compare-status[data-tone="loading"]::before {
+			background: #5f6fe4;
+			box-shadow: 0 0 0 4px rgba(95, 111, 228, 0.14);
+		}
+
+		.dtsb-compare-status[data-tone="error"]::before {
+			background: #d14d61;
+			box-shadow: 0 0 0 4px rgba(209, 77, 97, 0.14);
+		}
+
+		.dtsb-compare-cards {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+			margin: 8px 0 0;
+		}
+
+		.dtsb-chart-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+			gap: 12px;
+			margin-top: 14px;
+			min-width: 0;
+		}
+
+		.dtsb-chart-card {
+			min-width: 0;
+			padding: 12px;
+			border-radius: 18px;
+			border: 1px solid #dde7fb;
+			background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 248, 255, 0.96));
+			box-shadow: 0 12px 28px rgba(33, 59, 104, 0.09);
+		}
+
+		.dtsb-chart-card__head {
+			display: grid;
+			gap: 2px;
+			margin-bottom: 10px;
+		}
+
+		.dtsb-chart-card__eyebrow {
+			font-size: 10px;
+			font-weight: 800;
+			letter-spacing: 0.12em;
+			text-transform: uppercase;
+			color: #7b8ca9;
+		}
+
+		.dtsb-chart-card__title {
+			margin: 0;
+			font-size: 1.28rem;
+			line-height: 1.35;
+			color: #20304d;
+		}
+
+		.dtsb-chart-card__body {
+			height: 220px;
+			padding: 8px;
+			border-radius: 14px;
+			border: 1px solid #e1e9f9;
+			background: #ffffff;
+		}
+
+		.dtsb-chart-card__body canvas {
+			width: 100% !important;
+			max-width: 100% !important;
+		}
+
+		.dtsb-chart-card--table .dtsb-chart-card__body {
+			height: auto;
+			min-height: 220px;
+			max-height: 260px;
+			padding: 0;
+			overflow: auto;
+		}
+
+		.dtsb-compare-table {
+			width: 100%;
+			border-collapse: separate;
+			border-spacing: 0;
+			font-size: 12px;
+		}
+
+		.dtsb-compare-table thead th {
+			position: sticky;
+			top: 0;
+			z-index: 1;
+			background: #f8fbff;
+			color: #51627c;
+			font-weight: 800;
+		}
+
+		.dtsb-compare-table th,
+		.dtsb-compare-table td {
+			padding: 10px 12px;
+			border-bottom: 1px solid #eef3fb;
+		}
+
+		.dtsb-compare-table tbody tr:nth-child(even) {
+			background: rgba(95, 111, 228, 0.03);
+		}
+
+		.dtsb-compare-table td:last-child,
+		.dtsb-compare-table th:last-child,
+		.dtsb-compare-table td:nth-last-child(2),
+		.dtsb-compare-table th:nth-last-child(2),
+		.dtsb-compare-table td:nth-last-child(3),
+		.dtsb-compare-table th:nth-last-child(3),
+		.dtsb-compare-table td:nth-last-child(4),
+		.dtsb-compare-table th:nth-last-child(4) {
+			text-align: right;
+		}
+
+		.dtsb-compare-table__empty {
+			padding: 18px;
+			color: #617089;
 		}
 
 		.station-people-legend {
@@ -314,12 +834,56 @@
 			margin-top: 12px;
 		}
 
+		.dtsb-meta-chip {
+			display: inline-flex;
+			align-items: center;
+			min-height: 28px;
+			padding: 0 10px;
+			border-radius: 999px;
+			border: 1px solid #dbe4f6;
+			background: rgba(255, 255, 255, 0.9);
+			color: #55657f;
+			font-size: 11px;
+			font-weight: 700;
+		}
+
+		@keyframes dtsb-pop-in {
+			from {
+				opacity: 0;
+				transform: translateY(8px) scale(0.98);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
 		@media (max-width: 959px) {
 			.l-container.p-result {
 				margin: 0;
 				height: 100svh;
 				border-radius: 0;
 				border-width: 0;
+			}
+
+			.dtsb-compare-mode {
+				grid-template-columns: 1fr;
+			}
+
+			.dtsb-compare-actions {
+				align-items: stretch;
+			}
+
+			.dtsb-compare-status {
+				width: 100%;
+				border-radius: 16px;
+			}
+
+			.dtsb-compare-field--pair,
+			.dtsb-compare-field--pair-equal,
+			.dtsb-compare-field--toggles {
+				grid-template-columns: 1fr;
 			}
 		}
 
@@ -330,6 +894,96 @@
 		}
 
 		@media screen and (min-width: 960px) and (max-width: 1440px) and (max-height: 1040px) {
+			.p-result__story {
+				--boxPad: 12px 14px;
+				display: grid;
+				grid-template-columns: minmax(0, 1fr);
+				grid-template-rows: auto auto;
+				row-gap: 8px;
+				height: 132px;
+				min-height: 132px;
+				max-height: 132px;
+				overflow-y: auto;
+				overflow-x: hidden;
+				align-content: start;
+				align-self: start;
+			}
+
+			.p-result__story-tit {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) max-content max-content;
+				gap: 6px;
+				align-items: center;
+				padding: 0 0 8px;
+				border-right: 0;
+				border-bottom: 1px solid var(--commonGray);
+			}
+
+			.p-result__story-tit h2 {
+				font-size: 1.55rem;
+				line-height: 1.2;
+			}
+
+			.p-result__story-btn {
+				margin-top: 0;
+				height: auto;
+				min-height: 0;
+				padding: 6px 10px;
+				padding-inline: 10px;
+				font-size: 1.1rem;
+				line-height: 1.2;
+			}
+
+			.p-result__story-target {
+				min-width: 0;
+				overflow: visible;
+			}
+
+			.p-result__story li.current {
+				grid-template-columns: 34px minmax(0, 1fr);
+				column-gap: 8px;
+				align-items: start;
+			}
+
+			.p-result__story-ico {
+				font-size: 0;
+				line-height: 1.25;
+			}
+
+			.p-result__story-ico img {
+				width: 32px;
+				height: auto;
+			}
+
+			.p-result__story-ico figcaption {
+				display: none;
+			}
+
+			.p-result__story-fukidashi {
+				height: auto;
+				min-height: 0;
+			}
+
+			.p-result__story-fukidashi::before {
+				top: 8px;
+				width: 7px;
+				height: 7px;
+			}
+
+			.p-result__story-txt {
+				display: block;
+				max-height: none;
+				padding: 8px 10px;
+				font-size: 1.08rem;
+				line-height: 1.32;
+			}
+
+			#aiStoryBubbles {
+				margin-top: 4px !important;
+				font-size: 1.05rem;
+				line-height: 1.3;
+			}
+
 			.p-result__map .js-btns {
 				height: 100%;
 				align-self: stretch;
@@ -349,13 +1003,6 @@
 				min-height: 30px;
 				padding: 12px 14px;
 				font-size: 1.22rem;
-			}
-		}
-
-		@media screen and (min-width: 1441px) {
-			#aiStoryBubbles li {
-				padding: 5px 8px;
-				font-size: 1.02rem;
 			}
 		}
 	</style>
@@ -391,35 +1038,35 @@
 					<details class="dtsb-mission">
 						<summary class="dtsb-mission__toggle">
 							<span class="dtsb-mission__toggle-label">Results Quest</span>
-							<span class="dtsb-mission__toggle-value" id="resultsQuestValue">0 / 3 完了</span>
+							<span class="dtsb-mission__toggle-value">STEP 2 / 3</span>
 						</summary>
 						<div class="dtsb-mission__popup">
 							<span class="dtsb-hero__eyebrow">Results Quest</span>
 							<div class="dtsb-mission__title">結果レビュー</div>
-							<p class="dtsb-mission__copy" id="resultsQuestCopy">3つのレビュー項目はどの順番でも確認できます。気になるものから試してください。</p>
+							<p class="dtsb-mission__copy">地図、グラフ、AIストーリーで今回の変化をまとめて確認できます。</p>
 							<div class="dtsb-hero__meta">
-								<span class="dtsb-chip dtsb-chip--accent">集計比較</span>
-								<span class="dtsb-chip">西条駅周辺人数</span>
+								<span class="dtsb-chip dtsb-chip--accent">スコア確認</span>
+								<span class="dtsb-chip">メッシュ比較</span>
 								<span class="dtsb-chip dtsb-chip--blue">AIストーリー</span>
 							</div>
-							<div class="dtsb-stage-grid" aria-label="レビュー項目（順不同）">
-								<div class="dtsb-stage-card" id="resultsQuestStep1" data-state="todo">
-									<strong>運航頻度変更前後</strong>
-									<span id="resultsQuestStep1Text">「比較する」で変更前後を集計</span>
+							<div class="dtsb-stage-grid" aria-label="レビュー項目">
+								<div class="dtsb-stage-card">
+									<strong>地図を見る</strong>
+									<span>路線とメッシュの変化を重ねて確認</span>
 								</div>
-								<div class="dtsb-stage-card" id="resultsQuestStep2" data-state="todo">
-									<strong>西条駅周辺人数</strong>
-									<span id="resultsQuestStep2Text">駅周辺の人数差とピークを計算</span>
+								<div class="dtsb-stage-card">
+									<strong>グラフ比較</strong>
+									<span>主要指標の伸びと弱点を把握</span>
 								</div>
-								<div class="dtsb-stage-card" id="resultsQuestStep3" data-state="todo">
-									<strong>AIストーリー生成</strong>
-									<span id="resultsQuestStep3Text">代表ユーザーの1日をAIで要約</span>
+								<div class="dtsb-stage-card">
+									<strong>ストーリー生成</strong>
+									<span>代表ユーザーの1日をAIで要約</span>
 								</div>
 							</div>
-							<div class="dtsb-progress" id="resultsQuestProgress" style="--progress: 0%;">
+							<div class="dtsb-progress" style="--progress: 68%;">
 								<div class="dtsb-progress__label">
 									<span>結果レビュー進行</span>
-									<strong id="resultsQuestProgressLabel">0 / 3 完了</strong>
+									<strong>STEP 2 / 3</strong>
 								</div>
 								<div class="dtsb-progress__track">
 									<span class="dtsb-progress__fill"></span>
@@ -571,7 +1218,7 @@
 						</button>
 					</div>
 					<div class="c-box c-area__scroll">
-						<div id="aggPanelMount" data-agg-panel-mode="frequency-result" style="margin-bottom: 16px;"></div>
+						<div id="aggPanelMount" style="margin-bottom: 16px;"></div>
 						<div id="stationCompareMount" style="margin-bottom: 16px;"></div>
 						<details class="c-details" open>
 							<summary class="c-details__summary">結果</summary>
@@ -605,15 +1252,9 @@
 						</details>
 					</div>
 				</div>
-				<div class="p-result__story c-box dtsb-story-panel">
+				<div class="p-result__story c-box">
 					<div class="p-result__story-tit">
 						<h2>ある1日のストーリー</h2>
-						<p class="dtsb-story-panel__copy">AIナレーターで代表ユーザーの1日をテンポよく読み解けます。</p>
-						<div class="dtsb-story-panel__meta">
-							<span class="dtsb-story-chip dtsb-story-chip--violet">AI Narrator</span>
-							<span class="dtsb-story-chip">Daily Route</span>
-							<span class="dtsb-story-chip">Story Bonus</span>
-						</div>
 						<span
 							class="l-fixed__open p-result__story-btn c-btn__small c-btn__small-black target u-hover-op js-fixed-open"
 							data-fixed="target">ターゲット選択</span>
@@ -637,7 +1278,7 @@
 								<img src="assets/image/ico_story_04.svg" width="100" height="100" alt="AIストーリー" />
 								<figcaption id="aiStoryTitle">AIストーリー</figcaption>
 							</figure>
-							<div class="p-result__story-fukidashi dtsb-story-bubble">
+							<div class="p-result__story-fukidashi">
 								<span id="aiStoryText"
 									class="p-result__story-txt c-area__scroll">Compareを実行後、AIストーリー生成を押してください。</span>
 								<ul id="aiStoryBubbles" style="margin-top:8px; list-style:disc; padding-left:1.2em;">
@@ -710,11 +1351,7 @@
 
 		<div class="l-fixed js-fixed" id="target">
 			<div class="l-fixed__box p-result__story-box c-area__scroll js-fixed-box">
-				<div class="dtsb-story-box__head">
-					<span class="dtsb-story-panel__eyebrow">Target Select</span>
-					<h2>ターゲット選択</h2>
-					<p class="dtsb-story-panel__copy">ストーリーの主人公を選んで、視点を切り替えます。</p>
-				</div>
+				<h2>ターゲット選択</h2>
 				<div class="p-result__story-select">
 					<label class="p-result__story-radio u-hover-op l-fixed__close js-fixed-close">
 						<input class="js-target" type="radio" name="target" value="target01">
@@ -1123,18 +1760,57 @@
 	<script src="assets/js/input_bars.js"></script>
 	<script>
 		window.addEventListener("load", function () {
+			const STORY_FALLBACK_MARKER = "AIサービスが利用できないため、ローカル要約で表示しています。";
 			const titleEl = document.getElementById("aiStoryTitle");
 			const textEl = document.getElementById("aiStoryText");
 			const ul = document.getElementById("aiStoryBubbles");
 			try {
-				localStorage.removeItem("matsim-ai-story");
-				if (titleEl) titleEl.textContent = "AIストーリー";
-				if (textEl) textEl.textContent = "AIストーリー生成 を押して生成してください。";
-				if (ul) ul.style.display = "none";
+				const raw = localStorage.getItem("matsim-ai-story");
+				if (!raw) {
+					if (titleEl) titleEl.textContent = "AIストーリー";
+					if (textEl) textEl.textContent = "Compareを実行後、AIストーリー生成を押してください。";
+					if (ul) ul.style.display = "none";
+					return;
+				}
+
+				const { story } = JSON.parse(raw) || {};
+				if (!story) {
+					if (titleEl) titleEl.textContent = "AIストーリー";
+					if (textEl) textEl.textContent = "Compareを実行後、AIストーリー生成を押してください。";
+					if (ul) ul.style.display = "none";
+					return;
+				}
+				const oneLiner = String(story.one_liner || "");
+				if (oneLiner.includes(STORY_FALLBACK_MARKER)) {
+					localStorage.removeItem("matsim-ai-story");
+					if (titleEl) titleEl.textContent = "AIストーリー";
+					if (textEl) textEl.textContent = "Compareを実行後、AIストーリー生成を押してください。";
+					if (ul) ul.style.display = "none";
+					return;
+				}
+				const item = document.getElementById("aiStoryItem");
+
+				// Title + one-liner (speech balloon)
+				titleEl.textContent = (story.title || "AIストーリー").trim();
+				textEl.textContent = (story.one_liner || "").trim();
+
+				// Bubble text: append to #aiStoryText on the next line, hide the <ul>
+				const bubbleText = (typeof story.bubble === "string" ? story.bubble.trim() : "");
+				if (bubbleText) {
+					// break line then append bubble safely
+					textEl.appendChild(document.createElement("br"));
+					textEl.appendChild(document.createTextNode(bubbleText));
+					if (ul) ul.style.display = "none";
+				} else {
+					if (ul) ul.style.display = "none";
+				}
+
+				// No metadata (personId/score/timestamp) appended
+
 			} catch (e) {
 				console.warn("AI story render failed:", e);
 				if (titleEl) titleEl.textContent = "AIストーリー";
-				if (textEl) textEl.textContent = "AIストーリー生成 を押して生成してください。";
+				if (textEl) textEl.textContent = "Compareを実行後、AIストーリー生成を押してください。";
 				if (ul) ul.style.display = "none";
 			}
 		});
@@ -1291,14 +1967,6 @@
 				if (ul) ul.style.display = "none";
 			}
 
-			function emitStoryEvent(name, detail) {
-				try {
-					window.dispatchEvent(new CustomEvent(name, { detail }));
-				} catch (e) {
-					console.warn(`Failed to emit ${name}`, e);
-				}
-			}
-
 			let latestCompareContext = null;
 
 			function setStoryButtonState(enabled, reason) {
@@ -1349,18 +2017,14 @@
 						});
 						const cmp = await resCmp.json().catch(() => ({}));
 						if (resCmp.ok) {
-							const target = cmp && cmp.storyTarget;
-							if (!target || !Array.isArray(target.afterPlanSteps) || !target.afterPlanSteps.length) {
-								throw new Error("BRT未利用からBRT利用に変わった対象者が見つかりませんでした。");
-							}
-							const mi = target;
+							const mi = cmp && cmp.mostImpacted;
 							if (mi && mi.personId && Array.isArray(mi.afterPlanSteps) && mi.afterPlanSteps.length) {
 								return {
 									personId: mi.personId,
 									planSteps: mi.afterPlanSteps,
 									beforePlanSteps: Array.isArray(mi.beforePlanSteps) ? mi.beforePlanSteps : null,
 									meta: {
-										kind: "storyTarget",
+										kind: "mostImpacted",
 										routeId: params.routeId,
 										beforePlanIndex: Number(mi.beforePlanIndex),
 										afterPlanIndex: Number(mi.afterPlanIndex),
@@ -1368,8 +2032,6 @@
 										afterScore: Number(mi.afterScore),
 										deltaScore: Number(mi.deltaScore),
 										changedPlan: !!mi.changedPlan,
-										beforeUsesBrt: !!mi.beforeUsesBrt,
-										afterUsesBrt: !!mi.afterUsesBrt,
 									},
 									compare: {
 										mode: "frequency",
@@ -1408,7 +2070,7 @@
 				};
 			}
 
-			async function generateAndRenderStory(options = {}) {
+			async function generateAndRenderStory() {
 				const btn = document.getElementById("genStoryBtn");
 				const spin = document.getElementById("genStorySpin");
 				try {
@@ -1421,10 +2083,6 @@
 						throw new Error("index.html で運航頻度設定を保存してください。");
 					}
 					latestCompareContext = compareCtx;
-					emitStoryEvent("dtsb:story-started", {
-						auto: !!options.auto,
-						compareCtx,
-					});
 					const picked = await pickPlanForStory(compareCtx, weights);
 
 					const res = await fetch("/story", {
@@ -1449,32 +2107,17 @@
 					const payload = { personId: picked.personId, meta: picked.meta, story, ts: Date.now() };
 					localStorage.setItem("matsim-ai-story", JSON.stringify(payload));
 					renderStory(story);
-					emitStoryEvent("dtsb:story-completed", {
-						auto: !!options.auto,
-						compareCtx,
-						payload,
-					});
-					return payload;
 				} catch (e) {
 					console.error(e);
 					localStorage.removeItem("matsim-ai-story");
 					const msg = (e && e.message) ? String(e.message) : "";
-					emitStoryEvent("dtsb:story-failed", {
-						auto: !!options.auto,
-						compareCtx: latestCompareContext || buildStandaloneFrequencyContext(),
-						error: msg || "AIストーリー生成に失敗しました。",
-					});
-					if (!options.auto) {
-						alert(msg ? `AIストーリー生成に失敗しました。\n${msg}` : "AIストーリー生成に失敗しました。");
-					}
-					return null;
+					alert(msg ? `AIストーリー生成に失敗しました。\n${msg}` : "AIストーリー生成に失敗しました。");
 				} finally {
 					if (spin) spin.style.display = "none";
 					if (btn) btn.disabled = !((latestCompareContext || buildStandaloneFrequencyContext())?.ready);
 				}
 			}
 
-			window.__dtsbStory = { generate: generateAndRenderStory };
 			window.addEventListener("load", () => {
 				latestCompareContext = buildStandaloneFrequencyContext();
 				setStoryButtonState(!!latestCompareContext, "index.html で運航頻度設定を保存してください");
@@ -1485,7 +2128,6 @@
 			});
 		})();
 	</script>
-	<script src="assets/js/results_quest.js"></script>
 
 
 

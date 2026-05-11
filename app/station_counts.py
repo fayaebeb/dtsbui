@@ -4,6 +4,7 @@ import gzip
 import io
 import json
 import os
+import shutil
 import tempfile
 import zipfile
 import xml.etree.ElementTree as ET
@@ -18,7 +19,6 @@ from .azure_utils import get_storage_context
 from .models import get_simulation
 from .parsing import parse_facilities_file
 from .person_cache import iter_cached_persons
-from .zip_utils import extract_zip_member
 
 
 _EVENT_CANDIDATES = ("output_events.xml.gz", "output_events.xml", "events.xml.gz", "events.xml")
@@ -36,29 +36,22 @@ _TRANSIT_SCHEDULE_CANDIDATES = (
 )
 
 
-def _looks_like_schedule_name(name: str) -> bool:
-    base = os.path.basename(str(name or "")).lower()
-    return "transitschedule" in base and (base.endswith(".xml") or base.endswith(".xml.gz"))
-
-
-def _find_first_existing(folder: str, candidates: Tuple[str, ...], *, allow_schedule_fallback: bool = False) -> Optional[str]:
+def _find_first_existing(folder: str, candidates: Tuple[str, ...]) -> Optional[str]:
     for name in candidates:
         path = os.path.join(folder, name)
         if os.path.isfile(path):
             return path
-    if allow_schedule_fallback:
-        for root, _dirs, files in os.walk(folder):
-            for name in files:
-                if _looks_like_schedule_name(name):
-                    return os.path.join(root, name)
     return None
 
 
 def _extract_member(zf: zipfile.ZipFile, member: str, dest_dir: str) -> str:
-    return extract_zip_member(zf, member, dest_dir)
+    dst = os.path.join(dest_dir, os.path.basename(member))
+    with zf.open(member) as src, open(dst, "wb") as dst_file:
+        shutil.copyfileobj(src, dst_file, length=1024 * 1024)
+    return dst
 
 
-def _locate_member(zf: zipfile.ZipFile, wanted: Tuple[str, ...], *, allow_schedule_fallback: bool = False) -> Optional[str]:
+def _locate_member(zf: zipfile.ZipFile, wanted: Tuple[str, ...]) -> Optional[str]:
     wanted_lc = {name.lower() for name in wanted}
     for info in zf.infolist():
         if info.is_dir():
@@ -66,12 +59,6 @@ def _locate_member(zf: zipfile.ZipFile, wanted: Tuple[str, ...], *, allow_schedu
         base = os.path.basename(info.filename).lower()
         if base in wanted_lc:
             return info.filename
-    if allow_schedule_fallback:
-        for info in zf.infolist():
-            if info.is_dir():
-                continue
-            if _looks_like_schedule_name(info.filename):
-                return info.filename
     return None
 
 
@@ -281,7 +268,7 @@ def resolve_station_center(sim_id: str, station_name: str) -> Dict[str, Any]:
 
     folder = sim.get("path") or ""
     if folder and os.path.isdir(folder):
-        path = _find_first_existing(folder, tuple(_TRANSIT_SCHEDULE_CANDIDATES), allow_schedule_fallback=True)
+        path = _find_first_existing(folder, tuple(_TRANSIT_SCHEDULE_CANDIDATES))
         if not path:
             raise FileNotFoundError("transit schedule file not found in local folder")
         resolved = _resolve_station_center_from_schedule_path(path, station_name)
@@ -301,7 +288,7 @@ def resolve_station_center(sim_id: str, station_name: str) -> Dict[str, Any]:
         with open(tmp_zip, "wb") as handle:
             blob.download_blob().readinto(handle)
         with zipfile.ZipFile(tmp_zip, "r") as zf:
-            member = _locate_member(zf, tuple(_TRANSIT_SCHEDULE_CANDIDATES), allow_schedule_fallback=True)
+            member = _locate_member(zf, tuple(_TRANSIT_SCHEDULE_CANDIDATES))
             if not member:
                 raise FileNotFoundError("transit schedule file not found in zip")
             path = _extract_member(zf, member, tmpd)

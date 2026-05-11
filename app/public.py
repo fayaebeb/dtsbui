@@ -11,13 +11,12 @@ from azure.storage.blob import generate_blob_sas, BlobSasPermissions
 from .models import list_simulations, get_simulation
 from .azure_utils import get_storage_context
 from .frequency_compare import (
-    DEFAULT_WAITING_PT_COEFF_UTIL_HR,
     compute_frequency_compare_aggregates,
     compute_frequency_compare_aggregates_from_affected,
 )
 from .frequency_route_cache import iter_route_cached_persons, load_bestscore_aggregate_state, load_route_manifest
 from .station_counts import StationQuery, resolve_station_center
-from .station_frequency_cache import ensure_station_baseline_profile
+from .station_frequency_cache import get_station_baseline_profile
 from .station_jobs import enqueue_station_job, get_station_status
 from .person_cache import iter_cached_persons, read_cached_persons_sample
 from .aggregates import Aggregator
@@ -26,7 +25,7 @@ from .aggregates import Aggregator
 public_bp = Blueprint("public", __name__)
 
 
-# ---- Legacy fallback scoring for pre-config cached data ----
+# ---- Shared scoring logic (mirror of app.js) ----
 _DEFAULT_WEIGHTS = {
     "act": {"Home": 1.0, "Work": 0.5, "Business": 0.3, "Shopping": 0.2, "__other__": 0.1},
     "leg": {"car": -2.0, "walk": 0.5, "pt": 0.1, "__other__": 0.0},
@@ -55,13 +54,7 @@ def _normalize_weights(payload: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
 
 
 def _compute_score_client(plan: Dict[str, Any], weights: Dict[str, Dict[str, float]]) -> float:
-    """Prefer authoritative parse-time utility; keep legacy weighting as fallback."""
-    try:
-        if plan.get("serverScore") is not None:
-            return float(plan.get("serverScore"))
-    except Exception:
-        pass
-
+    """Client-side score: mirror of computeScoreClient in app.js."""
     steps = plan.get("steps") or []
     if not isinstance(steps, list):
         return 0.0
@@ -226,47 +219,6 @@ def public_data(sim_id):
             return jsonify(slim)
 
     return jsonify({"error": "No cached data. Admin must parse this simulation first."}), 400
-
-
-@public_bp.route("/api/simulations/<sim_id>/persons/<path:person_id>/plans", methods=["GET"])
-def public_person_plans(sim_id, person_id):
-    """Return all plans for a single person from cached data on demand."""
-    sim = get_simulation(sim_id)
-    if not sim or not sim.get("published"):
-        return jsonify({"error": "Not found"}), 404
-
-    cache = sim.get("cached_json_path")
-    if not cache:
-        return jsonify({"error": "No cached data. Admin must parse this simulation first."}), 400
-
-    cache_path = cache
-    if not os.path.isabs(cache_path):
-        cache_path = os.path.abspath(cache_path)
-    if not os.path.isfile(cache_path):
-        current_app.logger.warning("Cached JSON path missing for person plans: %s", cache_path)
-        return jsonify({"error": "Cached data file missing"}), 500
-
-    person_id_str = str(person_id or "")
-    for p in iter_cached_persons(cache_path):
-        if not isinstance(p, dict):
-            continue
-        if str(p.get("personId") or "") != person_id_str:
-            continue
-
-        plans = p.get("plans") or []
-        if not isinstance(plans, list):
-            plans = []
-        selected_idx = p.get("selectedPlanIndex")
-        if not isinstance(selected_idx, int) or selected_idx < 0 or selected_idx >= len(plans):
-            selected_idx = 0
-
-        return jsonify({
-            "personId": person_id_str,
-            "selectedPlanIndex": selected_idx,
-            "plans": plans,
-        })
-
-    return jsonify({"error": "Person not found"}), 404
 
 
 @public_bp.route("/api/simulations/<sim_id>/summary", methods=["POST"])
@@ -459,17 +411,18 @@ def public_frequency_compare(sim_id: str):
     include_most_steps = str(payload.get("includeMostImpactedSteps") or "").lower() in {"1", "true", "yes"}
     person_limit = _coerce_person_limit(payload.get("person_limit") or payload.get("personLimit") or payload.get("limit"))
 
-    waiting_coeff = payload.get("waitingPtCoeffUtilHr")
-    if waiting_coeff is None:
-        waiting_coeff = payload.get("waitingPtUtilityUtilHr")
+    # Prefer an explicit walk coefficient; else derive from weights (if provided).
+    walk_coeff = payload.get("walkCoeffPerSec")
+    if walk_coeff is None:
+        weights_payload = payload.get("weights") or {}
+        if isinstance(weights_payload, dict):
+            leg = weights_payload.get("leg") or {}
+            if isinstance(leg, dict):
+                walk_coeff = leg.get("walk")
     try:
-        waiting_pt_coeff_util_hr = (
-            float(waiting_coeff)
-            if waiting_coeff is not None
-            else DEFAULT_WAITING_PT_COEFF_UTIL_HR
-        )
+        walk_coeff_per_sec = float(walk_coeff) if walk_coeff is not None else 0.5
     except Exception:
-        waiting_pt_coeff_util_hr = DEFAULT_WAITING_PT_COEFF_UTIL_HR
+        walk_coeff_per_sec = 0.5
 
     station_name = str(payload.get("stationName") or "").strip()
     station_radius = payload.get("radiusM")
@@ -486,7 +439,7 @@ def public_frequency_compare(sim_id: str):
             return jsonify({"error": "radiusM must be > 0"}), 400
         if station_bin_sec_n <= 0 or station_bin_sec_n > 24 * 3600:
             return jsonify({"error": "binSec out of range"}), 400
-        station_baseline = ensure_station_baseline_profile(sim_id, station_name, float(station_radius_m), int(station_bin_sec_n))
+        station_baseline = get_station_baseline_profile(sim_id, station_name, float(station_radius_m), int(station_bin_sec_n))
         if isinstance(station_baseline, dict):
             station_center = {
                 "stationName": station_baseline.get("stationName") or station_name,
@@ -527,7 +480,7 @@ def public_frequency_compare(sim_id: str):
                     old_frequency=float(old_f),
                     new_frequency=float(new_f),
                     top_routes=12,
-                    waiting_pt_coeff_util_hr=waiting_pt_coeff_util_hr,
+                    walk_coeff_per_sec=walk_coeff_per_sec,
                     changed_sample_n=50,
                     include_most_impacted_steps=include_most_steps,
                     station_baseline=station_baseline,
@@ -558,7 +511,7 @@ def public_frequency_compare(sim_id: str):
             old_frequency=float(old_f),
             new_frequency=float(new_f),
             top_routes=12,
-            waiting_pt_coeff_util_hr=waiting_pt_coeff_util_hr,
+            walk_coeff_per_sec=walk_coeff_per_sec,
             changed_sample_n=50,
             include_most_impacted_steps=include_most_steps,
             station_center_x=(station_center or {}).get("centerX"),
@@ -574,18 +527,12 @@ def public_frequency_compare(sim_id: str):
             "routeId": route_id,
             "oldFrequency": float(old_f),
             "newFrequency": float(new_f),
-            "waitingPtCoeffUtilHr": waiting_pt_coeff_util_hr,
+            "walkCoeffPerSec": walk_coeff_per_sec,
             "personLimit": person_limit,
         },
-        "deltaWaitMin": float(cmp.get("deltaWaitMin") or 0.0),
-        "deltaScore": float(cmp.get("deltaScore") or 0.0),
         "changedPeople": int(cmp.get("changedPeople") or 0),
-        "affectedPeople": int(cmp.get("affectedPeople", cmp.get("changedPeople")) or 0),
-        "utilityChangedPeople": int(cmp.get("utilityChangedPeople") or 0),
-        "changedPlanPeople": int(cmp.get("changedPlanPeople") or 0),
         "changedSample": cmp.get("changedSample") or [],
         "mostImpacted": cmp.get("mostImpacted"),
-        "storyTarget": cmp.get("storyTarget"),
         "pre": cmp.get("preAggregates") or {},
         "post": cmp.get("postAggregates") or {},
     }

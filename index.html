@@ -12,7 +12,6 @@
 		href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@600;700&display=swap"
 		rel="stylesheet">
 	<link rel="stylesheet" href="assets/css/indexcss.css" />
-	<link rel="stylesheet" href="assets/css/design-language.css" />
 	<style>
 		/* Dynamic route panel (bus routes) */
 		details.c-route.dtsb-dynroute {
@@ -218,56 +217,6 @@
 			border-color: rgba(var(--colorSubRgb), 1);
 		}
 
-		.dtsb-route-source__btn[data-tooltip]::after,
-		.dtsb-route-source__btn[data-tooltip]::before {
-			position: absolute;
-			left: 50%;
-			opacity: 0;
-			pointer-events: none;
-			transition: opacity .16s ease, transform .16s ease;
-		}
-
-		.dtsb-route-source__btn[data-tooltip]::after {
-			content: attr(data-tooltip);
-			bottom: calc(100% + 12px);
-			transform: translate(-50%, 4px);
-			z-index: 26;
-			min-width: 228px;
-			max-width: min(320px, calc(100vw - 28px));
-			padding: 8px 12px;
-			border-radius: 10px;
-			border: 2px solid rgba(255, 255, 255, 0.94);
-			background: linear-gradient(180deg, #5f6fe4, #4f64d9 100%);
-			box-shadow: 0 4px 0 #4f64d9, 0 10px 16px rgba(111, 55, 199, 0.16);
-			color: #fff;
-			font-size: 0.82rem;
-			font-weight: 700;
-			line-height: 1.35;
-			letter-spacing: 0;
-			text-align: left;
-			white-space: normal;
-		}
-
-		.dtsb-route-source__btn[data-tooltip]::before {
-			content: "";
-			bottom: calc(100% + 6px);
-			transform: translate(-50%, 4px) rotate(45deg);
-			z-index: 25;
-			width: 10px;
-			height: 10px;
-			border-right: 2px solid rgba(255, 255, 255, 0.94);
-			border-bottom: 2px solid rgba(255, 255, 255, 0.94);
-			background: #4f64d9;
-		}
-
-		.dtsb-route-source__btn[data-tooltip]:hover::after,
-		.dtsb-route-source__btn[data-tooltip]:hover::before,
-		.dtsb-route-source__btn[data-tooltip]:focus-visible::after,
-		.dtsb-route-source__btn[data-tooltip]:focus-visible::before {
-			opacity: 1;
-			transform: translate(-50%, 0);
-		}
-
 		/* Make reset/pills read nicely on small widths */
 		@media (max-width: 720px) {
 			.dtsb-select {
@@ -288,37 +237,6 @@
 
 			.dtsb-route-source__btn {
 				width: 100%;
-			}
-
-			.dtsb-route-source__btn[data-tooltip]::after {
-				left: 0;
-				transform: translate(0, 4px);
-				min-width: 0;
-				width: max-content;
-			}
-
-			.dtsb-route-source__btn[data-tooltip]::before {
-				left: 18px;
-				transform: translate(0, 4px) rotate(45deg);
-			}
-
-			.dtsb-route-source__buttons .dtsb-route-source__btn:nth-child(2n)[data-tooltip]::after {
-				left: auto;
-				right: 0;
-				transform: translate(0, 4px);
-			}
-
-			.dtsb-route-source__buttons .dtsb-route-source__btn:nth-child(2n)[data-tooltip]::before {
-				left: auto;
-				right: 18px;
-				transform: translate(0, 4px) rotate(45deg);
-			}
-
-			.dtsb-route-source__btn[data-tooltip]:hover::after,
-			.dtsb-route-source__btn[data-tooltip]:hover::before,
-			.dtsb-route-source__btn[data-tooltip]:focus-visible::after,
-			.dtsb-route-source__btn[data-tooltip]:focus-visible::before {
-				transform: translate(0, 0);
 			}
 		}
 
@@ -449,174 +367,6 @@
 			-webkit-text-fill-color: #fff;
 		}
 
-		#dyn_frequency_0609 {
-			display: block;
-			padding-right: 0;
-			min-width: 0;
-		}
-
-		#dynFreqRange .c-input__range-unit {
-			position: absolute;
-			top: 12px;
-			left: 14px;
-			display: inline-flex;
-			align-items: center;
-			min-height: 26px;
-			padding: 0 8px;
-			border-radius: 999px;
-			border: 2px solid rgba(255, 255, 255, 0.94);
-			background: linear-gradient(180deg, #ffffff 0%, #f4eeff 100%);
-			box-shadow: 0 4px 0 #e7dbff, 0 10px 16px rgba(111, 55, 199, 0.08);
-			color: #5e3a95;
-			font-size: 0.92rem;
-			font-weight: 800;
-			letter-spacing: 0.04em;
-			z-index: 1;
-			pointer-events: none;
-		}
-
-		#dynFreqRange {
-			position: relative;
-			display: grid;
-			gap: 14px;
-			width: 100%;
-			min-width: 0;
-			justify-self: stretch;
-			box-sizing: border-box;
-			margin-top: 10px;
-			padding: 22px 14px 22px;
-			border: 2px solid rgba(255, 255, 255, 0.95);
-			border-radius: 24px;
-			background:
-				radial-gradient(circle at 0% 0%, rgba(255, 214, 108, 0.18), transparent 26%),
-				radial-gradient(circle at 100% 0%, rgba(79, 100, 217, 0.12), transparent 28%),
-				linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 237, 255, 0.95));
-			box-shadow: 0 8px 0 #e6d8ff, 0 18px 26px rgba(111, 55, 199, 0.11);
-			overflow: visible;
-		}
-
-		#dynFreqRange .c-input__range-change,
-		#dynFreqRange .c-input__range-saved {
-			position: absolute;
-			transform: translateX(-50%);
-			display: inline-flex;
-			align-items: center;
-			gap: 6px;
-			white-space: nowrap;
-			z-index: 3;
-			pointer-events: none;
-		}
-
-		#dynFreqRange .c-input__range-change {
-			top: -18px;
-			padding: 8px 12px;
-			border-radius: 18px;
-			background: linear-gradient(180deg, #ffd66c 0%, #ffbb58 100%);
-			box-shadow: 0 5px 0 rgba(212, 147, 28, 0.18), 0 12px 18px rgba(255, 187, 88, 0.22);
-			color: #5b3400;
-			font-weight: 900;
-		}
-
-		#dynFreqRange .c-input__range-change::after {
-			content: "";
-			position: absolute;
-			top: 100%;
-			left: 50%;
-			transform: translateX(-50%);
-			border-width: 8px 7px 0 7px;
-			border-style: solid;
-			border-color: #ffbb58 transparent transparent transparent;
-		}
-
-		#dynFreqRange .c-input__range-saved {
-			bottom: -14px;
-			padding: 6px 10px;
-			border-radius: 16px;
-			border: 2px solid rgba(255, 255, 255, 0.94);
-			background: linear-gradient(180deg, #ffffff 0%, #f2edff 100%);
-			box-shadow: 0 4px 0 #e8dbff, 0 10px 16px rgba(111, 55, 199, 0.08);
-			color: #617089;
-			font-size: 1.05rem;
-			font-weight: 800;
-		}
-
-		#dynFreqRange .js-range-value {
-			font-size: 1.65rem;
-			line-height: 1;
-		}
-
-		#dynFreqRange .js-range-diff {
-			font-size: 1rem;
-			font-weight: 900;
-			color: #6f37c7;
-		}
-
-		#dynFreqRange .c-input__range-minmax {
-			padding: 0 4px;
-			color: #74668f;
-			font-size: 1.1rem;
-			font-weight: 800;
-		}
-
-		#dynFreqRange .c-input__range-wrap {
-			height: 26px;
-			margin: 0;
-			overflow: visible;
-		}
-
-		#dynFreqRange .c-input__range-slider {
-			--range-thumb-width: 28px;
-			height: 14px;
-			border-radius: 999px;
-			background: linear-gradient(90deg, #eae3fb 0%, #dde8ff 100%);
-			box-shadow: inset 0 2px 4px rgba(111, 55, 199, 0.12);
-		}
-
-		#dynFreqRange .c-input__range-slider::-webkit-slider-runnable-track {
-			height: 14px;
-			border-radius: 999px;
-			background: linear-gradient(90deg, #eae3fb 0%, #dde8ff 100%);
-		}
-
-		#dynFreqRange .c-input__range-slider::-moz-range-track {
-			height: 14px;
-			border-radius: 999px;
-			background: linear-gradient(90deg, #eae3fb 0%, #dde8ff 100%);
-		}
-
-		#dynFreqRange .c-input__range-slider::-webkit-slider-thumb {
-			width: 28px;
-			height: 28px;
-			margin-top: -7px;
-			border-radius: 50%;
-			border: 4px solid #ffffff;
-			background: linear-gradient(180deg, #a06df0 0%, #8e4dd8 100%);
-			box-shadow: 0 6px 0 #6f37c7, 0 12px 18px rgba(111, 55, 199, 0.18);
-		}
-
-		#dynFreqRange .c-input__range-slider::-moz-range-thumb {
-			width: 28px;
-			height: 28px;
-			border-radius: 50%;
-			border: 4px solid #ffffff;
-			background: linear-gradient(180deg, #a06df0 0%, #8e4dd8 100%);
-			box-shadow: 0 6px 0 #6f37c7, 0 12px 18px rgba(111, 55, 199, 0.18);
-		}
-
-		#dynFreqRange .c-input__range-mark.js-range-mark {
-			width: 10px;
-			height: 18px;
-			border-radius: 999px;
-			background: linear-gradient(180deg, #ffd978 0%, #ffbf4e 100%);
-			box-shadow: 0 0 0 3px rgba(255, 214, 108, 0.22);
-			pointer-events: none;
-		}
-
-		#dynFreqRange .c-input__range-mark.js-range-mark.equal {
-			background: linear-gradient(180deg, #ffffff 0%, #efe8ff 100%);
-			box-shadow: 0 0 0 3px rgba(142, 77, 216, 0.14);
-		}
-
 		.l-contents__route-source {
 			min-width: 0;
 		}
@@ -667,70 +417,6 @@
 
 		@media (min-width: 960px) and (max-width: 1440px),
 		(min-width: 960px) and (max-height: 900px) {
-			#dynFreqRange {
-				gap: 10px;
-				margin-top: 8px;
-				padding: 18px 12px 16px;
-				border-radius: 20px;
-			}
-
-			#dynFreqRange .c-input__range-unit {
-				top: 10px;
-				left: 12px;
-				min-height: 22px;
-				padding: 0 7px;
-				font-size: 0.82rem;
-			}
-
-			#dynFreqRange .c-input__range-change {
-				top: -14px;
-				padding: 6px 10px;
-				border-radius: 16px;
-			}
-
-			#dynFreqRange .c-input__range-change::after {
-				border-width: 6px 6px 0 6px;
-			}
-
-			#dynFreqRange .js-range-value {
-				font-size: 1.45rem;
-			}
-
-			#dynFreqRange .js-range-diff,
-			#dynFreqRange .c-input__range-minmax {
-				font-size: 0.92rem;
-			}
-
-			#dynFreqRange .c-input__range-wrap {
-				height: 22px;
-			}
-
-			#dynFreqRange .c-input__range-slider,
-			#dynFreqRange .c-input__range-slider::-webkit-slider-runnable-track,
-			#dynFreqRange .c-input__range-slider::-moz-range-track {
-				height: 12px;
-			}
-
-			#dynFreqRange .c-input__range-slider {
-				--range-thumb-width: 24px;
-			}
-
-			#dynFreqRange .c-input__range-slider::-webkit-slider-thumb {
-				width: 24px;
-				height: 24px;
-				margin-top: -6px;
-			}
-
-			#dynFreqRange .c-input__range-slider::-moz-range-thumb {
-				width: 24px;
-				height: 24px;
-			}
-
-			#dynFreqRange .c-input__range-mark.js-range-mark {
-				width: 8px;
-				height: 14px;
-			}
-
 			.l-container.p-simulation .dtsb-actions__left {
 				gap: 10px;
 			}
@@ -852,30 +538,30 @@
 					<details class="dtsb-mission">
 						<summary class="dtsb-mission__toggle">
 							<span class="dtsb-mission__toggle-label">Mission Board</span>
-							<span id="missionBoardMini" class="dtsb-mission__toggle-value">STEP 1 / 3</span>
+							<span class="dtsb-mission__toggle-value">STEP 1 / 3</span>
 						</summary>
 						<div class="dtsb-mission__popup">
 							<span class="dtsb-hero__eyebrow">Mission Board</span>
 							<div class="dtsb-mission__title">入力ステージ</div>
-							<p id="missionBoardCopy" class="dtsb-mission__copy" aria-live="polite">路線を選んで、朝の運行頻度を調整し、結果ステージへ進みます。</p>
+							<p class="dtsb-mission__copy">路線を選んで、朝の運行頻度を調整し、結果ステージへ進みます。</p>
 							<div class="dtsb-stage-grid" aria-label="操作ステップ">
-								<div id="missionStageCard1" class="dtsb-stage-card" data-state="current">
+								<div class="dtsb-stage-card">
 									<strong>1. 路線を選ぶ</strong>
 									<span>CURR / BRT を切り替えてベース条件を決める</span>
 								</div>
-								<div id="missionStageCard2" class="dtsb-stage-card" data-state="todo">
+								<div class="dtsb-stage-card">
 									<strong>2. 頻度を調整</strong>
 									<span>地図上の路線を選んで運行頻度と専用レーンを設定</span>
 								</div>
-								<div id="missionStageCard3" class="dtsb-stage-card" data-state="todo">
+								<div class="dtsb-stage-card">
 									<strong>3. 結果へ進む</strong>
 									<span>保存した変更をもとに次のステージで効果を確認</span>
 								</div>
 							</div>
-							<div id="missionBoardProgress" class="dtsb-progress" style="--progress: 34%;">
+							<div class="dtsb-progress" style="--progress: 34%;">
 								<div class="dtsb-progress__label">
 									<span>シミュレーション準備</span>
-									<strong id="missionBoardStepLabel">STEP 1 / 3</strong>
+									<strong>STEP 1 / 3</strong>
 								</div>
 								<div class="dtsb-progress__track">
 									<span class="dtsb-progress__fill"></span>
@@ -891,22 +577,18 @@
 						<div id="busRouteSourceButtons" class="dtsb-route-source__buttons">
 							<button type="button"
 								class="c-btn__small c-btn__small-white dtsb-route-source__btn is-active"
-								data-tooltip="CURR24：2024年度ネットワーク　BRTなし"
 								data-bus-route-source="bus_route/baseline_transitSchedule_cr24_1.xml">
 								CURR24
 							</button>
 							<button type="button" class="c-btn__small c-btn__small-white dtsb-route-source__btn"
-								data-tooltip="BRT24：2024年度ネットワーク　BRTあり"
 								data-bus-route-source="bus_route/brt_transitSchedule_brt24_2.xml">
 								BRT24
 							</button>
 							<button type="button" class="c-btn__small c-btn__small-white dtsb-route-source__btn"
-								data-tooltip="CURR40：2040年度ネットワーク　BRTなし"
 								data-bus-route-source="bus_route/net_expansion_transitSchedule_cr40_3.xml">
 								CURR40
 							</button>
 							<button type="button" class="c-btn__small c-btn__small-white dtsb-route-source__btn"
-								data-tooltip="BRT40：2040年度ネットワーク　BRTあり"
 								data-bus-route-source="bus_route/output_transitSchedule_brt40_4.xml">
 								BRT40
 							</button>
@@ -1010,7 +692,7 @@
 									<div id="dynRouteContainer" class="dtsb-dynroute__container">
 										<div class="dtsb-dynroute__top">
 											<div class="dtsb-dynroute__mode">
-												<span class="dtsb-dynroute__label">運行頻度（06:00–09:59、1時間あたり）</span>
+												<span class="dtsb-dynroute__label">運行頻度（06:00–09:59）</span>
 											</div>
 											<div class="dtsb-dynroute__actions">
 												<button id="clearRouteBtn" type="button"
@@ -1027,18 +709,21 @@
 
 										<div id="dynRouteControls" class="dtsb-dynroute__controls" hidden>
 											<dl class="c-route__setting">
-												<dt>運航頻度</dt>
+												<dt>運航頻度
+													<span class="c-btn__small c-btn__small-white reset js-reset"
+														data-reset="dyn_frequency">まとめてリセット</span>
+												</dt>
 												<dd id="dyn_frequency">
 													<dl class="c-frequency">
-														<dt class="c-frequency__hours">6～9時台（1時間あたり）
+														<dt class="c-frequency__hours">6～9時台
 															<span class="c-btn__small c-btn__small-white reset js-reset"
 																data-reset="dyn_frequency_0609">リセット</span>
 														</dt>
 														<dd class="c-frequency__number c-input__range"
 															id="dyn_frequency_0609">
+															<span class="c-input__range-unit">台数(台)</span>
 															<div class="c-input__range-container js-range"
 																id="dynFreqRange">
-																<span class="c-input__range-unit">本/時間</span>
 																<span
 																	class="c-input__change c-input__range-change current-value u-en js-range-change">
 																	<span class="js-range-value" data-saved="0">0</span>
@@ -1052,7 +737,7 @@
 																<div class="c-input__range-wrap">
 																	<input type="range" name="dyn_frequency_0609"
 																		value="0" data-saved="0" data-default="0"
-																		min="0" max="60" step="0.25"
+																		min="0" max="60"
 																		class="c-input__range-slider js-range-slider" />
 																	<i
 																		class="c-input__range-mark js-range-mark equal"></i>
@@ -1070,34 +755,6 @@
 														<input type="checkbox" id="dynBrtToggle" />
 														<span class="btn">専用レーンを付与</span>
 													</label>
-												</dd>
-
-												<dt>対象人数</dt>
-												<dd>
-													<select id="dynPersonLimit" name="freq_person_limit"
-														class="dtsb-select" aria-label="対象人数">
-														<option value="">全員</option>
-														<option value="1000">1000</option>
-													</select>
-												</dd>
-
-												<dt>比較前</dt>
-												<dd>
-													<select id="dynBaselineSelect" name="baseline_sim_id"
-														class="dtsb-select" aria-label="比較前">
-														<option value="096896b54be24ffbb0cbee53dde6fd9f"
-															data-bus-route-source="bus_route/baseline_transitSchedule_cr24_1.xml"
-															data-label="CURR24">CURR24</option>
-														<option value="67eb5392da3a4202906f46f7b808b888"
-															data-bus-route-source="bus_route/brt_transitSchedule_brt24_2.xml"
-															data-label="BRT24">BRT24</option>
-														<option value="18c774153bad4ee0aae34a8dcbb7f03b"
-															data-bus-route-source="bus_route/net_expansion_transitSchedule_cr40_3.xml"
-															data-label="CURR40">CURR40</option>
-														<option value="10862aa9ea9d4fd18c1b91b980b66439"
-															data-bus-route-source="bus_route/output_transitSchedule_brt40_4.xml"
-															data-label="BRT40">BRT40</option>
-													</select>
 												</dd>
 											</dl>
 
@@ -1167,28 +824,22 @@
 						</section>
 					</div>
 
-					<div id="analysisBlock" class="collapsible dtsb-analysis">
+					<div id="analysisBlock" class="collapsible">
 						<!-- Legend + status toolbar -->
 						<div class="dtsb-toolbar">
-							<div class="legend dtsb-analysis__legend" aria-label="凡例">
-								<span class="dtsb-analysis__legend-label">凡例</span>
-								<span class="dtsb-analysis__legend-item"><span
-										class="dot dtsb-analysis__dot dtsb-analysis__dot--home"></span>Home</span>
-								<span class="dtsb-analysis__legend-item"><span
-										class="dot dtsb-analysis__dot dtsb-analysis__dot--work"></span>Work</span>
-								<span class="dtsb-analysis__legend-item"><span
-										class="dot dtsb-analysis__dot dtsb-analysis__dot--business"></span>Business</span>
-								<span class="dtsb-analysis__legend-item"><span
-										class="dot dtsb-analysis__dot dtsb-analysis__dot--shopping"></span>Shopping</span>
-								<span class="dtsb-analysis__legend-item"><span
-										class="dot dtsb-analysis__dot dtsb-analysis__dot--interaction"></span>pt
-									interaction</span>
+							<div class="legend">
+								<span>凡例:</span>
+								<span><span class="dot" style="background:blue"></span> Home</span>
+								<span><span class="dot" style="background:green"></span> Work</span>
+								<span><span class="dot" style="background:orange"></span> Business</span>
+								<span><span class="dot" style="background:purple"></span> Shopping</span>
+								<span><span class="dot" style="background:gray"></span> pt interaction</span>
 							</div>
-							<!-- Person filter + Export buttons -->
+							<!-- 🔎 Person filter + Export buttons -->
 							<div class="dtsb-toolbar__actions" aria-label="Person filter and exports">
 								<div class="dtsb-toolbar__filter">
 									<input id="personSearch" type="text" placeholder="Filter by personId (partial ok)"
-										class="dtsb-analysis__search">
+										style="padding:6px 8px; font-size:12px; width:220px; min-width:140px; flex:1 1 220px; border:1px solid #ccd5ff; border-radius:8px;">
 									<button id="clearSearchBtn" type="button" class="btn ghost">Clear</button>
 								</div>
 								<div class="dtsb-toolbar__exports" aria-label="Exports">
@@ -1204,7 +855,7 @@
 
 						<!-- Scoring + table panel (unchanged content) -->
 						<div class="panel">
-							<div class="card dtsb-analysis__card dtsb-analysis__card--weights" style="flex:1 1 320px;">
+							<div class="card" style="flex:1 1 320px;">
 								<h3>Scoring Weights（1秒あたりの重み）</h3>
 								<div class="weights-grid">
 									<label for="wHome">🏠 Home</label><input id="wHome" type="number" step="0.01"
@@ -1226,31 +877,34 @@
 									<label for="wOtherLeg">🚦 other mode</label><input id="wOtherLeg" type="number"
 										step="0.01" value="0.0" />
 								</div>
-								<div class="dtsb-analysis__button-row">
+								<div style="margin-top:8px; display:flex; gap:8px;">
 									<button id="recomputeBtn" type="button" class="btn">Recompute Scores</button>
 									<button id="clearMapBtn" type="button" class="btn secondary">Clear Map</button>
 									<button id="topBusBtn" type="button" class="btn">Find Top Bus User</button>
 									<button id="fullSummaryBtn" type="button" class="btn secondary">Full
 										Summary</button>
 								</div>
-								<div id="fullSummaryStatus" class="muted dtsb-analysis__status-copy"></div>
-								<pre id="fullSummaryPre" class="dtsb-analysis__pre"></pre>
-								<pre id="bus-result" class="dtsb-analysis__pre"></pre>
+								<div id="fullSummaryStatus" class="muted" style="margin-top:8px;"></div>
+								<pre id="fullSummaryPre"
+									style="margin-top:8px; font-size:12px; background:#f8f8f8; padding:6px; border-radius:6px; max-height:180px; overflow:auto;"></pre>
+								<pre id="bus-result"
+									style="margin-top:8px; font-size:12px; background:#f8f8f8; padding:6px; border-radius:6px; max-height:180px; overflow:auto;"></pre>
 
-								<div class="muted dtsb-analysis__note">※
-									スコアは output_config.xml の scoringParameters に基づくサーバー計算値を優先して表示します。</div>
+								<div class="muted" style="margin-top:6px;">※
+									サーバーは既定重みでもスコアを付与します。上記を変更するとフロント側で再計算して表示します。</div>
 							</div>
 
-							<div class="card dtsb-analysis__card dtsb-analysis__card--table" style="flex:2 1 520px;">
-								<h3>Persons（selected=yes がデフォルト表示）</h3>
-								<div class="table-wrap dtsb-analysis__table-wrap">
+							<div class="card" style="flex:2 1 520px;">
+								<h3>Persons & Plans（selected=yes がデフォルト表示）</h3>
+								<div class="table-wrap">
 									<table id="plansTable">
 										<thead>
 											<tr>
 												<th>Person</th>
-												<th>MATSim Score</th>
+												<th>MATSim Score (Plan)</th>
 												<th>Our Score</th>
 												<th>Selected</th>
+												<th>Plans</th>
 												<th>Actions</th>
 											</tr>
 										</thead>
@@ -1258,24 +912,6 @@
 									</table>
 								</div>
 							</div>
-						</div>
-					</div>
-
-					<div id="personPlansModal" class="dtsb-modal" hidden aria-hidden="true">
-						<div class="dtsb-modal__backdrop" data-close-person-plans></div>
-						<div class="dtsb-modal__dialog" role="dialog" aria-modal="true"
-							aria-labelledby="personPlansTitle">
-							<div class="dtsb-modal__header">
-								<div class="dtsb-modal__titlewrap">
-									<span class="dtsb-modal__eyebrow">Plan Details</span>
-									<h3 id="personPlansTitle" class="dtsb-modal__title">人物プラン詳細</h3>
-									<p id="personPlansSubtitle" class="dtsb-modal__subtitle"></p>
-								</div>
-								<button id="closePersonPlansModal" type="button"
-									class="btn ghost dtsb-modal__close">閉じる</button>
-							</div>
-							<div id="personPlansModalStatus" class="dtsb-modal__status" aria-live="polite"></div>
-							<div id="personPlansModalBody" class="dtsb-modal__body"></div>
 						</div>
 					</div>
 				</div>
@@ -1558,13 +1194,10 @@
 			const btn = document.getElementById('toggleAnalysisBtn');
 			if (!block || !btn) return;
 
-			function getMaxVh() {
-				if (window.innerWidth >= 960 && window.innerWidth <= 1440) return 94;
-				return 60;
-			}
+			const MAX_VH = 60;
 
 			function applyOpenStyles() {
-				const capPx = Math.floor(window.innerHeight * (getMaxVh() / 100));
+				const capPx = Math.floor(window.innerHeight * (MAX_VH / 100));
 				const prev = block.style.maxHeight;
 				block.style.maxHeight = 'none';
 				const contentHeight = block.scrollHeight;

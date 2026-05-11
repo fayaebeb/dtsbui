@@ -7,12 +7,6 @@ const exportSummaryBtn = document.getElementById("exportSummaryBtn");
 const exportStepsBtn = document.getElementById("exportStepsBtn");
 const simulationSelect = document.getElementById("simulationSelect");
 const downloadSimulationBtn = document.getElementById("downloadSimulationBtn");
-const analysisActions = document.querySelector(".dtsb-actions");
-const personPlansModal = document.getElementById("personPlansModal");
-const personPlansModalBody = document.getElementById("personPlansModalBody");
-const personPlansModalStatus = document.getElementById("personPlansModalStatus");
-const personPlansSubtitle = document.getElementById("personPlansSubtitle");
-const closePersonPlansModalBtn = document.getElementById("closePersonPlansModal");
 if (downloadSimulationBtn) downloadSimulationBtn.disabled = true;
 window.__PUBLISHED_SIMS__ = window.__PUBLISHED_SIMS__ || [];
 const showCachedSimulationBtn = document.getElementById("showCachedSimulationBtn");
@@ -230,9 +224,6 @@ function getWeights() {
 
 function computeScoreClient(plan, weights) {
   if (!plan || !Array.isArray(plan.steps)) return 0; // guard
-  if (plan.serverScore != null && Number.isFinite(Number(plan.serverScore))) {
-    return Number(plan.serverScore);
-  }
   let score = 0;
   (plan.steps || []).forEach(s => {
     if (!s) return;
@@ -432,9 +423,6 @@ function setAnalysisOpen(open) {
   UI.analysisOpen = !!open;
   Persist.saveUI(UI);
   if (analysisBlock) analysisBlock.style.display = open ? "block" : "none";
-  if (analysisActions) {
-    analysisActions.classList.toggle("dtsb-actions--analysis-open", !!open);
-  }
   if (toggleAnalysisBtn) {
     toggleAnalysisBtn.textContent = open ? "▲ 解析パネルを閉じる" : "▼ 解析パネルを開く";
   }
@@ -444,174 +432,6 @@ toggleAnalysisBtn?.addEventListener("click", () => setAnalysisOpen(!UI.analysisO
 // restore now
 setAnalysisOpen(!!UI.analysisOpen);
 applyWeightsToInputs();
-
-function getActiveSimulationId() {
-  return String(simulationSelect?.value || "");
-}
-
-function getLoadedSimulationId() {
-  const key = String(UI.datasetKey || "");
-  if (key.startsWith("pub:")) return key.slice(4);
-  return getActiveSimulationId();
-}
-
-function setPersonPlansModalOpen(open) {
-  if (!personPlansModal) return;
-  personPlansModal.hidden = !open;
-  personPlansModal.setAttribute("aria-hidden", open ? "false" : "true");
-  document.body.classList.toggle("dtsb-modal-open", !!open);
-}
-
-function setPersonPlansModalStatus(text, tone = "") {
-  if (!personPlansModalStatus) return;
-  personPlansModalStatus.textContent = text || "";
-  personPlansModalStatus.dataset.tone = tone || "";
-}
-
-function closePersonPlansModal() {
-  setPersonPlansModalOpen(false);
-}
-
-function formatPlanStepLine(step, idx) {
-  if (!step) return "";
-  if (step.kind === "activity") {
-    return `${idx}. [ACT] ${step.type ?? "-"}  ${step.startTime ?? "-"} → ${step.endTime ?? "-"}  dur=${formatSec(step.durationSec)}`;
-  }
-  return `${idx}. [LEG] ${step.mode ?? "-"}  dep=${step.depTime ?? "-"}  tt=${formatSec(step.durationSec)}`;
-}
-
-function createPlanMetaChip(label, value, tone = "") {
-  const chip = document.createElement("span");
-  chip.className = "dtsb-plan-card__chip";
-  if (tone) chip.dataset.tone = tone;
-  chip.textContent = `${label}: ${value}`;
-  return chip;
-}
-
-function renderPersonPlansModal(personId, payload) {
-  if (!personPlansModalBody) return;
-
-  const plans = Array.isArray(payload?.plans) ? payload.plans : [];
-  const selectedIdx = Number.isInteger(payload?.selectedPlanIndex) ? payload.selectedPlanIndex : 0;
-  personPlansModalBody.innerHTML = "";
-  if (personPlansSubtitle) {
-    personPlansSubtitle.textContent = `${personId} のプラン候補をオンデマンドで表示しています。`;
-  }
-
-  if (!plans.length) {
-    setPersonPlansModalStatus("この人物に利用可能なプランはありません。", "error");
-    return;
-  }
-
-  const grid = document.createElement("div");
-  grid.className = "dtsb-plan-grid";
-
-  plans.forEach((plan, idx) => {
-    const card = document.createElement("article");
-    card.className = "dtsb-plan-card";
-    if (idx === selectedIdx || plan?.selected) card.dataset.state = "selected";
-
-    const head = document.createElement("div");
-    head.className = "dtsb-plan-card__head";
-
-    const titleWrap = document.createElement("div");
-    titleWrap.className = "dtsb-plan-card__titlewrap";
-
-    const title = document.createElement("h4");
-    title.className = "dtsb-plan-card__title";
-    title.textContent = `Plan #${idx}`;
-    titleWrap.appendChild(title);
-
-    const subtitle = document.createElement("p");
-    subtitle.className = "dtsb-plan-card__subtitle";
-    subtitle.textContent = (idx === selectedIdx || plan?.selected)
-      ? "現在の選択プラン"
-      : "代替プラン";
-    titleWrap.appendChild(subtitle);
-
-    const drawBtn = document.createElement("button");
-    drawBtn.type = "button";
-    drawBtn.className = "btn dtsb-plan-card__draw";
-    drawBtn.textContent = "地図表示";
-    drawBtn.addEventListener("click", () => {
-      clearMapGraphics();
-      if (plan && Array.isArray(plan.steps)) {
-        drawPlanOnMap({ personId }, plan);
-      }
-    });
-
-    head.appendChild(titleWrap);
-    head.appendChild(drawBtn);
-
-    const chips = document.createElement("div");
-    chips.className = "dtsb-plan-card__chips";
-    chips.appendChild(createPlanMetaChip("MATSim", plan?.matsimScore?.toFixed?.(3) ?? "-"));
-    chips.appendChild(createPlanMetaChip("Server", plan?.serverScore?.toFixed?.(2) ?? "-"));
-    chips.appendChild(createPlanMetaChip("Client", computeScoreClient(plan, getWeights()).toFixed(2), "accent"));
-    chips.appendChild(createPlanMetaChip("Steps", Array.isArray(plan?.steps) ? plan.steps.length : 0));
-    if (idx === selectedIdx || plan?.selected) {
-      chips.appendChild(createPlanMetaChip("State", "Selected", "selected"));
-    }
-
-    const stepsPre = document.createElement("pre");
-    stepsPre.className = "dtsb-plan-card__steps";
-    const stepLines = Array.isArray(plan?.steps)
-      ? plan.steps.map((step, stepIdx) => formatPlanStepLine(step, stepIdx)).filter(Boolean)
-      : [];
-    stepsPre.textContent = stepLines.length ? stepLines.join("\n") : "ステップ情報はありません。";
-
-    card.appendChild(head);
-    card.appendChild(chips);
-    card.appendChild(stepsPre);
-    grid.appendChild(card);
-  });
-
-  personPlansModalBody.appendChild(grid);
-  setPersonPlansModalStatus(
-    plans.length === 1
-      ? "この人物は 1 プランのみです。"
-      : `${plans.length} 件のプラン候補を表示しています。`,
-    "ready"
-  );
-}
-
-async function openPersonPlansModal(personId) {
-  const simId = getLoadedSimulationId();
-  if (!simId) {
-    alert("先にシミュレーションを選択してください。");
-    return;
-  }
-  if (!personPlansModalBody) return;
-
-  personPlansModalBody.innerHTML = "";
-  if (personPlansSubtitle) personPlansSubtitle.textContent = `${personId} のプラン候補を読み込み中です。`;
-  setPersonPlansModalStatus("プラン候補を読み込み中…", "loading");
-  setPersonPlansModalOpen(true);
-
-  try {
-    const res = await fetch(`/api/simulations/${encodeURIComponent(simId)}/persons/${encodeURIComponent(personId)}/plans`);
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(data?.error || "プラン詳細の取得に失敗しました。");
-    }
-    renderPersonPlansModal(personId, data);
-  } catch (err) {
-    console.error(err);
-    if (personPlansSubtitle) personPlansSubtitle.textContent = `${personId} のプラン候補を取得できませんでした。`;
-    setPersonPlansModalStatus(err?.message || "プラン詳細の取得に失敗しました。", "error");
-    personPlansModalBody.innerHTML = "";
-  }
-}
-
-closePersonPlansModalBtn?.addEventListener("click", closePersonPlansModal);
-personPlansModal?.querySelectorAll("[data-close-person-plans]").forEach((el) => {
-  el.addEventListener("click", closePersonPlansModal);
-});
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && personPlansModal && !personPlansModal.hidden) {
-    closePersonPlansModal();
-  }
-});
 
 // === Persons Table ===
 function renderPersonsTable(persons) {
@@ -626,6 +446,7 @@ function renderPersonsTable(persons) {
         <td>-</td>
         <td><span class="badge">プランなし</span></td>
         <td class="muted">該当なし</td>
+        <td class="muted">該当なし</td>
       `;
       plansTableBody.appendChild(tr);
       return;
@@ -634,6 +455,30 @@ function renderPersonsTable(persons) {
     const selectedIdx = preferredSelectedIndex(p);
     const selected = p.plans[selectedIdx] || p.plans[0];
     const tr = document.createElement("tr");
+
+    // Plans selector
+    const sel = document.createElement("select");
+    sel.style.fontSize = "12px";
+    p.plans.forEach((pl, i) => {
+      const opt = document.createElement("option");
+      opt.value = i;
+      const matsimScore = (pl.matsimScore != null) ? pl.matsimScore.toFixed(3) : "なし";
+      opt.text = `#${i} (MATSim:${matsimScore}) ${pl.selected ? "[選択中]" : ""}`;
+      sel.appendChild(opt);
+    });
+    sel.value = String(selectedIdx);
+    sel.addEventListener("change", (e) => {
+      const idx = Number(e.target.value);
+      UI.selectedByPerson = UI.selectedByPerson || {};
+      UI.selectedByPerson[p.personId] = idx;     // persist
+      Persist.saveUI(UI);
+
+      clearMapGraphics();
+      const plan = p.plans[idx] || p.plans[0];
+      if (plan && Array.isArray(plan.steps)) {
+        drawPlanOnMap(p, plan);
+      }
+    });
 
     // Actions
     const btnDraw = document.createElement("button");
@@ -644,7 +489,7 @@ function renderPersonsTable(persons) {
       e.preventDefault();
       e.stopPropagation();
       clearMapGraphics();
-      const plan = p.plans[selectedIdx] || p.plans[0];
+      const plan = p.plans[Number(sel.value)];
       if (plan && Array.isArray(plan.steps)) {
         drawPlanOnMap(p, plan);
       }
@@ -657,7 +502,28 @@ function renderPersonsTable(persons) {
     btnDetails.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      openPersonPlansModal(p.personId);
+      const idx = Number(sel.value);
+      const target = p.plans[idx];
+      if (!target || !Array.isArray(target.steps)) {
+        alert(`人物ID: ${p.personId}\nプラン #${idx}\n（ステップなし）`);
+        return;
+      }
+      const lines = [
+        `人物ID: ${p.personId}`,
+        `プラン #${idx}  MATSimスコア: ${target.matsimScore?.toFixed?.(3) ?? "-"}`,
+        `サーバースコア: ${target.serverScore?.toFixed?.(2) ?? "-"}`,
+        `クライアントスコア（現在の重み）: ${computeScoreClient(target, getWeights()).toFixed(2)}`,
+        `ステップ:`
+      ];
+      target.steps.forEach((s, i) => {
+        if (!s) return;
+        if (s.kind === "activity") {
+          lines.push(`  ${i}. [ACT] ${s.type}  ${s.startTime ?? "-"} → ${s.endTime ?? "-"}  dur=${formatSec(s.durationSec)}`);
+        } else {
+          lines.push(`  ${i}. [LEG] ${s.mode}  dep=${s.depTime ?? "-"}  tt=${formatSec(s.durationSec)}`);
+        }
+      });
+      alert(lines.join("\n"));
     });
 
     const actions = document.createElement("div");
@@ -674,9 +540,12 @@ function renderPersonsTable(persons) {
       <td data-ourscore>${ourScore.toFixed(2)}</td>
       <td>${selected?.selected ? '<span class="badge">選択中</span>' : ''}</td>
     `;
+    const tdPlans = document.createElement("td");
+    tdPlans.appendChild(sel);
     const tdActions = document.createElement("td");
     tdActions.appendChild(actions);
 
+    tr.appendChild(tdPlans);
     tr.appendChild(tdActions);
     plansTableBody.appendChild(tr);
   });
@@ -816,7 +685,9 @@ document.getElementById("recomputeBtn").addEventListener("click", () => {
   rows.forEach((tr, i) => {
     const p = __FILTERED_PERSONS__[i];
     if (!p || !p.plans || p.plans.length === 0) return;
-    const idx = preferredSelectedIndex(p);
+    const sel = tr.querySelector("select");
+    if (!sel) return;
+    const idx = Number(sel.value);
     const plan = p.plans[idx] || p.plans[0];
     const td = tr.querySelector("[data-ourscore]");
     if (!td) return;
@@ -1072,39 +943,13 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
         });
         const cmp = await resCmp.json().catch(() => ({}));
         if (resCmp.ok) {
-          const target = cmp?.storyTarget;
-          if (!target || !Array.isArray(target.afterPlanSteps) || !target.afterPlanSteps.length) {
-            throw new Error("BRT未利用からBRT利用に変わった対象者が見つかりませんでした。");
-          }
-          const mi = target;
+          const mi = cmp?.mostImpacted;
           if (mi && mi.personId && Array.isArray(mi.afterPlanSteps) && mi.afterPlanSteps.length) {
             picked = {
               personId: mi.personId,
               planIndex: mi.afterPlanIndex,
               planSteps: mi.afterPlanSteps,
-              beforePlanSteps: Array.isArray(mi.beforePlanSteps) ? mi.beforePlanSteps : null,
-              meta: {
-                kind: "storyTarget",
-                deltaScore: mi.deltaScore,
-                routeId: routeParams.routeId,
-                beforePlanIndex: mi.beforePlanIndex,
-                afterPlanIndex: mi.afterPlanIndex,
-                changedPlan: !!mi.changedPlan,
-                beforeUsesBrt: !!mi.beforeUsesBrt,
-                afterUsesBrt: !!mi.afterUsesBrt,
-              },
-              compare: {
-                mode: "frequency",
-                simId,
-                params: {
-                  routeId: routeParams.routeId,
-                  oldFrequency: Number(routeParams.oldFrequency),
-                  newFrequency: Number(routeParams.newFrequency),
-                },
-                changedPeople: Number(cmp.changedPeople || 0),
-                deltaWaitMin: Number(cmp.deltaWaitMin || 0),
-                deltaScore: Number(cmp.deltaScore || 0),
-              },
+              meta: { kind: "mostImpacted", deltaScore: mi.deltaScore, routeId: routeParams.routeId },
             };
           }
         }
@@ -1131,9 +976,7 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
         personId: best.personId,
         planIndex: best.planIndex,
         planSteps: best.steps,
-        beforePlanSteps: null,
         meta: { kind: "bestPlan" },
-        compare: null,
       };
     }
 
@@ -1144,9 +987,6 @@ document.getElementById("genStoryBtn")?.addEventListener("click", async () => {
       body: JSON.stringify({
         personId: picked.personId,
         plan: { steps: picked.planSteps },
-        ...(picked.beforePlanSteps ? { beforePlan: { steps: picked.beforePlanSteps } } : {}),
-        compareContext: picked.compare || null,
-        personContext: picked.meta || null,
         weights,
         lang: "ja", // set to "en" if you add a language toggle later
       }),

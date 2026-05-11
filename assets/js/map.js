@@ -34,63 +34,16 @@ const BUS_ROUTE_SOURCE_TO_SIM_ID = {
   'bus_route/net_expansion_transitSchedule_cr40_3.xml': '18c774153bad4ee0aae34a8dcbb7f03b',
   'bus_route/output_transitSchedule_brt40_4.xml': '10862aa9ea9d4fd18c1b91b980b66439'
 };
-const BUS_ROUTE_SOURCE_LABELS = {
-  'bus_route/baseline_transitSchedule_cr24_1.xml': 'CURR24',
-  'bus_route/brt_transitSchedule_brt24_2.xml': 'BRT24',
-  'bus_route/net_expansion_transitSchedule_cr40_3.xml': 'CURR40',
-  'bus_route/output_transitSchedule_brt40_4.xml': 'BRT40'
-};
 let currentBusRouteSource = BUS_ROUTE_SOURCES[0];
 const IS_RESULTS_PAGE = /\/results(?:_graph)?\.html$/i.test(window.location.pathname || '');
 const DISABLE_BASE_ROUTE_LAYER_ON_PAGE = /\/results\.html$/i.test(window.location.pathname || '');
 const DEFAULT_BUS_CRS = 'EPSG:6671';
 const BUS_CRS_FALLBACKS = [DEFAULT_BUS_CRS, 'EPSG:2445'];
 let currentBusCrs = DEFAULT_BUS_CRS;
-const MORNING_FREQUENCY_WINDOW_HOURS = 4;
-const FREQUENCY_UNIT = 'perHour';
-
-function formatFrequency(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return '0';
-  return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, '');
-}
-
-function toHourlyFrequency(count, hours = MORNING_FREQUENCY_WINDOW_HOURS) {
-  const n = Number(count);
-  if (!Number.isFinite(n) || n <= 0) return 0;
-  const h = Number(hours);
-  return h > 0 ? n / h : n;
-}
-
-function normalizeRouteParamsUnit(params) {
-  if (!params || typeof params !== 'object') return params;
-  if (params.frequencyUnit === FREQUENCY_UNIT) return params;
-  const timeMode = params.timeMode || '0609';
-  if (timeMode !== '0609') return params;
-
-  const next = { ...params };
-  const hours = Number(next.frequencyWindowHours || MORNING_FREQUENCY_WINDOW_HOURS);
-  if (next.oldFrequency != null) {
-    next.oldFrequencyWindowCount = Number(next.oldFrequency);
-    next.oldFrequency = toHourlyFrequency(next.oldFrequency, hours);
-  }
-  if (next.newFrequency != null) {
-    next.newFrequencyWindowCount = Number(next.newFrequency);
-    next.newFrequency = toHourlyFrequency(next.newFrequency, hours);
-  }
-  next.frequencyUnit = FREQUENCY_UNIT;
-  next.frequencyWindowHours = hours;
-  return next;
-}
 
 function readGlobalRouteParams() {
   try {
-    const raw = JSON.parse(localStorage.getItem('routeParams') || 'null');
-    const normalized = normalizeRouteParamsUnit(raw);
-    if (normalized && normalized !== raw) {
-      localStorage.setItem('routeParams', JSON.stringify(normalized));
-    }
-    return normalized;
+    return JSON.parse(localStorage.getItem('routeParams') || 'null');
   } catch {
     return null;
   }
@@ -103,47 +56,6 @@ if (persistedRouteParams?.sourcePath && BUS_ROUTE_SOURCES.includes(persistedRout
 
 function getSimulationIdForCurrentBusSource() {
   return BUS_ROUTE_SOURCE_TO_SIM_ID[currentBusRouteSource] || null;
-}
-
-function getBusSourceForSimulationId(simId) {
-  const id = String(simId || '');
-  return Object.keys(BUS_ROUTE_SOURCE_TO_SIM_ID).find(source => BUS_ROUTE_SOURCE_TO_SIM_ID[source] === id) || null;
-}
-
-function getBaselineSimIdFromParams(params) {
-  if (!params || typeof params !== 'object') return null;
-  if (params.baselineSimId) return String(params.baselineSimId);
-  if (params.baselinePreId) return String(params.baselinePreId);
-  if (params.baselineSimulationId) return String(params.baselineSimulationId);
-  if (params.baselineSourcePath) return BUS_ROUTE_SOURCE_TO_SIM_ID[String(params.baselineSourcePath)] || null;
-  return null;
-}
-
-function getDynBaselineChoice() {
-  const select = document.getElementById('dynBaselineSelect');
-  const option = select?.selectedOptions?.[0] || null;
-  const baselineSimId = String(select?.value || getSimulationIdForCurrentBusSource() || '');
-  const baselineSourcePath =
-    option?.dataset?.busRouteSource ||
-    getBusSourceForSimulationId(baselineSimId) ||
-    currentBusRouteSource;
-  const baselineLabel =
-    option?.dataset?.label ||
-    BUS_ROUTE_SOURCE_LABELS[baselineSourcePath] ||
-    option?.textContent?.trim() ||
-    baselineSimId;
-  return { baselineSimId, baselineSourcePath, baselineLabel };
-}
-
-function setDynBaselineFromParams(params) {
-  const select = document.getElementById('dynBaselineSelect');
-  if (!select) return;
-  const savedBaselineSimId = getBaselineSimIdFromParams(params);
-  const fallback = getSimulationIdForCurrentBusSource();
-  const nextValue = savedBaselineSimId || fallback || '';
-  if (nextValue && Array.from(select.options).some(opt => opt.value === nextValue)) {
-    select.value = nextValue;
-  }
 }
 
 function shouldShowBusRoutesNow() {
@@ -287,13 +199,7 @@ function readDynSavedParams(info) {
   try {
     const key = dynRouteStorageKey(info);
     const txt = localStorage.getItem(key) || localStorage.getItem('routeParams');
-    const parsed = txt ? JSON.parse(txt) : null;
-    const normalized = normalizeRouteParamsUnit(parsed);
-    if (normalized && normalized !== parsed) {
-      localStorage.setItem(key, JSON.stringify(normalized));
-      localStorage.setItem('routeParams', JSON.stringify(normalized));
-    }
-    return normalized;
+    return txt ? JSON.parse(txt) : null;
   } catch {
     return null;
   }
@@ -315,134 +221,10 @@ function updateDynFreqUi() {
   const def = Number(slider.dataset.default || 0);
   const val = document.querySelector('#dynFreqRange .js-range-value');
   const diff = document.querySelector('#dynFreqRange .js-range-diff');
-  if (val) val.textContent = formatFrequency(v);
-  if (diff) {
-    const d = v - def;
-    diff.textContent = `(${d >= 0 ? '+' : ''}${formatFrequency(d)})`;
-  }
+  if (val) val.textContent = String(v);
+  if (diff) diff.textContent = `(${v - def >= 0 ? '+' : ''}${v - def})`;
   const view = document.getElementById('dynRouteFreqView');
-  if (view) view.textContent = `${formatFrequency(v)} 本/時間`;
-}
-
-function routeParamsMatchSelectedRoute(saved, info) {
-  if (!saved || !info) return false;
-  if (saved.routeId != null && info.routeId != null && String(saved.routeId) !== String(info.routeId)) return false;
-  if (saved.lineId != null && info.lineId != null && String(saved.lineId) !== String(info.lineId)) return false;
-  if (saved.sourcePath && currentBusRouteSource && String(saved.sourcePath) !== String(currentBusRouteSource)) return false;
-  return true;
-}
-
-function isSelectedRouteSaveCurrent() {
-  if (!selectedRouteInfo) return false;
-  const saved = readDynSavedParams(selectedRouteInfo);
-  if (!routeParamsMatchSelectedRoute(saved, selectedRouteInfo)) return false;
-
-  const slider = document.querySelector('#dynFreqRange .js-range-slider');
-  const currentFreq = Number(slider?.value ?? getBusFreq(selectedRouteInfo) ?? 0);
-  const currentBrt = !!document.getElementById('dynBrtToggle')?.checked;
-  const currentPersonLimit = document.getElementById('dynPersonLimit')?.value || '';
-  const savedPersonLimit = saved?.personLimit ? String(saved.personLimit) : '';
-  const currentBaselineSimId = getDynBaselineChoice().baselineSimId || '';
-  const savedBaselineSimId = getBaselineSimIdFromParams(saved) || saved?.simulationId || '';
-  return Number(saved?.newFrequency) === currentFreq &&
-    !!saved?.brtExclusive === currentBrt &&
-    savedPersonLimit === currentPersonLimit &&
-    String(savedBaselineSimId) === String(currentBaselineSimId);
-}
-
-function buildDynRoutePayload() {
-  if (!selectedRouteInfo) return null;
-  const newFreq = Number(document.querySelector('#dynFreqRange .js-range-slider')?.value || 0);
-  const brt = !!document.getElementById('dynBrtToggle')?.checked;
-  const personLimitRaw = document.getElementById('dynPersonLimit')?.value || '';
-  const personLimit = personLimitRaw ? Number(personLimitRaw) : null;
-  const simId = getSimulationIdForCurrentBusSource();
-  const baseline = getDynBaselineChoice();
-  return {
-    routeId: selectedRouteInfo.routeId,
-    lineId: selectedRouteInfo.lineId,
-    systemId: selectedRouteInfo.systemId,
-    sourcePath: currentBusRouteSource,
-    simulationId: simId,
-    timeMode: getBusTimeMode(),
-    oldFrequency: getBusFreq(selectedRouteInfo),
-    newFrequency: newFreq,
-    oldFrequencyWindowCount: selectedRouteInfo.count0609 ?? null,
-    newFrequencyWindowCount: newFreq * MORNING_FREQUENCY_WINDOW_HOURS,
-    frequencyUnit: FREQUENCY_UNIT,
-    frequencyWindowHours: MORNING_FREQUENCY_WINDOW_HOURS,
-    brtExclusive: brt,
-    personLimit,
-    ...baseline,
-    ts: Date.now()
-  };
-}
-
-function saveDynRoutePayload() {
-  const payload = buildDynRoutePayload();
-  if (!payload) return null;
-  writeDynSavedParams(selectedRouteInfo, payload);
-  persistedRouteParams = payload;
-  return payload;
-}
-
-function saveBaselineChoiceToExistingRouteParams() {
-  if (selectedRouteInfo) return saveDynRoutePayload();
-  const saved = readGlobalRouteParams();
-  if (!saved || !saved.routeId) return null;
-  const payload = {
-    ...saved,
-    ...getDynBaselineChoice(),
-    ts: Date.now()
-  };
-  try {
-    localStorage.setItem('routeParams', JSON.stringify(payload));
-  } catch { }
-  persistedRouteParams = payload;
-  return payload;
-}
-
-function updateInputMissionBoard() {
-  const mini = document.getElementById('missionBoardMini');
-  const stepLabel = document.getElementById('missionBoardStepLabel');
-  const copy = document.getElementById('missionBoardCopy');
-  const progress = document.getElementById('missionBoardProgress');
-  const stageCards = [
-    document.getElementById('missionStageCard1'),
-    document.getElementById('missionStageCard2'),
-    document.getElementById('missionStageCard3')
-  ];
-
-  if (!mini && !stepLabel && !copy && !progress && stageCards.every(card => !card)) return;
-
-  const hasSource = !!currentBusRouteSource;
-  const hasSelection = !!selectedRouteInfo;
-  const hasSavedChange = hasSelection && isSelectedRouteSaveCurrent();
-  const step = hasSavedChange ? 3 : hasSelection ? 2 : hasSource ? 1 : 0;
-  const displayStep = Math.max(1, step);
-  const progressPercent = displayStep === 1 ? 34 : displayStep === 2 ? 68 : 100;
-  const stepText = `STEP ${displayStep} / 3`;
-
-  if (mini) mini.textContent = stepText;
-  if (stepLabel) stepLabel.textContent = stepText;
-  if (progress) progress.style.setProperty('--progress', `${progressPercent}%`);
-
-  if (copy) {
-    copy.textContent = hasSavedChange
-      ? '変更を保存しました。結果ステージへ進んで効果を確認できます。'
-      : hasSelection
-        ? '路線を選択しました。運航頻度や専用レーンを調整して保存します。'
-        : '路線を選んで、朝の運行頻度を調整し、結果ステージへ進みます。';
-  }
-
-  stageCards.forEach((card, index) => {
-    if (!card) return;
-    const cardStep = index + 1;
-    const state = cardStep < displayStep ? 'done' : cardStep === displayStep ? 'current' : 'todo';
-    card.dataset.state = state;
-    if (state === 'current') card.setAttribute('aria-current', 'step');
-    else card.removeAttribute('aria-current');
-  });
+  if (view) view.textContent = `${v} 本`;
 }
 
 function bindDynRoutePanel() {
@@ -452,34 +234,33 @@ function bindDynRoutePanel() {
   document.getElementById('clearRouteBtn')?.addEventListener('click', () => clearSelection());
 
   const slider = document.querySelector('#dynFreqRange .js-range-slider');
-  if (slider) {
-    slider.addEventListener('input', updateDynFreqUi);
-    slider.addEventListener('input', updateInputMissionBoard);
-  }
-
-  document.getElementById('dynBrtToggle')?.addEventListener('change', updateInputMissionBoard);
-  document.getElementById('dynPersonLimit')?.addEventListener('change', updateInputMissionBoard);
-  document.getElementById('dynBaselineSelect')?.addEventListener('change', () => {
-    saveBaselineChoiceToExistingRouteParams();
-    updateInputMissionBoard();
-  });
+  if (slider) slider.addEventListener('input', updateDynFreqUi);
 
   document.getElementById('applyDynParamsBtn')?.addEventListener('click', () => {
-    if (!saveDynRoutePayload()) return;
+    if (!selectedRouteInfo) return;
+    const newFreq = Number(document.querySelector('#dynFreqRange .js-range-slider')?.value || 0);
+    const brt = !!document.getElementById('dynBrtToggle')?.checked;
+    const simId = getSimulationIdForCurrentBusSource();
+    const payload = {
+      routeId: selectedRouteInfo.routeId,
+      lineId: selectedRouteInfo.lineId,
+      systemId: selectedRouteInfo.systemId,
+      sourcePath: currentBusRouteSource,
+      simulationId: simId,
+      timeMode: getBusTimeMode(),
+      oldFrequency: getBusFreq(selectedRouteInfo),
+      newFrequency: newFreq,
+      brtExclusive: brt,
+      ts: Date.now()
+    };
+    writeDynSavedParams(selectedRouteInfo, payload);
     setDynSaveStatus(true);
-    updateInputMissionBoard();
-  });
-
-  document.querySelector('form[action="results.html"]')?.addEventListener('submit', () => {
-    saveBaselineChoiceToExistingRouteParams();
   });
 }
 
 ensureDynRoutePanel();
 bindDynRoutePanel();
-setDynBaselineFromParams(persistedRouteParams);
 renderRouteDetails(null);
-updateInputMissionBoard();
 
 // ================================
 // Bus routes derived from transitSchedule
@@ -522,7 +303,6 @@ function initBusRouteSourceButtons() {
       currentBusRouteSource = source;
       setActiveBusRouteSourceButton(currentBusRouteSource);
       clearSelection();
-      updateInputMissionBoard();
       if (busRoutesLayer && map.hasLayer(busRoutesLayer)) map.removeLayer(busRoutesLayer);
       busRoutesLayer = null;
 
@@ -558,7 +338,7 @@ function getBusFreq(info) {
   if (overridden != null) return overridden;
   const mode = getBusTimeMode();
   if (mode === 'all') return info.countAll ?? info.count0609 ?? 0;
-  return toHourlyFrequency(info.count0609 ?? info.countAll ?? 0);
+  return info.count0609 ?? info.countAll ?? 0;
 }
 
 function getBusSamples(info) {
@@ -573,16 +353,16 @@ function getBusTooltip(props) {
   const freq = getBusFreq(props);
   const oldFreq = getSavedOldFrequency(props);
   if (oldFreq != null && oldFreq !== freq) {
-    return `${title}<br>${label}: ${formatFrequency(freq)}本/時間（変更前 ${formatFrequency(oldFreq)}本/時間）`;
+    return `${title}<br>${label}: ${freq}本（変更前 ${oldFreq}本）`;
   }
-  return `${title}<br>${label}: ${formatFrequency(freq)}本/時間`;
+  return `${title}<br>${label}: ${freq}本`;
 }
 
 function getBusLineWeight(info) {
   const freq = getBusFreq(info);
-  if (freq >= 25) return 16;      // very frequent
-  if (freq >= 12.5) return 9;     // frequent
-  if (freq >= 5) return 4;        // moderate
+  if (freq >= 100) return 16;      // very frequent
+  if (freq >= 50) return 9;       // frequent
+  if (freq >= 20) return 4;       // moderate
   return 1.5;                     // low frequency
 }
 
@@ -916,7 +696,6 @@ function renderRouteDetails(info) {
     details.innerHTML = '';
     if (applyBtn) applyBtn.disabled = true;
     setDynControlsVisibility(false);
-    updateInputMissionBoard();
     return;
   }
 
@@ -926,7 +705,6 @@ function renderRouteDetails(info) {
   const lineName = escapeHtml(info.lineId || '(不明)');
   const routeName = escapeHtml(info.routeId || '(不明)');
   const freqAll = info.countAll ?? info.count0609 ?? 0;
-  const freqMorningCount = info.count0609 ?? 0;
   const freqSelected = getBusFreq(info);
   const samples = escapeHtml((getBusSamples(info) || []).join(', ') || '—');
 
@@ -939,18 +717,16 @@ function renderRouteDetails(info) {
   details.innerHTML = `
     <dt>路線ID</dt><dd>${lineName}</dd>
     <dt>経路ID</dt><dd>${routeName}</dd>
-    <dt>運行頻度（06:00–09:59）</dt><dd id="dynRouteFreqView">${formatFrequency(freqSelected)} 本/時間</dd>
-    <dt>運行本数（06:00–09:59）</dt><dd>${freqMorningCount} 本</dd>
-    <dt>運行本数（終日）</dt><dd>${freqAll} 本</dd>
+    <dt>運行頻度（06:00–09:59）</dt><dd id="dynRouteFreqView">${freqSelected} 本</dd>
+    <dt>運行頻度（終日）</dt><dd>${freqAll} 本</dd>
     <dt>出発サンプル</dt><dd>${samples}</dd>
   `;
 
   const slider = document.querySelector('#dynFreqRange .js-range-slider');
   if (slider) {
-    const freqText = formatFrequency(freqSelected);
-    slider.value = freqText;
-    slider.dataset.default = freqText;
-    slider.dataset.saved = freqText;
+    slider.value = String(freqSelected);
+    slider.dataset.default = String(freqSelected);
+    slider.dataset.saved = String(freqSelected);
     // Keep the value bubble centered and UI in sync (simulation.js binds on `input`).
     slider.dispatchEvent(new Event('input', { bubbles: true }));
   }
@@ -958,15 +734,11 @@ function renderRouteDetails(info) {
   const saved = readDynSavedParams(info);
   const brtToggle = document.getElementById('dynBrtToggle');
   if (brtToggle) brtToggle.checked = !!saved?.brtExclusive;
-  const personLimitSelect = document.getElementById('dynPersonLimit');
-  if (personLimitSelect) personLimitSelect.value = saved?.personLimit ? String(saved.personLimit) : '';
-  setDynBaselineFromParams(saved);
   if (applyBtn) applyBtn.disabled = false;
   // Always show controls when a route is selected.
   setDynControlsVisibility(true, { scroll: true });
   setDynSaveStatus(false);
   updateDynFreqUi();
-  updateInputMissionBoard();
 
   document.getElementById('dynRouteContainer')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -1178,7 +950,7 @@ if (!window.__dynResetBound) {
       if (diffEl) diffEl.textContent = '(+0)';
 
       const view = document.getElementById('dynRouteFreqView');
-      if (view) view.textContent = `${formatFrequency(def)} 本/時間`;
+      if (view) view.textContent = `${def} 本`;
     }
   });
   window.__dynResetBound = true;

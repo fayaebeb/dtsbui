@@ -4,11 +4,6 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from .aggregates import Aggregator
 
-DEFAULT_WAITING_PT_COEFF_UTIL_HR = -2.3394
-UTILITY_EPSILON = 1e-9
-WAITING_PT_MIN_OBSERVED_SEC = 1.0
-
-
 def _best_index_by_server_score(plans: List[Dict[str, Any]]) -> int:
     if not plans:
         return 0
@@ -73,57 +68,6 @@ def _plan_affected_by_route(plan: Dict[str, Any], route_id: str) -> bool:
     return has_exact if supports_ids else has_any_pt
 
 
-def _plan_has_any_brt_leg(plan: Dict[str, Any]) -> bool:
-    steps = plan.get("steps") or []
-    if isinstance(steps, list):
-        if any(isinstance(s, dict) and _is_pt_leg(s) for s in steps):
-            return True
-
-    has_pt = plan.get("hasPt")
-    return bool(has_pt) if isinstance(has_pt, bool) else False
-
-
-def _person_compare_payload(
-    *,
-    person_id: str,
-    before_idx: int,
-    after_idx: int,
-    before_score: float,
-    after_score: float,
-    before_plan: Dict[str, Any],
-    after_plan: Dict[str, Any],
-    route_id: str,
-    include_steps: bool,
-) -> Dict[str, Any]:
-    before_uses_brt = _plan_has_any_brt_leg(before_plan)
-    after_uses_brt = _plan_affected_by_route(after_plan, route_id)
-    payload: Dict[str, Any] = {
-        "personId": person_id,
-        "beforePlanIndex": int(before_idx),
-        "afterPlanIndex": int(after_idx),
-        "beforeScore": before_score,
-        "afterScore": after_score,
-        "deltaScore": float(after_score - before_score),
-        "changedPlan": bool(after_idx != before_idx),
-        "beforeUsesBrt": bool(before_uses_brt),
-        "afterUsesBrt": bool(after_uses_brt),
-    }
-    if include_steps:
-        payload["beforePlanSteps"] = before_plan.get("steps") or []
-        payload["afterPlanSteps"] = after_plan.get("steps") or []
-    return payload
-
-
-def _story_candidate_rank(payload: Dict[str, Any]) -> tuple[int, float]:
-    if not payload.get("afterUsesBrt"):
-        return (0, float(payload.get("deltaScore") or 0.0))
-    if not payload.get("beforeUsesBrt"):
-        return (3, float(payload.get("deltaScore") or 0.0))
-    if payload.get("changedPlan"):
-        return (2, float(payload.get("deltaScore") or 0.0))
-    return (1, float(payload.get("deltaScore") or 0.0))
-
-
 def _person_may_be_affected(person: Dict[str, Any], plans: List[Dict[str, Any]], route_id: str) -> bool:
     route_ids = person.get("routeIds")
     if isinstance(route_ids, list) and route_ids:
@@ -154,105 +98,26 @@ def _argmax(values: List[float]) -> int:
     return best
 
 
-def _waiting_pt_duration_sec(plan: Dict[str, Any]) -> float:
-    total = 0.0
-    for step in plan.get("steps") or []:
-        if not isinstance(step, dict):
-            continue
-        if step.get("kind") != "activity":
-            continue
-        if str(step.get("type") or "").lower() != "waitingpt":
-            continue
-        try:
-            total += float(step.get("durationSec") or 0.0)
-        except Exception:
-            continue
-    return total
-
-
-def _waiting_pt_coeff_util_hr(plan: Dict[str, Any], fallback: float) -> float:
-    try:
-        return float(plan.get("waitingPtUtilityUtilHr"))
-    except Exception:
-        return float(fallback)
-
-
-def _expected_wait_sec(frequency: float) -> float:
-    freq = max(1.0, float(frequency or 0.0))
-    return ((60.0 / freq) / 2.0) * 60.0
-
-
-def _effective_current_wait_sec(plan: Dict[str, Any], old_frequency: float) -> float:
-    current_wait_sec = _waiting_pt_duration_sec(plan)
-    if current_wait_sec >= WAITING_PT_MIN_OBSERVED_SEC:
-        return current_wait_sec
-    return _expected_wait_sec(old_frequency)
-
-
-def _plan_frequency_delta_score(
-    plan: Dict[str, Any],
-    *,
-    route_id: str,
-    old_frequency: float,
-    new_frequency: float,
-    waiting_pt_coeff_util_hr: float,
-) -> float:
-    if not _plan_affected_by_route(plan, route_id):
-        return 0.0
-
-    current_wait_sec = _effective_current_wait_sec(plan, old_frequency)
-    expected_wait_after_sec = _expected_wait_sec(new_frequency)
-    expected_change_hr = (expected_wait_after_sec - current_wait_sec) / 3600.0
-    coeff = _waiting_pt_coeff_util_hr(plan, waiting_pt_coeff_util_hr)
-    return expected_change_hr * coeff
-
-
-def _reference_frequency_delta_score(
-    *,
-    old_frequency: float,
-    new_frequency: float,
-    waiting_pt_coeff_util_hr: float,
-) -> float:
-    old_f = max(1.0, float(old_frequency or 0.0))
-    new_f = max(1.0, float(new_frequency or 0.0))
-    expected_change_hr = (((60.0 / new_f) / 2.0) - ((60.0 / old_f) / 2.0)) / 60.0
-    return expected_change_hr * float(waiting_pt_coeff_util_hr)
-
-
 def _compare_person_frequency_change(
     person: Dict[str, Any],
     plans: List[Dict[str, Any]],
     *,
     route_id: str,
-    old_frequency: float,
-    new_frequency: float,
-    waiting_pt_coeff_util_hr: float = DEFAULT_WAITING_PT_COEFF_UTIL_HR,
-    person_may_be_affected: Optional[bool] = None,
+    delta_score: float,
 ) -> tuple[int, int, float, float]:
     before_idx = _best_index_for_person(person, plans)
     before_score = float(plans[before_idx].get("serverScore") or 0.0) if 0 <= before_idx < len(plans) else 0.0
 
-    may_be_affected = (
-        _person_may_be_affected(person, plans, route_id)
-        if person_may_be_affected is None
-        else bool(person_may_be_affected)
-    )
-    if not may_be_affected:
+    if not _person_may_be_affected(person, plans, route_id) or abs(delta_score) < 1e-12:
         return before_idx, before_idx, before_score, before_score
 
     adjusted_scores: List[float] = []
     any_affected = False
     for pl in plans:
         base = float(pl.get("serverScore") or 0.0)
-        delta = _plan_frequency_delta_score(
-            pl,
-            route_id=route_id,
-            old_frequency=old_frequency,
-            new_frequency=new_frequency,
-            waiting_pt_coeff_util_hr=waiting_pt_coeff_util_hr,
-        )
-        any_affected = any_affected or abs(delta) > 1e-12
-        adjusted_scores.append(base + delta)
+        affected = _plan_affected_by_route(pl, route_id)
+        any_affected = any_affected or affected
+        adjusted_scores.append(base + delta_score if affected else base)
 
     if not any_affected:
         return before_idx, before_idx, before_score, before_score
@@ -406,24 +271,19 @@ def compare_frequency(
     route_id: str,
     old_frequency: float,
     new_frequency: float,
-    waiting_pt_coeff_util_hr: float = DEFAULT_WAITING_PT_COEFF_UTIL_HR,
+    walk_coeff_per_sec: float = 0.5,
 ) -> Dict[str, Any]:
     """
-    Apply waitingPt-based frequency utility adjustment and
+    Apply the same frequency utility adjustment used in assets/js/route_sim.js and
     return before/after selected plan indices per person (plus changed count).
     """
     old_f = max(1.0, float(old_frequency or 0.0))
     new_f = max(1.0, float(new_frequency or 0.0))
     delta_wait_min = ((60.0 / old_f) - (60.0 / new_f)) / 2.0
-    delta_score = _reference_frequency_delta_score(
-        old_frequency=old_f,
-        new_frequency=new_f,
-        waiting_pt_coeff_util_hr=waiting_pt_coeff_util_hr,
-    )
+    # Treat score as utility (higher is better): higher frequency -> lower wait -> higher utility.
+    delta_score = (delta_wait_min * 60.0) * float(walk_coeff_per_sec)
 
-    route_affected = 0
-    utility_changed = 0
-    changed_plan = 0
+    changed = 0
     before_indices: Dict[str, int] = {}
     after_indices: Dict[str, int] = {}
 
@@ -438,25 +298,16 @@ def compare_frequency(
         if not plans:
             continue
 
-        person_route_affected = _person_may_be_affected(p, plans, route_id)
-        if person_route_affected:
-            route_affected += 1
-
-        before_idx, after_idx, before_score, after_score = _compare_person_frequency_change(
+        before_idx, after_idx, _before_score, _after_score = _compare_person_frequency_change(
             p,
             plans,
             route_id=route_id,
-            old_frequency=old_f,
-            new_frequency=new_f,
-            waiting_pt_coeff_util_hr=waiting_pt_coeff_util_hr,
-            person_may_be_affected=person_route_affected,
+            delta_score=delta_score,
         )
         before_indices[pid] = before_idx
         after_indices[pid] = after_idx
-        if abs(after_score - before_score) > UTILITY_EPSILON:
-            utility_changed += 1
         if after_idx != before_idx:
-            changed_plan += 1
+            changed += 1
 
     return {
         "routeId": route_id,
@@ -464,10 +315,7 @@ def compare_frequency(
         "newFrequency": new_f,
         "deltaWaitMin": delta_wait_min,
         "deltaScore": delta_score,
-        "changedPeople": route_affected,
-        "affectedPeople": route_affected,
-        "utilityChangedPeople": utility_changed,
-        "changedPlanPeople": changed_plan,
+        "changedPeople": changed,
         "beforePlanIndexByPerson": before_indices,
         "afterPlanIndexByPerson": after_indices,
     }
@@ -481,7 +329,7 @@ def compute_frequency_compare_aggregates_from_affected(
     old_frequency: float,
     new_frequency: float,
     top_routes: int = 12,
-    waiting_pt_coeff_util_hr: float = DEFAULT_WAITING_PT_COEFF_UTIL_HR,
+    walk_coeff_per_sec: float = 0.5,
     changed_sample_n: int = 50,
     include_most_impacted_steps: bool = False,
     station_baseline: Optional[Dict[str, Any]] = None,
@@ -490,11 +338,7 @@ def compute_frequency_compare_aggregates_from_affected(
     old_f = max(1.0, float(old_frequency or 0.0))
     new_f = max(1.0, float(new_frequency or 0.0))
     delta_wait_min = ((60.0 / old_f) - (60.0 / new_f)) / 2.0
-    delta_score = _reference_frequency_delta_score(
-        old_frequency=old_f,
-        new_frequency=new_f,
-        waiting_pt_coeff_util_hr=waiting_pt_coeff_util_hr,
-    )
+    delta_score = (delta_wait_min * 60.0) * float(walk_coeff_per_sec)
 
     pre_agg = Aggregator.from_state(baseline_state or {})
     post_agg = Aggregator.from_state(baseline_state or {})
@@ -502,14 +346,10 @@ def compute_frequency_compare_aggregates_from_affected(
     post_total_utility = pre_total_utility
     utility_people = int((baseline_state or {}).get("totalPeople") or 0)
 
-    route_affected = 0
-    utility_changed = 0
-    changed_plan = 0
+    changed = 0
     changed_sample: List[Dict[str, Any]] = []
     most_impacted: Optional[Dict[str, Any]] = None
-    story_target: Optional[Dict[str, Any]] = None
     most_delta = float("-inf")
-    best_story_rank: tuple[int, float] = (0, float("-inf"))
     station_pre = None
     station_post = None
     station_enabled = isinstance(station_baseline, dict)
@@ -540,70 +380,50 @@ def compute_frequency_compare_aggregates_from_affected(
         if not plans:
             continue
 
-        person_route_affected = _person_may_be_affected(p, plans, route_id)
-        if person_route_affected:
-            route_affected += 1
-
         before_idx, after_idx, before_score, after_score = _compare_person_frequency_change(
             p,
             plans,
             route_id=route_id,
-            old_frequency=old_f,
-            new_frequency=new_f,
-            waiting_pt_coeff_util_hr=waiting_pt_coeff_util_hr,
-            person_may_be_affected=person_route_affected,
+            delta_score=delta_score,
         )
         delta = after_score - before_score
-        pre_plan = plans[before_idx] if 0 <= before_idx < len(plans) else plans[0]
-        post_plan = plans[after_idx] if 0 <= after_idx < len(plans) else plans[0]
-        person_payload = _person_compare_payload(
-            person_id=pid,
-            before_idx=before_idx,
-            after_idx=after_idx,
-            before_score=before_score,
-            after_score=after_score,
-            before_plan=pre_plan,
-            after_plan=post_plan,
-            route_id=route_id,
-            include_steps=include_most_impacted_steps,
-        )
         post_total_utility += delta
 
         if delta > most_delta:
             most_delta = delta
-            most_impacted = person_payload
+            most_impacted = {
+                "personId": pid,
+                "beforePlanIndex": int(before_idx),
+                "afterPlanIndex": int(after_idx),
+                "beforeScore": before_score,
+                "afterScore": after_score,
+                "deltaScore": delta,
+                "changedPlan": bool(after_idx != before_idx),
+            }
+            if include_most_impacted_steps:
+                pre_plan = plans[before_idx] if 0 <= before_idx < len(plans) else plans[0]
+                post_plan = plans[after_idx] if 0 <= after_idx < len(plans) else plans[0]
+                most_impacted["beforePlanSteps"] = pre_plan.get("steps") or []
+                most_impacted["afterPlanSteps"] = post_plan.get("steps") or []
 
-        story_rank = _story_candidate_rank(person_payload)
-        if story_rank[0] > 0 and story_rank > best_story_rank:
-            best_story_rank = story_rank
-            story_target = person_payload
-
-        is_affected = abs(delta) > UTILITY_EPSILON
-        changed_plan_for_person = after_idx != before_idx
-        if is_affected:
-            utility_changed += 1
+        if after_idx != before_idx:
+            changed += 1
             if len(changed_sample) < max(0, int(changed_sample_n)):
-                changed_sample.append({
-                    "personId": pid,
-                    "before": int(before_idx),
-                    "after": int(after_idx),
-                    "deltaScore": float(delta),
-                    "changedPlan": bool(changed_plan_for_person),
-                })
-        if changed_plan_for_person:
-            changed_plan += 1
-            post_agg.remove_person_plan(pid, pre_plan)
-            post_agg.add_person_plan(pid, post_plan)
+                changed_sample.append({"personId": pid, "before": int(before_idx), "after": int(after_idx)})
+            before_plan = plans[before_idx] if 0 <= before_idx < len(plans) else plans[0]
+            post_agg.remove_person_plan(pid, before_plan)
+            after_plan = plans[after_idx] if 0 <= after_idx < len(plans) else plans[0]
+            post_agg.add_person_plan(pid, after_plan)
             if station_enabled and station_post is not None:
                 before_contribution = _station_plan_contribution(
-                    pre_plan,
+                    before_plan,
                     center_x=station_center_x,
                     center_y=station_center_y,
                     radius_sq=station_radius_sq,
                     bin_sec=station_bin_sec,
                 )
                 after_contribution = _station_plan_contribution(
-                    post_plan,
+                    after_plan,
                     center_x=station_center_x,
                     center_y=station_center_y,
                     radius_sq=station_radius_sq,
@@ -638,13 +458,9 @@ def compute_frequency_compare_aggregates_from_affected(
         "newFrequency": new_f,
         "deltaWaitMin": delta_wait_min,
         "deltaScore": delta_score,
-        "changedPeople": route_affected,
-        "affectedPeople": route_affected,
-        "utilityChangedPeople": utility_changed,
-        "changedPlanPeople": changed_plan,
+        "changedPeople": changed,
         "changedSample": changed_sample,
         "mostImpacted": most_impacted,
-        "storyTarget": story_target,
         "preAggregates": pre_out,
         "postAggregates": post_out,
         "stationArea": station_area,
@@ -658,7 +474,7 @@ def compute_frequency_compare_aggregates(
     old_frequency: float,
     new_frequency: float,
     top_routes: int = 12,
-    waiting_pt_coeff_util_hr: float = DEFAULT_WAITING_PT_COEFF_UTIL_HR,
+    walk_coeff_per_sec: float = 0.5,
     changed_sample_n: int = 50,
     include_most_impacted_steps: bool = False,
     station_center_x: Optional[float] = None,
@@ -674,15 +490,10 @@ def compute_frequency_compare_aggregates(
     old_f = max(1.0, float(old_frequency or 0.0))
     new_f = max(1.0, float(new_frequency or 0.0))
     delta_wait_min = ((60.0 / old_f) - (60.0 / new_f)) / 2.0
-    delta_score = _reference_frequency_delta_score(
-        old_frequency=old_f,
-        new_frequency=new_f,
-        waiting_pt_coeff_util_hr=waiting_pt_coeff_util_hr,
-    )
+    # Treat score as utility (higher is better): higher frequency -> lower wait -> higher utility.
+    delta_score = (delta_wait_min * 60.0) * float(walk_coeff_per_sec)
 
-    route_affected = 0
-    utility_changed = 0
-    changed_plan = 0
+    changed = 0
     changed_sample: List[Dict[str, Any]] = []
 
     pre_agg = Aggregator()
@@ -706,9 +517,7 @@ def compute_frequency_compare_aggregates(
     station_post_max_time = 0
 
     most_impacted: Optional[Dict[str, Any]] = None
-    story_target: Optional[Dict[str, Any]] = None
     most_delta = float("-inf")
-    best_story_rank: tuple[int, float] = (0, float("-inf"))
 
     for p in persons:
         if not isinstance(p, dict):
@@ -721,58 +530,38 @@ def compute_frequency_compare_aggregates(
         if not plans:
             continue
 
-        person_route_affected = _person_may_be_affected(p, plans, route_id)
-        if person_route_affected:
-            route_affected += 1
-
         before_idx, after_idx, before_score, after_score = _compare_person_frequency_change(
             p,
             plans,
             route_id=route_id,
-            old_frequency=old_f,
-            new_frequency=new_f,
-            waiting_pt_coeff_util_hr=waiting_pt_coeff_util_hr,
-            person_may_be_affected=person_route_affected,
+            delta_score=delta_score,
         )
         delta = after_score - before_score  # positive means improved utility
-        before_plan = plans[before_idx] if 0 <= before_idx < len(plans) else plans[0]
-        post_plan = plans[after_idx] if 0 <= after_idx < len(plans) else plans[0]
-        person_payload = _person_compare_payload(
-            person_id=pid,
-            before_idx=before_idx,
-            after_idx=after_idx,
-            before_score=before_score,
-            after_score=after_score,
-            before_plan=before_plan,
-            after_plan=post_plan,
-            route_id=route_id,
-            include_steps=include_most_impacted_steps,
-        )
         if delta > most_delta:
             most_delta = delta
-            most_impacted = person_payload
+            most_impacted = {
+                "personId": pid,
+                "beforePlanIndex": int(before_idx),
+                "afterPlanIndex": int(after_idx),
+                "beforeScore": before_score,
+                "afterScore": after_score,
+                "deltaScore": delta,
+                "changedPlan": bool(after_idx != before_idx),
+            }
+            if include_most_impacted_steps:
+                pre_plan = plans[before_idx] if 0 <= before_idx < len(plans) else plans[0]
+                post_plan = plans[after_idx] if 0 <= after_idx < len(plans) else plans[0]
+                most_impacted["beforePlanSteps"] = pre_plan.get("steps") or []
+                most_impacted["afterPlanSteps"] = post_plan.get("steps") or []
 
-        story_rank = _story_candidate_rank(person_payload)
-        if story_rank[0] > 0 and story_rank > best_story_rank:
-            best_story_rank = story_rank
-            story_target = person_payload
-
-        is_affected = abs(delta) > UTILITY_EPSILON
-        changed_plan_for_person = after_idx != before_idx
-        if is_affected:
-            utility_changed += 1
+        if after_idx != before_idx:
+            changed += 1
             if len(changed_sample) < max(0, int(changed_sample_n)):
-                changed_sample.append({
-                    "personId": pid,
-                    "before": int(before_idx),
-                    "after": int(after_idx),
-                    "deltaScore": float(delta),
-                    "changedPlan": bool(changed_plan_for_person),
-                })
-        if changed_plan_for_person:
-            changed_plan += 1
+                changed_sample.append({"personId": pid, "before": int(before_idx), "after": int(after_idx)})
 
+        before_plan = plans[before_idx] if 0 <= before_idx < len(plans) else plans[0]
         pre_agg.add_person_plan(pid, before_plan)
+        post_plan = plans[after_idx] if 0 <= after_idx < len(plans) else plans[0]
         post_agg.add_person_plan(pid, post_plan)
         if station_enabled:
             station_pre_max_time = max(
@@ -839,13 +628,9 @@ def compute_frequency_compare_aggregates(
         "newFrequency": new_f,
         "deltaWaitMin": delta_wait_min,
         "deltaScore": delta_score,
-        "changedPeople": route_affected,
-        "affectedPeople": route_affected,
-        "utilityChangedPeople": utility_changed,
-        "changedPlanPeople": changed_plan,
+        "changedPeople": changed,
         "changedSample": changed_sample,
         "mostImpacted": most_impacted,
-        "storyTarget": story_target,
         "preAggregates": pre_out,
         "postAggregates": post_out,
         "stationArea": station_area,

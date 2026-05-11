@@ -11,7 +11,7 @@ from azure.storage.blob import BlobClient
 
 from .azure_utils import get_storage_context
 from .models import get_simulation, update_simulation
-from .parsing import iter_plans_to_persons, parse_config_file
+from .parsing import iter_plans_to_persons
 from .aggregates import Aggregator
 from .frequency_route_cache import (
     RouteCacheWriter,
@@ -25,7 +25,6 @@ from .station_frequency_cache import (
     save_station_baseline_payload,
 )
 from .person_cache import write_ndjson_gz
-from .zip_utils import extract_zip_member
 
 
 class ParseError(Exception):
@@ -33,7 +32,6 @@ class ParseError(Exception):
 
 
 _PLAN_CANDIDATES = ("output_plans.xml.gz", "output_plans.xml")
-_CONFIG_CANDIDATES = ("output_config.xml.gz", "output_config.xml", "config.xml.gz", "config.xml")
 _EVENT_CANDIDATES = ("output_events.xml.gz", "output_events.xml", "events.xml.gz", "events.xml")
 _SCHEDULE_CANDIDATES = ("output_transitSchedule.xml.gz", "output_transitSchedule.xml", "transitSchedule.xml.gz", "transitSchedule.xml")
 _FACILITY_CANDIDATES = (
@@ -44,29 +42,22 @@ _FACILITY_CANDIDATES = (
 )
 
 
-def _looks_like_schedule_name(name: str) -> bool:
-    base = os.path.basename(str(name or "")).lower()
-    return "transitschedule" in base and (base.endswith(".xml") or base.endswith(".xml.gz"))
-
-
-def _find_first_existing(folder: str, candidates: Tuple[str, ...], *, allow_schedule_fallback: bool = False) -> Optional[str]:
+def _find_first_existing(folder: str, candidates: Tuple[str, ...]) -> Optional[str]:
     for name in candidates:
         path = os.path.join(folder, name)
         if os.path.isfile(path):
             return path
-    if allow_schedule_fallback:
-        for root, _dirs, files in os.walk(folder):
-            for name in files:
-                if _looks_like_schedule_name(name):
-                    return os.path.join(root, name)
     return None
 
 
 def _extract_member(zf: zipfile.ZipFile, member: str, dest_dir: str) -> str:
-    return extract_zip_member(zf, member, dest_dir)
+    dst = os.path.join(dest_dir, os.path.basename(member))
+    with zf.open(member) as src, open(dst, "wb") as dst_file:
+        shutil.copyfileobj(src, dst_file, length=1024 * 1024)
+    return dst
 
 
-def _locate_member(zf: zipfile.ZipFile, wanted: Tuple[str, ...], *, allow_schedule_fallback: bool = False) -> Optional[str]:
+def _locate_member(zf: zipfile.ZipFile, wanted: Tuple[str, ...]) -> Optional[str]:
     wanted_lc = {name.lower() for name in wanted}
     for info in zf.infolist():
         if info.is_dir():
@@ -74,12 +65,6 @@ def _locate_member(zf: zipfile.ZipFile, wanted: Tuple[str, ...], *, allow_schedu
         base = os.path.basename(info.filename).lower()
         if base in wanted_lc:
             return info.filename
-    if allow_schedule_fallback:
-        for info in zf.infolist():
-            if info.is_dir():
-                continue
-            if _looks_like_schedule_name(info.filename):
-                return info.filename
     return None
 
 
@@ -90,22 +75,12 @@ def _parse_and_cache(
     limit: int,
     selected_only: bool,
     schedule_path: Optional[str] = None,
-    config_path: Optional[str] = None,
 ) -> Dict[str, Any]:
-    scoring_config: Optional[Dict[str, Any]] = None
-    if config_path:
-        try:
-            scoring_config = parse_config_file(config_path)
-            current_app.logger.info("[parse] scoring config loaded for %s: %s", sim_id, os.path.basename(config_path))
-        except Exception:
-            current_app.logger.exception("[parse] failed to parse scoring config for %s; using defaults", sim_id)
-
     people_iter = iter_plans_to_persons(
         plans_path,
         facilities_path,
         max_persons=limit,
         selected_only_flag=selected_only,
-        scoring_config=scoring_config,
     )
     parsed_dir = os.path.join(current_app.config["STORAGE_ROOT"], "parsed")
     os.makedirs(parsed_dir, exist_ok=True)
@@ -119,23 +94,6 @@ def _parse_and_cache(
     bestscore_agg = Aggregator() if not selected_only else None
     route_cache_writer = RouteCacheWriter(sim_id) if not selected_only else None
     station_baseline_builders = prepare_station_baseline_builders(schedule_path) if not selected_only else []
-    if selected_only:
-        current_app.logger.info("[parse] station baseline skipped for %s: selected-only parse", sim_id)
-    elif not schedule_path:
-        current_app.logger.info("[parse] station baseline skipped for %s: transit schedule not found", sim_id)
-    elif station_baseline_builders:
-        current_app.logger.info(
-            "[parse] station baseline prepared for %s: schedule=%s profiles=%s",
-            sim_id,
-            os.path.basename(schedule_path),
-            len(station_baseline_builders),
-        )
-    else:
-        current_app.logger.info(
-            "[parse] station baseline skipped for %s: no supported station profiles from schedule=%s",
-            sim_id,
-            os.path.basename(schedule_path),
-        )
     sample: list[dict[str, Any]] = []
     sample_limit = int(os.getenv("PUBLIC_MAX_PERSONS", "1000") or "1000")
     sample_limit = max(1, sample_limit)
@@ -203,14 +161,7 @@ def _parse_and_cache(
         if bestscore_agg is not None:
             save_bestscore_aggregate_state(sim_id, bestscore_agg.to_state())
         if station_baseline_builders:
-            payload = builders_to_payload(sim_id, station_baseline_builders)
-            save_station_baseline_payload(sim_id, payload)
-            current_app.logger.info(
-                "[parse] station baseline saved for %s: stations=%s profiles=%s",
-                sim_id,
-                len((payload.get("stations") or {})) if isinstance(payload, dict) else 0,
-                len(station_baseline_builders),
-            )
+            save_station_baseline_payload(sim_id, builders_to_payload(sim_id, station_baseline_builders))
     except Exception:
         cleanup_frequency_route_cache(sim_id)
         cleanup_station_baseline_cache(sim_id)
@@ -254,18 +205,9 @@ def run_parse(sim_id: str, limit: int, selected_only: bool = True) -> Dict[str, 
         if not plans_path:
             raise ParseError("plans file not found in local folder")
         facilities_path = _find_first_existing(folder, tuple(_FACILITY_CANDIDATES))
-        config_path = _find_first_existing(folder, tuple(_CONFIG_CANDIDATES))
         events_path = _find_first_existing(folder, tuple(_EVENT_CANDIDATES))
-        schedule_path = _find_first_existing(folder, tuple(_SCHEDULE_CANDIDATES), allow_schedule_fallback=True)
-        result = _parse_and_cache(
-            sim_id,
-            plans_path,
-            facilities_path,
-            limit,
-            selected_only,
-            schedule_path=schedule_path,
-            config_path=config_path,
-        )
+        schedule_path = _find_first_existing(folder, tuple(_SCHEDULE_CANDIDATES))
+        result = _parse_and_cache(sim_id, plans_path, facilities_path, limit, selected_only, schedule_path=schedule_path)
 
         if facilities_path:
             try:
@@ -301,33 +243,22 @@ def run_parse(sim_id: str, limit: int, selected_only: bool = True) -> Dict[str, 
             if not plan_member:
                 raise ParseError("plans file not found in zip")
             fac_member = _locate_member(zf, tuple(_FACILITY_CANDIDATES))
-            cfg_member = _locate_member(zf, tuple(_CONFIG_CANDIDATES))
             ev_member = _locate_member(zf, tuple(_EVENT_CANDIDATES))
-            sch_member = _locate_member(zf, tuple(_SCHEDULE_CANDIDATES), allow_schedule_fallback=True)
+            sch_member = _locate_member(zf, tuple(_SCHEDULE_CANDIDATES))
 
             plans_path = _extract_member(zf, plan_member, tmpd)
             facilities_path = _extract_member(zf, fac_member, tmpd) if fac_member else None
-            config_path = _extract_member(zf, cfg_member, tmpd) if cfg_member else None
             events_path = _extract_member(zf, ev_member, tmpd) if ev_member else None
             schedule_path = _extract_member(zf, sch_member, tmpd) if sch_member else None
 
             logger.info(
-                "[parse] found plans=%s facilities=%s config=%s events=%s schedule=%s",
+                "[parse] found plans=%s facilities=%s events=%s schedule=%s",
                 plan_member,
                 fac_member or "none",
-                cfg_member or "none",
                 ev_member or "none",
                 sch_member or "none",
             )
-            result = _parse_and_cache(
-                sim_id,
-                plans_path,
-                facilities_path,
-                limit,
-                selected_only,
-                schedule_path=schedule_path,
-                config_path=config_path,
-            )
+            result = _parse_and_cache(sim_id, plans_path, facilities_path, limit, selected_only, schedule_path=schedule_path)
 
             # Cache facilities locally so station-count queries can avoid zip access.
             if facilities_path:
